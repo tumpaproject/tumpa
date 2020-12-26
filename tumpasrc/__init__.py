@@ -1,13 +1,56 @@
 import io
 import os
 import sys
-import qrcode
 from PySide2 import QtWidgets
-from PySide2.QtCore import QObject, Signal
+from PySide2.QtCore import QObject, Signal, QSize
 from PySide2 import QtGui
 
 import johnnycanencrypt as jce
 import johnnycanencrypt.johnnycanencrypt as rjce
+
+
+class NewKeyDialog(QtWidgets.QDialog):
+    def __init__(self):
+        super(NewKeyDialog, self).__init__()
+        self.setModal(True)
+        self.setFixedSize(QSize(800, 600))
+        vboxlayout = QtWidgets.QVBoxLayout()
+        name_label = QtWidgets.QLabel("Your name:")
+        self.name_box = QtWidgets.QLineEdit("")
+
+        vboxlayout.addWidget(name_label)
+        vboxlayout.addWidget(self.name_box)
+
+        email_label = QtWidgets.QLabel("Email addresses (one email per line)")
+        self.email_box = QtWidgets.QPlainTextEdit()
+
+        vboxlayout.addWidget(email_label)
+        vboxlayout.addWidget(self.email_box)
+        passphrase_label = QtWidgets.QLabel("Key Passphrase (must be 12+ chars in length):")
+        self.passphrase_box = QtWidgets.QLineEdit("")
+
+        vboxlayout.addWidget(passphrase_label)
+        vboxlayout.addWidget(self.passphrase_box)
+
+        self.generateButton = QtWidgets.QPushButton("Generateg New Key")
+        self.generateButton.clicked.connect(self.generate)
+        vboxlayout.addWidget(self.generateButton)
+
+        self.setLayout(vboxlayout)
+        self.setWindowTitle("Generate a new OpenPGP key")
+
+    def generate(self):
+        emails = self.email_box.toPlainText()
+        name = self.name_box.text().strip()
+
+        uids = []
+        for email in emails.split("\n"):
+            value = f"{name} <{email}>"
+            uids.append(value)
+        print(uids)
+        self.hide()
+
+
 
 
 class KeyWidget(QtWidgets.QWidget):
@@ -47,8 +90,8 @@ class KeyWidget(QtWidgets.QWidget):
     def mouseDoubleClickEvent(self, event):
         select_path = QtWidgets.QFileDialog.getExistingDirectory(self, "Select directory to save public key", ".", QtWidgets.QFileDialog.ShowDirsOnly)
         if select_path:
-            filename = f"{self.fingerprint}.pub"
-            filepath = os.path.join(select_path, filename)
+            filepassphrase = f"{self.fingerprint}.pub"
+            filepath = os.path.join(select_path, filepassphrase)
             with open(filepath, "w") as fobj:
                 fobj.write(self.key.get_pub_key())
         print("public key written.")
@@ -74,6 +117,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.cwidget = QtWidgets.QWidget()
         self.generateButton = QtWidgets.QPushButton(text="Generate new key")
+        self.generateButton.clicked.connect(self.show_generate_dialog)
         self.uploadButton = QtWidgets.QPushButton(text="Upload to Yubikey")
 
         hlayout = QtWidgets.QHBoxLayout()
@@ -104,6 +148,11 @@ class MainWindow(QtWidgets.QMainWindow):
         for kw in self.key_widgets:
             if kw.fingerprint != fp:
                 kw.deselected()
+
+    def show_generate_dialog(self):
+        self.newd = NewKeyDialog()
+        self.newd.show()
+
 
 def main():
     app = QtWidgets.QApplication(sys.argv)
