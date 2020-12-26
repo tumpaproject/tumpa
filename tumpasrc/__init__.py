@@ -1,6 +1,7 @@
 import io
 import os
 import sys
+import datetime
 from PySide2 import QtWidgets
 from PySide2.QtCore import QObject, Signal, QSize
 from PySide2 import QtGui
@@ -10,9 +11,12 @@ import johnnycanencrypt.johnnycanencrypt as rjce
 
 
 class NewKeyDialog(QtWidgets.QDialog):
-    def __init__(self):
+    update_ui = Signal()
+    def __init__(self, ks: jce.KeyStore, newkey_slot):
         super(NewKeyDialog, self).__init__()
         self.setModal(True)
+        self.update_ui.connect(newkey_slot)
+        self.ks = ks  # jce.KeyStore
         self.setFixedSize(QSize(800, 600))
         vboxlayout = QtWidgets.QVBoxLayout()
         name_label = QtWidgets.QLabel("Your name:")
@@ -40,14 +44,18 @@ class NewKeyDialog(QtWidgets.QDialog):
         self.setWindowTitle("Generate a new OpenPGP key")
 
     def generate(self):
+        self.generateButton.setEnabled(False)
         emails = self.email_box.toPlainText()
         name = self.name_box.text().strip()
+        password = self.passphrase_box.text().strip()
 
         uids = []
         for email in emails.split("\n"):
             value = f"{name} <{email}>"
             uids.append(value)
-        print(uids)
+        edate = datetime.datetime.now() +  datetime.timedelta(days=3*365)
+        newk = self.ks.create_newkey(password, uids, ciphersuite=jce.Cipher.Cv25519, expiration=edate, subkeys_expiration=True)
+        self.update_ui.emit()
         self.hide()
 
 
@@ -57,6 +65,7 @@ class KeyWidget(QtWidgets.QWidget):
     selected = Signal((str),) 
     def __init__(self, key: jce.Key, selection_slot):
         super(KeyWidget, self).__init__()
+        self.setObjectName("KeyWidget")
         self.selected.connect(selection_slot)
         self.setMinimumWidth(400)
         self.key = key
@@ -79,13 +88,14 @@ class KeyWidget(QtWidgets.QWidget):
         self.setLayout(group_vboxlayout)
 
     def mousePressEvent(self, event):
-        st = """QWidget {
+        self.setObjectName("KeyWidget_selected")
+        st = """
             background: blue;
             color: white;
-        }
         """
         self.setStyleSheet(st)
         self.selected.emit(self.fingerprint)
+        self.update()
 
     def mouseDoubleClickEvent(self, event):
         select_path = QtWidgets.QFileDialog.getExistingDirectory(self, "Select directory to save public key", ".", QtWidgets.QFileDialog.ShowDirsOnly)
@@ -97,21 +107,25 @@ class KeyWidget(QtWidgets.QWidget):
         print("public key written.")
 
     def deselected(self):
-        st = """ QLabel {
+        self.setObjectName("KeyWidget")
+        st = """
             background: white;
             color: black;
             font: normal;
-        }
         """
         self.setStyleSheet(st)
+        self.update()
 
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self, parent=None, config={}):
         super(MainWindow, self).__init__(parent)
         self.setWindowTitle("Tumpa")
-        self.setMinimumWidth(500)
+        self.setMinimumWidth(600)
+        self.setMinimumHeight(500)
         self.ks = jce.KeyStore("./")
         self.key_widgets = []
+        self.vboxlayout_for_keys = QtWidgets.QVBoxLayout()
+        self.widget = QtWidgets.QWidget()
         self.updateKeyList()
         self.current_fingerprint = ""
 
@@ -133,24 +147,30 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setCentralWidget(self.cwidget)
 
     def updateKeyList(self):
-        vboxlayout = QtWidgets.QVBoxLayout()
-        self.widget = QtWidgets.QWidget()
-        for key in self.ks.get_all_keys():
-            kw = KeyWidget(key, self.childSelected)
-            self.key_widgets.append(kw)
-            vboxlayout.addWidget(kw)
+        # hide the old widgets
+        for w in self.key_widgets:
+            w.hide()
+        # Start fresh
+        self.key_widgets = []
+        try:
+            for key in self.ks.get_all_keys():
+                kw = KeyWidget(key, self.childSelected)
+                self.key_widgets.append(kw)
+                self.vboxlayout_for_keys.addWidget(kw)
+        except jce.exceptions.KeyNotFoundError:
+            pass
         # now set on the main window
-        self.widget.setLayout(vboxlayout)
+        self.widget.setLayout(self.vboxlayout_for_keys)
+        self.widget.update()
 
     def childSelected(self, fp):
         self.current_fingerprint = fp
-        print(f"{fp=}")
         for kw in self.key_widgets:
             if kw.fingerprint != fp:
                 kw.deselected()
 
     def show_generate_dialog(self):
-        self.newd = NewKeyDialog()
+        self.newd = NewKeyDialog(self.ks, self.updateKeyList)
         self.newd.show()
 
 
