@@ -9,6 +9,31 @@ from PySide2 import QtGui
 import johnnycanencrypt as jce
 import johnnycanencrypt.johnnycanencrypt as rjce
 
+css = """QPushButton {
+    background-color: #3c99dc;
+    border-style: outset;
+    border-width: 2px;
+    border-radius: 10px;
+    border-color: beige;
+    font: 14px;
+    color: white;
+    min-width: 10em;
+    min-height: 40px;
+    padding: 6px;
+}
+QPushButton:pressed {
+    background-color: rgb(224, 0, 0);
+    border-style: inset;
+}
+
+QLineEdit {
+    height: 40px;
+    margin: 0px 0px 0px 0px;
+    padding-left: 5px;
+}
+"""
+
+
 
 class NewKeyDialog(QtWidgets.QDialog):
     update_ui = Signal((jce.Key,))
@@ -45,6 +70,7 @@ class NewKeyDialog(QtWidgets.QDialog):
 
         self.setLayout(vboxlayout)
         self.setWindowTitle("Generate a new OpenPGP key")
+        self.setStyleSheet(css)
 
     def generate(self):
         self.generateButton.setEnabled(False)
@@ -94,9 +120,7 @@ class KeyWidget(QtWidgets.QWidget):
         for uid in key.uids:
             uid_label = QtWidgets.QLabel(uid["value"])
             group_vboxlayout.addWidget(uid_label)
-        # group_vboxlayout.addItem(QtWidgets.QSpacerItem(self.BOTTOM_SPACER, self.BOTTOM_SPACER))
         self.setLayout(group_vboxlayout)
-        self.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
 
     def mouseDoubleClickEvent(self, event):
         select_path = QtWidgets.QFileDialog.getExistingDirectory(
@@ -137,8 +161,8 @@ class KeyWidgetList(QtWidgets.QListWidget):
                 self.addItem(item)
                 self.setItemWidget(item, kw)
                 self.key_widgets.append(kw)
-        except:
-            pass
+        except Exception as e:
+            print(e)
 
     def on_item_changed(self):
         print(self.selectedItems())
@@ -151,24 +175,6 @@ class KeyWidgetList(QtWidgets.QListWidget):
         self.setItemWidget(item, kw)
         self.key_widgets.append(kw)
 
-
-css = """QPushButton {
-    background-color: #3c99dc;
-    border-style: outset;
-    border-width: 2px;
-    border-radius: 10px;
-    border-color: beige;
-    font: 14px;
-    color: white;
-    min-width: 10em;
-    min-height: 40px;
-    padding: 6px;
-}
-QPushButton:pressed {
-    background-color: rgb(224, 0, 0);
-    border-style: inset;
-}
-"""
 
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self, parent=None, config={}):
