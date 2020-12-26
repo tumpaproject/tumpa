@@ -30,6 +30,18 @@ QLineEdit {
     height: 40px;
     margin: 0px 0px 0px 0px;
     padding-left: 5px;
+    border-radius: 10px;
+}
+
+QLabel#keyring_label {
+    font-size: 25px;
+}
+
+QPlainTextEdit {
+    border-radius: 20px;
+    background-color: palette(base);
+    padding-left: 5px;
+    padding-top: 5px;
 }
 """
 
@@ -64,8 +76,9 @@ class NewKeyDialog(QtWidgets.QDialog):
         vboxlayout.addWidget(passphrase_label)
         vboxlayout.addWidget(self.passphrase_box)
 
-        self.generateButton = QtWidgets.QPushButton("Generateg New Key")
+        self.generateButton = QtWidgets.QPushButton("Generate")
         self.generateButton.clicked.connect(self.generate)
+        self.generateButton.setMaximumWidth(50)
         vboxlayout.addWidget(self.generateButton)
 
         self.setLayout(vboxlayout)
@@ -198,7 +211,10 @@ class MainWindow(QtWidgets.QMainWindow):
         wd = QtWidgets.QWidget()
         wd.setLayout(hlayout)
 
+        keyring_label = QtWidgets.QLabel("Available keys")
+        keyring_label.setObjectName("keyring_label")
         vboxlayout = QtWidgets.QVBoxLayout()
+        vboxlayout.addWidget(keyring_label)
         vboxlayout.addWidget(self.widget)
         vboxlayout.addWidget(wd)
         self.cwidget.setLayout(vboxlayout)
