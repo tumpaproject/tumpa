@@ -11,7 +11,7 @@ import johnnycanencrypt.johnnycanencrypt as rjce
 
 
 class NewKeyDialog(QtWidgets.QDialog):
-    update_ui = Signal()
+    update_ui = Signal((jce.Key,))
 
     def __init__(self, ks: jce.KeyStore, newkey_slot):
         super(NewKeyDialog, self).__init__()
@@ -64,7 +64,7 @@ class NewKeyDialog(QtWidgets.QDialog):
             expiration=edate,
             subkeys_expiration=True,
         )
-        self.update_ui.emit()
+        self.update_ui.emit(newk)
         self.hide()
 
 
@@ -143,6 +143,32 @@ class KeyWidgetList(QtWidgets.QListWidget):
     def on_item_changed(self):
         print(self.selectedItems())
 
+    def addnewKey(self, key):
+        kw = KeyWidget(key)
+        item = QtWidgets.QListWidgetItem()
+        item.setSizeHint(kw.sizeHint())
+        self.addItem(item)
+        self.setItemWidget(item, kw)
+        self.key_widgets.append(kw)
+
+
+css = """QPushButton {
+    background-color: #3c99dc;
+    border-style: outset;
+    border-width: 2px;
+    border-radius: 10px;
+    border-color: beige;
+    font: 14px;
+    color: white;
+    min-width: 10em;
+    min-height: 40px;
+    padding: 6px;
+}
+QPushButton:pressed {
+    background-color: rgb(224, 0, 0);
+    border-style: inset;
+}
+"""
 
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self, parent=None, config={}):
@@ -171,10 +197,12 @@ class MainWindow(QtWidgets.QMainWindow):
         vboxlayout.addWidget(wd)
         self.cwidget.setLayout(vboxlayout)
         self.setCentralWidget(self.cwidget)
+        self.setStyleSheet(css)
 
     def show_generate_dialog(self):
-        self.newd = NewKeyDialog(self.ks, self.updateKeyList)
+        self.newd = NewKeyDialog(self.ks, self.widget.addnewKey)
         self.newd.show()
+
 
 
 def main():
