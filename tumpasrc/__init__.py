@@ -152,6 +152,76 @@ class SmartCardConfirmationDialog(QtWidgets.QDialog):
         self.writetocard.emit(passphrase, adminpin)
 
 
+class SmartCardTextDialog(QtWidgets.QDialog):
+    # Public URL and Name
+    writetocard = Signal(
+        (str, str),
+    )
+
+    CSS = """QLineEdit {
+        border-radius: 10px;
+        height: 30px;
+        margin: 0px 0px 0px 0px;
+    }
+    """
+
+    def __init__(
+        self,
+        nextsteps_slot,
+        title="Enter public URL",
+        textInput="Public URL",
+    ):
+        super(SmartCardTextDialog, self).__init__()
+        self.setModal(True)
+        self.setFixedSize(600, 200)
+        self.setWindowTitle(title)
+        layout = QtWidgets.QFormLayout(self)
+        label = QtWidgets.QLabel(textInput)
+        self.textInput = textInput
+        self.textField = QtWidgets.QLineEdit("")
+        self.textField.setStyleSheet(self.CSS)
+        layout.addRow(label, self.textField)
+        label = QtWidgets.QLabel("Admin Pin")
+        self.adminPinEdit = PasswordEdit(self)
+        layout.addRow(label, self.adminPinEdit)
+        widget = QtWidgets.QWidget()
+        widget.setLayout(layout)
+        # now the button
+        self.finalButton = QtWidgets.QPushButton(text="Write to smartcard")
+        self.finalButton.clicked.connect(self.getTextValue)
+        vboxlayout = QtWidgets.QVBoxLayout()
+        vboxlayout.addWidget(widget)
+        vboxlayout.addWidget(self.finalButton)
+        self.setLayout(vboxlayout)
+        self.writetocard.connect(nextsteps_slot)
+        self.setStyleSheet(css)
+
+    def getTextValue(self):
+        text = self.textField.text().strip()
+        adminpin = self.adminPinEdit.text().strip()
+        if len(adminpin) < 8:
+            self.smallpin = QtWidgets.QMessageBox()
+            self.smallpin.setText("Admin pin must be 8 character or more.")
+            self.smallpin.setIcon(QtWidgets.QMessageBox.Critical)
+            self.smallpin.setWindowTitle("Admin pin too small")
+            self.smallpin.setStyleSheet(css)
+            self.smallpin.show()
+            return
+        if len(text) > 35:
+            self.smallpin = QtWidgets.QMessageBox()
+            self.smallpin.setText(
+                "{} must be less than 35 characters.".format(self.textInput)
+            )
+            self.smallpin.setIcon(QtWidgets.QMessageBox.Critical)
+            self.smallpin.setWindowTitle("{} is too big".format(self.textInput))
+            self.smallpin.setStyleSheet(css)
+            self.smallpin.show()
+            return
+
+        self.hide()
+        self.writetocard.emit(text, adminpin)
+
+
 class NewKeyDialog(QtWidgets.QDialog):
     update_ui = Signal((jce.Key,))
 
@@ -319,6 +389,7 @@ class MainWindow(QtWidgets.QMainWindow):
         changeadminpinAction.triggered.connect(self.show_change_admin_pin_dialog)
         changenameAction = QtWidgets.QAction("Set Chardholder &Name", self)
         changeurlAction = QtWidgets.QAction("Set public key &URL", self)
+        changeurlAction.triggered.connect(self.show_set_public_url)
         resetYubiKeylAction = QtWidgets.QAction("Reset the YubiKey", self)
         resetYubiKeylAction.triggered.connect(self.reset_yubikey_dialog)
         smartcardmenu = menu.addMenu("&SmartCard")
@@ -375,7 +446,14 @@ class MainWindow(QtWidgets.QMainWindow):
     def show_change_user_pin_dialog(self):
         "This slot shows the input dialog to change user pin"
         self.smalldialog = SmartCardConfirmationDialog(
-            self.change_pin_on_card_slot, "Chnage user pin", "New User pin"
+            self.change_pin_on_card_slot, "Change user pin", "New User pin"
+        )
+        self.smalldialog.show()
+
+    def show_set_public_url(self):
+        "This slot shows the input dialog to set public url"
+        self.smalldialog = SmartCardTextDialog(
+            self.set_url_on_card_slot, "Add public URL", "Public URL"
         )
         self.smalldialog.show()
 
@@ -403,6 +481,14 @@ class MainWindow(QtWidgets.QMainWindow):
             self.show_error_dialog(str(e), "changing admin pin")
             return
         self.show_success_dialog("Chnaged admin pin successfully.")
+    def set_url_on_card_slot(self, publicURL, adminpin):
+        "Final slot which will try to change the publicURL"
+        try:
+            rjce.set_url(publicURL.encode("utf-8"), adminpin.encode("utf-8"))
+        except Exception as e:
+            self.show_error_dialog(str(e), "adding public URL")
+            return
+        self.show_success_dialog("Added public URL successfully.")
 
     def show_error_dialog(self, msg, where):
         self.error_dialog = QtWidgets.QMessageBox()
