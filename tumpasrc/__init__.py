@@ -160,7 +160,7 @@ class NewKeyDialog(QtWidgets.QDialog):
         passphrase_label = QtWidgets.QLabel(
             "Key Passphrase (must be 12+ chars in length):"
         )
-        self.passphrase_box = QtWidgets.QLineEdit("")
+        self.passphrase_box = PasswordEdit(self)
 
         vboxlayout.addWidget(passphrase_label)
         vboxlayout.addWidget(self.passphrase_box)
@@ -333,12 +333,26 @@ class MainWindow(QtWidgets.QMainWindow):
 
         item = self.widget.selectedItems()[0]
         kw = self.widget.itemWidget(item)
-        print(kw.key)
+        self.current_key = kw.key
         self.sccd = SmartCardConfirmationDialog(self.get_pins_and_passphrase_and_write)
         self.sccd.show()
 
     def get_pins_and_passphrase_and_write(self, passphrase, adminpin):
+        "This method uploads the cert to the card"
         print(passphrase, adminpin)
+        certdata = self.current_key.keyvalue
+        try:
+            rjce.upload_to_smartcard(certdata, adminpin.encode("utf-8"), passphrase)
+        except Exception as e:
+            print(e)
+            return
+        self.success = QtWidgets.QMessageBox()
+        self.success.setText("Success")
+        self.success.setIcon(QtWidgets.QMessageBox.Information)
+        self.success.setWindowTitle("")
+        self.success.setStyleSheet(css)
+        self.success.show()
+
 
 
 def main():
