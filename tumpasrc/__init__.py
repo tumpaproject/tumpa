@@ -49,16 +49,18 @@ QPlainTextEdit {
 }
 """
 
+
 class PasswordEdit(QtWidgets.QLineEdit):
     """
     A LineEdit with icons to show/hide password entries
     """
-    CSS = '''QLineEdit {
+
+    CSS = """QLineEdit {
         border-radius: 10px;
         height: 30px;
         margin: 0px 0px 0px 0px;
     }
-    '''
+    """
 
     def __init__(self, parent):
         self.parent = parent
@@ -71,7 +73,9 @@ class PasswordEdit(QtWidgets.QLineEdit):
         self.hiddenIcon = load_icon("eye_hidden.svg")
 
         self.setEchoMode(QtWidgets.QLineEdit.Password)
-        self.togglepasswordAction = self.addAction(self.visibleIcon, QtWidgets.QLineEdit.TrailingPosition)
+        self.togglepasswordAction = self.addAction(
+            self.visibleIcon, QtWidgets.QLineEdit.TrailingPosition
+        )
         self.togglepasswordAction.triggered.connect(self.on_toggle_password_Action)
         self.password_shown = False
 
@@ -85,9 +89,12 @@ class PasswordEdit(QtWidgets.QLineEdit):
             self.password_shown = False
             self.togglepasswordAction.setIcon(self.visibleIcon)
 
+
 class SmartCardConfirmationDialog(QtWidgets.QDialog):
     # passphrase, adminpin
-    writetocard = Signal((str,str),)
+    writetocard = Signal(
+        (str, str),
+    )
 
     def __init__(self, nextsteps_slot):
         super(SmartCardConfirmationDialog, self).__init__()
@@ -127,7 +134,6 @@ class SmartCardConfirmationDialog(QtWidgets.QDialog):
 
         self.hide()
         self.writetocard.emit(passphrase, adminpin)
-
 
 
 class NewKeyDialog(QtWidgets.QDialog):
@@ -263,7 +269,6 @@ class KeyWidgetList(QtWidgets.QListWidget):
     def on_item_changed(self):
         print(self.selectedItems())
 
-
     def addnewKey(self, key):
         kw = KeyWidget(key)
         item = QtWidgets.QListWidgetItem()
@@ -291,7 +296,6 @@ class MainWindow(QtWidgets.QMainWindow):
         self.uploadButton.clicked.connect(self.upload_to_smartcard)
         self.uploadButton.setEnabled(False)
         self.widget.itemSelectionChanged.connect(self.enable_upload)
-
 
         hlayout = QtWidgets.QHBoxLayout()
         hlayout.addWidget(self.generateButton)
