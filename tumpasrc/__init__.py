@@ -388,6 +388,7 @@ class MainWindow(QtWidgets.QMainWindow):
         changeadminpinAction = QtWidgets.QAction("Change &Admin pin", self)
         changeadminpinAction.triggered.connect(self.show_change_admin_pin_dialog)
         changenameAction = QtWidgets.QAction("Set Chardholder &Name", self)
+        changenameAction.triggered.connect(self.show_set_name)
         changeurlAction = QtWidgets.QAction("Set public key &URL", self)
         changeurlAction.triggered.connect(self.show_set_public_url)
         resetYubiKeylAction = QtWidgets.QAction("Reset the YubiKey", self)
@@ -457,6 +458,13 @@ class MainWindow(QtWidgets.QMainWindow):
         )
         self.smalldialog.show()
 
+    def show_set_name(self):
+        "This slot shows the input dialog to set name"
+        self.smalldialog = SmartCardTextDialog(
+            self.set_name_on_card_slot, "Add Name", "Name"
+        )
+        self.smalldialog.show()
+
     def show_change_admin_pin_dialog(self):
         "This slot shows the input dialog to change admin pin"
         self.smalldialog = SmartCardConfirmationDialog(
@@ -489,6 +497,18 @@ class MainWindow(QtWidgets.QMainWindow):
             self.show_error_dialog(str(e), "adding public URL")
             return
         self.show_success_dialog("Added public URL successfully.")
+
+    def set_name_on_card_slot(self, name, adminpin):
+        "Final slot which will try to change the name"
+        try:
+            # If input is "First Middle Last",
+            # the parameter sent should be "Last<<Middle<<First"
+            name = "<<".join(name.split()[::-1])
+            rjce.set_name(name.encode("utf-8"), adminpin.encode("utf-8"))
+        except Exception as e:
+            self.show_error_dialog(str(e), "adding name")
+            return
+        self.show_success_dialog("Added name successfully.")
 
     def show_error_dialog(self, msg, where):
         self.error_dialog = QtWidgets.QMessageBox()
