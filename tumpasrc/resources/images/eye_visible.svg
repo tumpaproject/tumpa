@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="23px" height="23px" viewBox="0 0 23 23" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 61 (89581) - https://sketch.com -->
+    <title>Group 7</title>
+    <desc>Created with Sketch.</desc>
+    <defs>
+        <polygon id="path-1" points="0 0.0004 20 0.0004 20 13.6364 0 13.6364"></polygon>
+    </defs>
+    <g id="Login" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Login-Active-First-Step" transform="translate(-1140.000000, -642.000000)">
+            <g id="Group-7" transform="translate(1141.000000, 643.000000)">
+                <rect id="Rectangle" stroke="#F4FDFF" x="0" y="0" width="21" height="21"></rect>
+                <g id="Group-3" transform="translate(0.000000, 3.000000)">
+                    <mask id="mask-2" fill="white">
+                        <use xlink:href="#path-1"></use>
+                    </mask>
+                    <g id="Clip-2"></g>
+                    <path d="M10,2.7274 C7.746,2.7274 5.909,4.5634 5.909,6.8184 C5.909,9.0734 7.746,10.9094 10,10.9094 C12.255,10.9094 14.091,9.0734 14.091,6.8184 C14.091,4.5634 12.255,2.7274 10,2.7274 M10,4.5454 C11.254,4.5454 12.272,5.5634 12.272,6.8184 C12.272,8.0724 11.254,9.0904 10,9.0904 C8.746,9.0904 7.727,8.0724 7.727,6.8184 C7.727,5.5634 8.746,4.5454 10,4.5454 M10,-0.0006 C5.455,-0.0006 1.573,2.8274 0,6.8184 C1.573,10.8094 5.455,13.6364 10,13.6364 C14.546,13.6364 18.428,10.8094 20,6.8184 C18.428,2.8274 14.546,-0.0006 10,-0.0006 M10,1.8184 C13.445,1.8184 16.519,3.7544 18.019,6.8184 C16.519,9.8814 13.445,11.8184 10,11.8184 C6.555,11.8184 3.482,9.8814 1.982,6.8184 C3.482,3.7544 6.555,1.8184 10,1.8184" id="Fill-1" fill="#162D84" mask="url(#mask-2)"></path>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>
