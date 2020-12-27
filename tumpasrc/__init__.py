@@ -96,13 +96,19 @@ class SmartCardConfirmationDialog(QtWidgets.QDialog):
         (str, str),
     )
 
-    def __init__(self, nextsteps_slot):
+    def __init__(
+        self,
+        nextsteps_slot,
+        title="Enter passphrase and pin for the smartcard",
+        firstinput="Key passphrase",
+    ):
         super(SmartCardConfirmationDialog, self).__init__()
         self.setModal(True)
         self.setFixedSize(600, 200)
-        self.setWindowTitle("Enter passphrase and pin for the smartcard")
+        self.setWindowTitle(title)
         layout = QtWidgets.QFormLayout(self)
-        label = QtWidgets.QLabel("Key passphrase")
+        label = QtWidgets.QLabel(firstinput)
+        self.firstinput = firstinput
         self.passphraseEdit = PasswordEdit(self)
         layout.addRow(label, self.passphraseEdit)
         label = QtWidgets.QLabel("Admin Pin")
@@ -128,6 +134,16 @@ class SmartCardConfirmationDialog(QtWidgets.QDialog):
             self.smallpin.setText("Admin pin must be 8 character or more.")
             self.smallpin.setIcon(QtWidgets.QMessageBox.Critical)
             self.smallpin.setWindowTitle("Admin pin too small")
+            self.smallpin.setStyleSheet(css)
+            self.smallpin.show()
+            return
+        if len(passphrase) < 6:
+            self.smallpin = QtWidgets.QMessageBox()
+            self.smallpin.setText(
+                "{} must be 6 character or more.".format(self.firstinput)
+            )
+            self.smallpin.setIcon(QtWidgets.QMessageBox.Critical)
+            self.smallpin.setWindowTitle("{} is too small".format(self.firstinput))
             self.smallpin.setStyleSheet(css)
             self.smallpin.show()
             return
@@ -289,10 +305,29 @@ class MainWindow(QtWidgets.QMainWindow):
         self.widget = KeyWidgetList(self.ks)
         self.current_fingerprint = ""
 
+        # Our menu
+        exitAction = QtWidgets.QAction("E&xit", self)
+        exitAction.triggered.connect(self.exit_process)
+        menu = self.menuBar()
+        filemenu = menu.addMenu("&File")
+        filemenu.addAction(exitAction)
+
+        # smartcard menu
+        changepinAction = QtWidgets.QAction("Change &User pin", self)
+        changepinAction.triggered.connect(self.show_change_user_pin_dialog)
+        changeadminpinAction = QtWidgets.QAction("Change &Admin pin", self)
+        changenameAction = QtWidgets.QAction("Set Chardholder &Name", self)
+        changeurlAction = QtWidgets.QAction("Set public key &URL", self)
+        smartcardmenu = menu.addMenu("&SmartCard")
+        smartcardmenu.addAction(changepinAction)
+        smartcardmenu.addAction(changeadminpinAction)
+        smartcardmenu.addAction(changenameAction)
+        smartcardmenu.addAction(changeurlAction)
+
         self.cwidget = QtWidgets.QWidget()
         self.generateButton = QtWidgets.QPushButton(text="Generate new key")
         self.generateButton.clicked.connect(self.show_generate_dialog)
-        self.uploadButton = QtWidgets.QPushButton(text="Upload to Yubikey")
+        self.uploadButton = QtWidgets.QPushButton(text="Upload to SmartCard")
         self.uploadButton.clicked.connect(self.upload_to_smartcard)
         self.uploadButton.setEnabled(False)
         self.widget.itemSelectionChanged.connect(self.enable_upload)
@@ -314,13 +349,40 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setStyleSheet(css)
 
     def enable_upload(self):
+        "Slot to enable the upload to smartcard button"
         self.uploadButton.setEnabled(True)
 
+    def show_change_user_pin_dialog(self):
+        "This slot shows the input dialog to change user pin"
+        self.smalldialog = SmartCardConfirmationDialog(
+            self.change_pin_on_card_slot, "Chnage user pin", "New User pin"
+        )
+        self.smalldialog.show()
+
+    def change_pin_on_card_slot(self, userpin, adminpin):
+        "Final slot which will try to change the userpin"
+        try:
+            rjce.change_user_pin(adminpin.encode("utf-8"), userpin.encode("utf-8"))
+        except Exception as e:
+            self.show_error_dialog(str(e), "changing user pin")
+            return
+        self.show_success_dialog("Chnaged user pin successfully.")
+
+    def show_error_dialog(self, msg, where):
+        self.error_dialog = QtWidgets.QMessageBox()
+        self.error_dialog.setText(msg)
+        self.error_dialog.setIcon(QtWidgets.QMessageBox.Critical)
+        self.error_dialog.setWindowTitle(f"Error during {where}")
+        self.error_dialog.setStyleSheet(css)
+        self.error_dialog.show()
+
     def show_generate_dialog(self):
+        "Shows the dialog to generate new key"
         self.newd = NewKeyDialog(self.ks, self.widget.addnewKey)
         self.newd.show()
 
     def upload_to_smartcard(self):
+        "Shows the userinput dialog to upload the selected key to the smartcard"
         # This means no key is selected on the list
         if not self.widget.selectedItems():
             self.select_first = QtWidgets.QMessageBox()
@@ -344,15 +406,20 @@ class MainWindow(QtWidgets.QMainWindow):
         try:
             rjce.upload_to_smartcard(certdata, adminpin.encode("utf-8"), passphrase)
         except Exception as e:
-            print(e)
+            self.show_error_dialog(str(e), "upload to smartcard.")
             return
+        self.show_success_dialog("Uploaded to the smartcard successfully.")
+
+    def show_success_dialog(self, msg: str):
         self.success = QtWidgets.QMessageBox()
-        self.success.setText("Success")
+        self.success.setText(f"{msg}")
         self.success.setIcon(QtWidgets.QMessageBox.Information)
-        self.success.setWindowTitle("")
+        self.success.setWindowTitle("Success")
         self.success.setStyleSheet(css)
         self.success.show()
 
+    def exit_process(self):
+        sys.exit(0)
 
 
 def main():
