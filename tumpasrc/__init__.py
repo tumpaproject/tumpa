@@ -3,7 +3,7 @@ import os
 import sys
 import datetime
 from PySide2 import QtWidgets
-from PySide2.QtCore import QObject, Signal, QSize
+from PySide2.QtCore import QObject, Signal, QSize, Qt
 from PySide2 import QtGui
 
 import johnnycanencrypt as jce
@@ -16,7 +16,7 @@ css = """QPushButton {
     border-width: 2px;
     border-radius: 10px;
     border-color: beige;
-    font: 14px;
+    font: 18px;
     color: white;
     min-width: 10em;
     min-height: 40px;
@@ -38,7 +38,11 @@ QLineEdit {
 }
 
 QLabel#keyring_label {
-    font-size: 25px;
+    font-size: 24px;
+}
+
+QLabel#keyring_instruction {
+    font-size: 12px;
 }
 
 QPlainTextEdit {
@@ -47,6 +51,22 @@ QPlainTextEdit {
     padding-left: 5px;
     padding-top: 5px;
 }
+
+
+QLabel#keyfingerprint {
+    font-size: 18px;
+    font-weight: 600;
+}
+
+QListWidget::item {
+    background-color: #edfff0;
+    border: 1px solid #B7E4C7;
+    margin: 4px;
+}
+QListWidget::item:selected {
+    background-color: #B7E4C7;
+}
+
 """
 
 
@@ -266,6 +286,46 @@ class NewKeyDialog(QtWidgets.QDialog):
         name = self.name_box.text().strip()
         password = self.passphrase_box.text().strip()
 
+        if not len(name):
+            self.smallpin = QtWidgets.QMessageBox()
+            self.smallpin.setText("Name cannot be blank.")
+            self.smallpin.setIcon(QtWidgets.QMessageBox.Critical)
+            self.smallpin.setWindowTitle("No name added")
+            self.smallpin.setStyleSheet(css)
+            self.smallpin.exec()
+            self.generateButton.setEnabled(True)
+            return
+
+        if not len(emails):
+            self.smallpin = QtWidgets.QMessageBox()
+            self.smallpin.setText("There must be at least one email.")
+            self.smallpin.setIcon(QtWidgets.QMessageBox.Critical)
+            self.smallpin.setWindowTitle("No email added")
+            self.smallpin.setStyleSheet(css)
+            self.smallpin.exec()
+            self.generateButton.setEnabled(True)
+            return
+
+        if not len(password):
+            self.smallpin = QtWidgets.QMessageBox()
+            self.smallpin.setText("Key passphrase cannot be blank.")
+            self.smallpin.setIcon(QtWidgets.QMessageBox.Critical)
+            self.smallpin.setWindowTitle("No passphrase added")
+            self.smallpin.setStyleSheet(css)
+            self.smallpin.exec()
+            self.generateButton.setEnabled(True)
+            return
+
+        if len(password) < 12:
+            self.smallpin = QtWidgets.QMessageBox()
+            self.smallpin.setText("Key passphrase must be more than 12 character.")
+            self.smallpin.setIcon(QtWidgets.QMessageBox.Critical)
+            self.smallpin.setWindowTitle("Passphrase is small")
+            self.smallpin.setStyleSheet(css)
+            self.smallpin.exec()
+            self.generateButton.setEnabled(True)
+            return
+
         uids = []
         for email in emails.split("\n"):
             value = f"{name} <{email}>"
@@ -279,6 +339,10 @@ class NewKeyDialog(QtWidgets.QDialog):
             subkeys_expiration=True,
         )
         self.update_ui.emit(newk)
+        success_dialog = QtWidgets.QMessageBox()
+        success_dialog.setWindowTitle("New key generated")
+        success_dialog.setText("Key generation successful!")
+        success_dialog.exec()
         self.hide()
 
 
@@ -290,25 +354,43 @@ class KeyWidget(QtWidgets.QWidget):
         super(KeyWidget, self).__init__()
         self.setObjectName("KeyWidgetItem")
         self.setMinimumWidth(400)
+        self.setMinimumHeight(84)
         self.key = key
         fingerprint = key.fingerprint
         self.fingerprint = fingerprint
-        date = key.creationtime.date()
         self.keyfingerprint = QtWidgets.QLabel(fingerprint)
-        date_label = QtWidgets.QLabel(date.strftime("%Y-%m-%d"))
-        hlayout = QtWidgets.QHBoxLayout()
-        hlayout.addWidget(self.keyfingerprint)
-        hlayout.addWidget(date_label)
-        fp_date_label = QtWidgets.QWidget()
-        fp_date_label.setLayout(hlayout)
-        group_vboxlayout = QtWidgets.QVBoxLayout()
-        group_vboxlayout.setSpacing(0)
-        group_vboxlayout.setContentsMargins(0, 0, 0, 0)
-        group_vboxlayout.addWidget(fp_date_label)
+        self.keyfingerprint.setObjectName("keyfingerprint")
+        date = key.creationtime.date()
+        date_label = QtWidgets.QLabel(f"Created at: {date.strftime('%Y-%m-%d')}")
+        date_label.setAlignment(Qt.AlignTop)
+        date_label.setContentsMargins(0, 0, 0, 0)
+
+        # UIDs
+        uid_vboxlayout = QtWidgets.QVBoxLayout()
+        uid_vboxlayout.setSpacing(0)
+        uid_vboxlayout.setContentsMargins(0, 0, 0, 0)
         for uid in key.uids:
             uid_label = QtWidgets.QLabel(uid["value"])
-            group_vboxlayout.addWidget(uid_label)
-        self.setLayout(group_vboxlayout)
+            uid_vboxlayout.addWidget(uid_label)
+        uid_widget = QtWidgets.QWidget()
+        uid_widget.setLayout(uid_vboxlayout)
+
+        # UID and date layout
+        hlayout = QtWidgets.QHBoxLayout()
+        hlayout.addWidget(uid_widget)
+        hlayout.addWidget(date_label)
+        hlayout.setAlignment(Qt.AlignTop)
+        hlayout.setContentsMargins(11, 0, 11, 11)
+        group_widget = QtWidgets.QWidget()
+        group_widget.setLayout(hlayout)
+
+        fp_group_layout = QtWidgets.QVBoxLayout()
+        fp_group_layout.addWidget(self.keyfingerprint)
+        fp_group_layout.addWidget(group_widget)
+
+        self.setLayout(fp_group_layout)
+        self.setToolTip("Double click to export public key")
+        self.setObjectName("keywidget")
 
     def mouseDoubleClickEvent(self, event):
         select_path = QtWidgets.QFileDialog.getExistingDirectory(
@@ -327,7 +409,6 @@ class KeyWidget(QtWidgets.QWidget):
 class KeyWidgetList(QtWidgets.QListWidget):
     def __init__(self, ks):
         super(KeyWidgetList, self).__init__()
-        self.setUniformItemSizes(True)
         self.setObjectName("KeyWidgetList")
         self.ks = ks
 
@@ -337,7 +418,7 @@ class KeyWidgetList(QtWidgets.QListWidget):
         # self.setLayout(self.layout)
         self.updateList()
         self.setSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
-        self.setMinimumHeight(500)
+        self.setMinimumHeight(400)
         self.currentItemChanged.connect(self.on_item_changed)
 
     def updateList(self):
@@ -369,7 +450,7 @@ class MainWindow(QtWidgets.QMainWindow):
         super(MainWindow, self).__init__(parent)
         self.setWindowTitle("Tumpa")
         self.setMinimumWidth(600)
-        self.setMinimumHeight(500)
+        self.setMinimumHeight(575)
         self.ks = jce.KeyStore("./")
         self.vboxlayout_for_keys = QtWidgets.QVBoxLayout()
         self.widget = KeyWidgetList(self.ks)
@@ -383,11 +464,11 @@ class MainWindow(QtWidgets.QMainWindow):
         filemenu.addAction(exitAction)
 
         # smartcard menu
-        changepinAction = QtWidgets.QAction("Change &User pin", self)
+        changepinAction = QtWidgets.QAction("Change user &pin", self)
         changepinAction.triggered.connect(self.show_change_user_pin_dialog)
-        changeadminpinAction = QtWidgets.QAction("Change &Admin pin", self)
+        changeadminpinAction = QtWidgets.QAction("Change &admin pin", self)
         changeadminpinAction.triggered.connect(self.show_change_admin_pin_dialog)
-        changenameAction = QtWidgets.QAction("Set Chardholder &Name", self)
+        changenameAction = QtWidgets.QAction("Set cardholder &name", self)
         changenameAction.triggered.connect(self.show_set_name)
         changeurlAction = QtWidgets.QAction("Set public key &URL", self)
         changeurlAction.triggered.connect(self.show_set_public_url)
@@ -416,8 +497,14 @@ class MainWindow(QtWidgets.QMainWindow):
 
         keyring_label = QtWidgets.QLabel("Available keys")
         keyring_label.setObjectName("keyring_label")
+        keyring_instruction_label = QtWidgets.QLabel(
+            "Single click on a key to enable writing to smart card. " +
+            "Double click on a key to export the public key."
+        )
+        keyring_instruction_label.setObjectName("keyring_instruction")
         vboxlayout = QtWidgets.QVBoxLayout()
         vboxlayout.addWidget(keyring_label)
+        vboxlayout.addWidget(keyring_instruction_label)
         vboxlayout.addWidget(self.widget)
         vboxlayout.addWidget(wd)
         self.cwidget.setLayout(vboxlayout)
@@ -468,7 +555,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def show_change_admin_pin_dialog(self):
         "This slot shows the input dialog to change admin pin"
         self.smalldialog = SmartCardConfirmationDialog(
-            self.change_admin_pin_on_card_slot, "Chnage admin pin", "New Admin pin"
+            self.change_admin_pin_on_card_slot, "Change admin pin", "New Admin pin"
         )
         self.smalldialog.show()
 
@@ -479,7 +566,7 @@ class MainWindow(QtWidgets.QMainWindow):
         except Exception as e:
             self.show_error_dialog(str(e), "changing user pin")
             return
-        self.show_success_dialog("Chnaged user pin successfully.")
+        self.show_success_dialog("Changed user pin successfully.")
 
     def change_admin_pin_on_card_slot(self, userpin, adminpin):
         "Final slot which will try to change the adminpin"
@@ -488,7 +575,7 @@ class MainWindow(QtWidgets.QMainWindow):
         except Exception as e:
             self.show_error_dialog(str(e), "changing admin pin")
             return
-        self.show_success_dialog("Chnaged admin pin successfully.")
+        self.show_success_dialog("Changed admin pin successfully.")
     def set_url_on_card_slot(self, publicURL, adminpin):
         "Final slot which will try to change the publicURL"
         try:
