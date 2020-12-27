@@ -111,7 +111,7 @@ class SmartCardConfirmationDialog(QtWidgets.QDialog):
         self.firstinput = firstinput
         self.passphraseEdit = PasswordEdit(self)
         layout.addRow(label, self.passphraseEdit)
-        label = QtWidgets.QLabel("Admin Pin")
+        label = QtWidgets.QLabel("Current Admin Pin")
         self.addminPinEdit = PasswordEdit(self)
         layout.addRow(label, self.addminPinEdit)
         widget = QtWidgets.QWidget()
