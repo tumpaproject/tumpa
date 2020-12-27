@@ -318,11 +318,14 @@ class MainWindow(QtWidgets.QMainWindow):
         changeadminpinAction = QtWidgets.QAction("Change &Admin pin", self)
         changenameAction = QtWidgets.QAction("Set Chardholder &Name", self)
         changeurlAction = QtWidgets.QAction("Set public key &URL", self)
+        resetYubiKeylAction = QtWidgets.QAction("Reset the YubiKey", self)
+        resetYubiKeylAction.triggered.connect(self.reset_yubikey_dialog)
         smartcardmenu = menu.addMenu("&SmartCard")
         smartcardmenu.addAction(changepinAction)
         smartcardmenu.addAction(changeadminpinAction)
         smartcardmenu.addAction(changenameAction)
         smartcardmenu.addAction(changeurlAction)
+        smartcardmenu.addAction(resetYubiKeylAction)
 
         self.cwidget = QtWidgets.QWidget()
         self.generateButton = QtWidgets.QPushButton(text="Generate new key")
@@ -347,6 +350,22 @@ class MainWindow(QtWidgets.QMainWindow):
         self.cwidget.setLayout(vboxlayout)
         self.setCentralWidget(self.cwidget)
         self.setStyleSheet(css)
+
+    def reset_yubikey_dialog(self):
+        "Verify if the user really wants to reset the smartcard"
+        reply = QtWidgets.QMessageBox.question(
+            self,
+            "Are you sure?",
+            "This action will reset your YubiKey. Are you sure to do that?",
+        )
+        if reply == QtWidgets.QMessageBox.StandardButton.Yes:
+            try:
+                rjce.reset_yubikey()
+            except Exception as e:
+                self.show_error_dialog(str(e), "YubiKey reset.")
+        else:
+            return
+        self.show_success_dialog("YubiKey successfully reset.")
 
     def enable_upload(self):
         "Slot to enable the upload to smartcard button"
