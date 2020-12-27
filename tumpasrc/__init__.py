@@ -316,6 +316,7 @@ class MainWindow(QtWidgets.QMainWindow):
         changepinAction = QtWidgets.QAction("Change &User pin", self)
         changepinAction.triggered.connect(self.show_change_user_pin_dialog)
         changeadminpinAction = QtWidgets.QAction("Change &Admin pin", self)
+        changeadminpinAction.triggered.connect(self.show_change_admin_pin_dialog)
         changenameAction = QtWidgets.QAction("Set Chardholder &Name", self)
         changeurlAction = QtWidgets.QAction("Set public key &URL", self)
         resetYubiKeylAction = QtWidgets.QAction("Reset the YubiKey", self)
@@ -378,6 +379,13 @@ class MainWindow(QtWidgets.QMainWindow):
         )
         self.smalldialog.show()
 
+    def show_change_admin_pin_dialog(self):
+        "This slot shows the input dialog to change admin pin"
+        self.smalldialog = SmartCardConfirmationDialog(
+            self.change_admin_pin_on_card_slot, "Chnage admin pin", "New Admin pin"
+        )
+        self.smalldialog.show()
+
     def change_pin_on_card_slot(self, userpin, adminpin):
         "Final slot which will try to change the userpin"
         try:
@@ -386,6 +394,15 @@ class MainWindow(QtWidgets.QMainWindow):
             self.show_error_dialog(str(e), "changing user pin")
             return
         self.show_success_dialog("Chnaged user pin successfully.")
+
+    def change_admin_pin_on_card_slot(self, userpin, adminpin):
+        "Final slot which will try to change the adminpin"
+        try:
+            rjce.change_admin_pin(adminpin.encode("utf-8"), userpin.encode("utf-8"))
+        except Exception as e:
+            self.show_error_dialog(str(e), "changing admin pin")
+            return
+        self.show_success_dialog("Chnaged admin pin successfully.")
 
     def show_error_dialog(self, msg, where):
         self.error_dialog = QtWidgets.QMessageBox()
