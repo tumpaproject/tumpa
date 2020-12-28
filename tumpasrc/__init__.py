@@ -59,12 +59,12 @@ QLabel#keyfingerprint {
 }
 
 QListWidget::item {
-    background-color: #edfff0;
-    border: 1px solid #B7E4C7;
+    background-color: #F1F8FD;
+    border: 1px solid #9DCCEE;
     margin: 4px;
 }
 QListWidget::item:selected {
-    background-color: #B7E4C7;
+    background-color: #9DCCEE;
 }
 
 """
