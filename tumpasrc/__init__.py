@@ -335,6 +335,15 @@ class NewKeyDialog(QtWidgets.QDialog):
             self.generateButton.setEnabled(True)
             return
 
+        if len(password) < 6:
+            self.error_dialog = MessageDialogs.error_dialog(
+                "generating new key",
+                "Key Passphrase must be at least 6 characters long.",
+            )
+            self.error_dialog.show()
+            self.generateButton.setEnabled(True)
+            return
+
         uids = []
         for email in emails.split("\n"):
             value = f"{name} <{email}>"
