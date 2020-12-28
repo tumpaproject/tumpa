@@ -110,6 +110,30 @@ class PasswordEdit(QtWidgets.QLineEdit):
             self.togglepasswordAction.setIcon(self.visibleIcon)
 
 
+class MessageDialogs:
+    """
+    A class that contains dialogue QMessageBoxes for success, error, etc.
+    """
+
+    @classmethod
+    def success_dialog(cls, msg: str):
+        success_dialog = QtWidgets.QMessageBox()
+        success_dialog.setText(f"{msg}")
+        success_dialog.setIcon(QtWidgets.QMessageBox.Information)
+        success_dialog.setWindowTitle("Success")
+        success_dialog.setStyleSheet(css)
+        return success_dialog
+
+    @classmethod
+    def error_dialog(cls, where: str, msg: str):
+        error_dialog = QtWidgets.QMessageBox()
+        error_dialog.setText(msg)
+        error_dialog.setIcon(QtWidgets.QMessageBox.Critical)
+        error_dialog.setWindowTitle(f"Error during {where}")
+        error_dialog.setStyleSheet(css)
+        return error_dialog
+
+
 class SmartCardConfirmationDialog(QtWidgets.QDialog):
     # passphrase, adminpin
     writetocard = Signal(
@@ -150,22 +174,17 @@ class SmartCardConfirmationDialog(QtWidgets.QDialog):
         passphrase = self.passphraseEdit.text().strip()
         adminpin = self.addminPinEdit.text().strip()
         if len(adminpin) < 8:
-            self.smallpin = QtWidgets.QMessageBox()
-            self.smallpin.setText("Admin pin must be 8 character or more.")
-            self.smallpin.setIcon(QtWidgets.QMessageBox.Critical)
-            self.smallpin.setWindowTitle("Admin pin too small")
-            self.smallpin.setStyleSheet(css)
-            self.smallpin.show()
+            self.error_dialog = MessageDialogs.error_dialog(
+                "Editing smart card details", "Admin pin must be 8 character or more."
+            )
+            self.error_dialog.show()
             return
         if len(passphrase) < 6:
-            self.smallpin = QtWidgets.QMessageBox()
-            self.smallpin.setText(
-                "{} must be 6 character or more.".format(self.firstinput)
+            self.error_dialog = MessageDialogs.error_dialog(
+                "Editing smart card details",
+                "{} must be 6 character or more.".format(self.firstinput),
             )
-            self.smallpin.setIcon(QtWidgets.QMessageBox.Critical)
-            self.smallpin.setWindowTitle("{} is too small".format(self.firstinput))
-            self.smallpin.setStyleSheet(css)
-            self.smallpin.show()
+            self.error_dialog.show()
             return
 
         self.hide()
@@ -220,22 +239,24 @@ class SmartCardTextDialog(QtWidgets.QDialog):
         text = self.textField.text().strip()
         adminpin = self.adminPinEdit.text().strip()
         if len(adminpin) < 8:
-            self.smallpin = QtWidgets.QMessageBox()
-            self.smallpin.setText("Admin pin must be 8 character or more.")
-            self.smallpin.setIcon(QtWidgets.QMessageBox.Critical)
-            self.smallpin.setWindowTitle("Admin pin too small")
-            self.smallpin.setStyleSheet(css)
-            self.smallpin.show()
+            self.error_dialog = MessageDialogs.error_dialog(
+                "Editing smart card details", "Admin pin must be 8 character or more."
+            )
+            self.error_dialog.show()
             return
         if len(text) > 35:
-            self.smallpin = QtWidgets.QMessageBox()
-            self.smallpin.setText(
-                "{} must be less than 35 characters.".format(self.textInput)
+            self.error_dialog = MessageDialogs.error_dialog(
+                "Editing smart card details",
+                "{} must be less than 35 characters.".format(self.textInput),
             )
-            self.smallpin.setIcon(QtWidgets.QMessageBox.Critical)
-            self.smallpin.setWindowTitle("{} is too big".format(self.textInput))
-            self.smallpin.setStyleSheet(css)
-            self.smallpin.show()
+            self.error_dialog.show()
+            return
+        if not len(text):
+            self.error_dialog = MessageDialogs.error_dialog(
+                "Editing smart card details",
+                "{} cannot be blank.".format(self.textInput),
+            )
+            self.error_dialog.show()
             return
 
         self.hide()
@@ -268,7 +289,7 @@ class NewKeyDialog(QtWidgets.QDialog):
         vboxlayout.addWidget(email_label)
         vboxlayout.addWidget(self.email_box)
         passphrase_label = QtWidgets.QLabel(
-            "Key Passphrase (must be 12+ chars in length):"
+            "Key Passphrase (recommended: 12+ chars in length):"
         )
         self.passphrase_box = PasswordEdit(self)
 
@@ -291,42 +312,26 @@ class NewKeyDialog(QtWidgets.QDialog):
         password = self.passphrase_box.text().strip()
 
         if not len(name):
-            self.smallpin = QtWidgets.QMessageBox()
-            self.smallpin.setText("Name cannot be blank.")
-            self.smallpin.setIcon(QtWidgets.QMessageBox.Critical)
-            self.smallpin.setWindowTitle("No name added")
-            self.smallpin.setStyleSheet(css)
-            self.smallpin.exec()
+            self.error_dialog = MessageDialogs.error_dialog(
+                "generating new key", "Name cannot be blank."
+            )
+            self.error_dialog.show()
             self.generateButton.setEnabled(True)
             return
 
         if not len(emails):
-            self.smallpin = QtWidgets.QMessageBox()
-            self.smallpin.setText("There must be at least one email.")
-            self.smallpin.setIcon(QtWidgets.QMessageBox.Critical)
-            self.smallpin.setWindowTitle("No email added")
-            self.smallpin.setStyleSheet(css)
-            self.smallpin.exec()
+            self.error_dialog = MessageDialogs.error_dialog(
+                "generating new key", "There must be at least one email."
+            )
+            self.error_dialog.show()
             self.generateButton.setEnabled(True)
             return
 
         if not len(password):
-            self.smallpin = QtWidgets.QMessageBox()
-            self.smallpin.setText("Key passphrase cannot be blank.")
-            self.smallpin.setIcon(QtWidgets.QMessageBox.Critical)
-            self.smallpin.setWindowTitle("No passphrase added")
-            self.smallpin.setStyleSheet(css)
-            self.smallpin.exec()
-            self.generateButton.setEnabled(True)
-            return
-
-        if len(password) < 1:
-            self.smallpin = QtWidgets.QMessageBox()
-            self.smallpin.setText("Key passphrase must be more than 12 character.")
-            self.smallpin.setIcon(QtWidgets.QMessageBox.Critical)
-            self.smallpin.setWindowTitle("Passphrase is small")
-            self.smallpin.setStyleSheet(css)
-            self.smallpin.exec()
+            self.error_dialog = MessageDialogs.error_dialog(
+                "generating new key", "Key passphrase cannot be blank."
+            )
+            self.error_dialog.show()
             self.generateButton.setEnabled(True)
             return
 
@@ -351,12 +356,10 @@ class NewKeyDialog(QtWidgets.QDialog):
         self.update_ui.emit(newk)
         self.hide()
         self.enable_button.emit()
-        success_dialog = QtWidgets.QMessageBox()
-        success_dialog.setIcon(QtWidgets.QMessageBox.Information)
-        success_dialog.setWindowTitle("New key generated")
-        success_dialog.setText("Key generation successful!")
-        success_dialog.setStyleSheet(css)
-        success_dialog.exec()
+        self.success_dialog = MessageDialogs.success_dialog(
+            "Generated keys successfully!"
+        )
+        self.success_dialog.show()
 
 
 class KeyWidget(QtWidgets.QWidget):
@@ -535,10 +538,16 @@ class MainWindow(QtWidgets.QMainWindow):
             try:
                 rjce.reset_yubikey()
             except Exception as e:
-                self.show_error_dialog(str(e), "YubiKey reset.")
+                self.error_dialog = MessageDialogs.error_dialog(
+                    "YubiKey reset.", str(e)
+                )
+                self.error_dialog.show()
         else:
             return
-        self.show_success_dialog("YubiKey successfully reset.")
+        self.success_dialog = MessageDialogs.success_dialog(
+            "YubiKey successfully reset."
+        )
+        self.success_dialog.show()
 
     def enable_upload(self):
         "Slot to enable the upload to smartcard button"
@@ -577,27 +586,41 @@ class MainWindow(QtWidgets.QMainWindow):
         try:
             rjce.change_user_pin(adminpin.encode("utf-8"), userpin.encode("utf-8"))
         except Exception as e:
-            self.show_error_dialog(str(e), "changing user pin")
+            self.error_dialog = MessageDialogs.error_dialog("changing user pin", str(e))
+            self.error_dialog.show()
             return
-        self.show_success_dialog("Changed user pin successfully.")
+        self.success_dialog = MessageDialogs.success_dialog(
+            "Changed user pin successfully."
+        )
+        self.success_dialog.show()
 
     def change_admin_pin_on_card_slot(self, userpin, adminpin):
         "Final slot which will try to change the adminpin"
         try:
             rjce.change_admin_pin(adminpin.encode("utf-8"), userpin.encode("utf-8"))
         except Exception as e:
-            self.show_error_dialog(str(e), "changing admin pin")
+            self.error_dialog = MessageDialogs.error_dialog(
+                "changing admin pin", str(e)
+            )
+            self.error_dialog.show()
             return
-        self.show_success_dialog("Changed admin pin successfully.")
+        self.success_dialog = MessageDialogs.success_dialog(
+            "Changed admin pin successfully."
+        )
+        self.success_dialog.show()
 
     def set_url_on_card_slot(self, publicURL, adminpin):
         "Final slot which will try to change the publicURL"
         try:
             rjce.set_url(publicURL.encode("utf-8"), adminpin.encode("utf-8"))
         except Exception as e:
-            self.show_error_dialog(str(e), "adding public URL")
+            self.error_dialog = MessageDialogs.error_dialog("adding public URL", str(e))
+            self.error_dialog.show()
             return
-        self.show_success_dialog("Added public URL successfully.")
+        self.success_dialog = MessageDialogs.success_dialog(
+            "Added public URL successfully."
+        )
+        self.success_dialog.show()
 
     def set_name_on_card_slot(self, name, adminpin):
         "Final slot which will try to change the name"
@@ -607,17 +630,11 @@ class MainWindow(QtWidgets.QMainWindow):
             name = "<<".join(name.split()[::-1])
             rjce.set_name(name.encode("utf-8"), adminpin.encode("utf-8"))
         except Exception as e:
-            self.show_error_dialog(str(e), "adding name")
+            self.error_dialog = MessageDialogs.error_dialog("adding name", str(e))
+            self.error_dialog.show()
             return
-        self.show_success_dialog("Added name successfully.")
-
-    def show_error_dialog(self, msg, where):
-        self.error_dialog = QtWidgets.QMessageBox()
-        self.error_dialog.setText(msg)
-        self.error_dialog.setIcon(QtWidgets.QMessageBox.Critical)
-        self.error_dialog.setWindowTitle(f"Error during {where}")
-        self.error_dialog.setStyleSheet(css)
-        self.error_dialog.show()
+        self.success_dialog = MessageDialogs.success_dialog("Added name successfully.")
+        self.success_dialog.show()
 
     def show_generate_dialog(self):
         "Shows the dialog to generate new key"
@@ -664,17 +681,15 @@ class MainWindow(QtWidgets.QMainWindow):
         try:
             rjce.upload_to_smartcard(certdata, adminpin.encode("utf-8"), passphrase)
         except Exception as e:
-            self.show_error_dialog(str(e), "upload to smartcard.")
+            self.error_dialog = MessageDialogs.error_dialog(
+                "upload to smartcard.", str(e)
+            )
+            self.error_dialog.show()
             return
-        self.show_success_dialog("Uploaded to the smartcard successfully.")
-
-    def show_success_dialog(self, msg: str):
-        self.success = QtWidgets.QMessageBox()
-        self.success.setText(f"{msg}")
-        self.success.setIcon(QtWidgets.QMessageBox.Information)
-        self.success.setWindowTitle("Success")
-        self.success.setStyleSheet(css)
-        self.success.show()
+        self.success_dialog = MessageDialogs.success_dialog(
+            "Uploaded to the smartcard successfully."
+        )
+        self.success_dialog.show()
 
     def exit_process(self):
         sys.exit(0)
