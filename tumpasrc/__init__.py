@@ -439,7 +439,9 @@ class KeyWidgetList(QtWidgets.QListWidget):
 
     def updateList(self):
         try:
-            for key in self.ks.get_all_keys():
+            keys = self.ks.get_all_keys()
+            keys.sort(key=lambda x: x.creationtime, reverse=True)
+            for key in keys:
                 kw = KeyWidget(key)
                 item = QtWidgets.QListWidgetItem()
                 item.setSizeHint(kw.sizeHint())
