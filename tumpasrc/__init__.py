@@ -429,6 +429,10 @@ class KeyWidget(QtWidgets.QWidget):
             filepath = os.path.join(select_path, filepassphrase)
             with open(filepath, "w") as fobj:
                 fobj.write(self.key.get_pub_key())
+            self.success_dialog = MessageDialogs.success_dialog(
+                "Exported public key successfully!"
+            )
+            self.success_dialog.show()
 
 
 class KeyWidgetList(QtWidgets.QListWidget):
