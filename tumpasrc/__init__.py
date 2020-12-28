@@ -418,21 +418,27 @@ class KeyWidget(QtWidgets.QWidget):
         self.setObjectName("keywidget")
 
     def mouseDoubleClickEvent(self, event):
+        if self.export_public_key(self, self.fingerprint, self.key.get_pub_key()):
+            self.success_dialog = MessageDialogs.success_dialog(
+                "Exported public key successfully!"
+            )
+            self.success_dialog.show()
+
+    @classmethod
+    def export_public_key(cls, widget, fingerprint, public_key):
         select_path = QtWidgets.QFileDialog.getExistingDirectory(
-            self,
+            widget,
             "Select directory to save public key",
             ".",
             QtWidgets.QFileDialog.ShowDirsOnly,
         )
         if select_path:
-            filepassphrase = f"{self.fingerprint}.pub"
+            filepassphrase = f"{fingerprint}.pub"
             filepath = os.path.join(select_path, filepassphrase)
             with open(filepath, "w") as fobj:
-                fobj.write(self.key.get_pub_key())
-            self.success_dialog = MessageDialogs.success_dialog(
-                "Exported public key successfully!"
-            )
-            self.success_dialog.show()
+                fobj.write(public_key)
+            return True
+        return False
 
 
 class KeyWidgetList(QtWidgets.QListWidget):
@@ -486,11 +492,14 @@ class MainWindow(QtWidgets.QMainWindow):
         self.widget = KeyWidgetList(self.ks)
         self.current_fingerprint = ""
 
-        # Our menu
+        # File menu
+        exportPubKey = QtWidgets.QAction("&Export public key", self)
+        exportPubKey.triggered.connect(self.export_public_key)
         exitAction = QtWidgets.QAction("E&xit", self)
         exitAction.triggered.connect(self.exit_process)
         menu = self.menuBar()
         filemenu = menu.addMenu("&File")
+        filemenu.addAction(exportPubKey)
         filemenu.addAction(exitAction)
 
         # smartcard menu
@@ -676,12 +685,10 @@ class MainWindow(QtWidgets.QMainWindow):
         "Shows the userinput dialog to upload the selected key to the smartcard"
         # This means no key is selected on the list
         if not self.widget.selectedItems():
-            self.select_first = QtWidgets.QMessageBox()
-            self.select_first.setText("Please select a key from the list.")
-            self.select_first.setIcon(QtWidgets.QMessageBox.Information)
-            self.select_first.setWindowTitle("No selected key")
-            self.select_first.setStyleSheet(css)
-            self.select_first.show()
+            self.error_dialog = MessageDialogs.error_dialog(
+                "upload to smart card", "Please select a key from the list."
+            )
+            self.error_dialog.show()
             return
 
         item = self.widget.selectedItems()[0]
@@ -706,6 +713,23 @@ class MainWindow(QtWidgets.QMainWindow):
             "Uploaded to the smartcard successfully."
         )
         self.success_dialog.show()
+
+    def export_public_key(self):
+        # This means no key is selected on the list
+        if not self.widget.selectedItems():
+            self.error_dialog = MessageDialogs.error_dialog(
+                "exporting public key", "Please select a key from the list."
+            )
+            self.error_dialog.show()
+            return
+
+        item = self.widget.selectedItems()[0]
+        kw = self.widget.itemWidget(item)
+        if KeyWidget.export_public_key(self, kw.key.fingerprint, kw.key.get_pub_key()):
+            self.success_dialog = MessageDialogs.success_dialog(
+                "Exported public key successfully!"
+            )
+            self.success_dialog.show()
 
     def exit_process(self):
         sys.exit(0)
