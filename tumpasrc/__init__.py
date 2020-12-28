@@ -466,6 +466,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setWindowTitle("Tumpa")
         self.setMinimumWidth(600)
         self.setMinimumHeight(575)
+        self.setMaximumWidth(600)
+        self.setMaximumHeight(575)
         self.ks = jce.KeyStore("./")
         self.vboxlayout_for_keys = QtWidgets.QVBoxLayout()
         self.widget = KeyWidgetList(self.ks)
