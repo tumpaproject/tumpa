@@ -339,11 +339,13 @@ class NewKeyDialog(QtWidgets.QDialog):
             subkeys_expiration=True,
         )
         self.update_ui.emit(newk)
+        self.hide()
         success_dialog = QtWidgets.QMessageBox()
+        success_dialog.setIcon(QtWidgets.QMessageBox.Information)
         success_dialog.setWindowTitle("New key generated")
         success_dialog.setText("Key generation successful!")
+        success_dialog.setStyleSheet(css)
         success_dialog.exec()
-        self.hide()
 
 
 class KeyWidget(QtWidgets.QWidget):
