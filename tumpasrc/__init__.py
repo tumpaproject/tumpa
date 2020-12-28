@@ -543,8 +543,10 @@ class MainWindow(QtWidgets.QMainWindow):
                     "YubiKey reset.", str(e)
                 )
                 self.error_dialog.show()
+                return
         else:
             return
+
         self.success_dialog = MessageDialogs.success_dialog(
             "YubiKey successfully reset."
         )
