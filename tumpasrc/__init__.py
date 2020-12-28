@@ -3,7 +3,7 @@ import os
 import sys
 import datetime
 from PySide2 import QtWidgets
-from PySide2.QtCore import QObject, Signal, QSize
+from PySide2.QtCore import QObject, Signal, QSize, Qt
 from PySide2 import QtGui
 
 import johnnycanencrypt as jce
@@ -16,7 +16,7 @@ css = """QPushButton {
     border-width: 2px;
     border-radius: 10px;
     border-color: beige;
-    font: 14px;
+    font: 18px;
     color: white;
     min-width: 10em;
     min-height: 40px;
@@ -38,7 +38,11 @@ QLineEdit {
 }
 
 QLabel#keyring_label {
-    font-size: 25px;
+    font-size: 24px;
+}
+
+QLabel#keyring_instruction {
+    font-size: 12px;
 }
 
 QPlainTextEdit {
@@ -47,6 +51,22 @@ QPlainTextEdit {
     padding-left: 5px;
     padding-top: 5px;
 }
+
+
+QLabel#keyfingerprint {
+    font-size: 18px;
+    font-weight: 600;
+}
+
+QListWidget::item {
+    background-color: #F1F8FD;
+    border: 1px solid #9DCCEE;
+    margin: 4px;
+}
+QListWidget::item:selected {
+    background-color: #9DCCEE;
+}
+
 """
 
 
@@ -90,6 +110,30 @@ class PasswordEdit(QtWidgets.QLineEdit):
             self.togglepasswordAction.setIcon(self.visibleIcon)
 
 
+class MessageDialogs:
+    """
+    A class that contains dialogue QMessageBoxes for success, error, etc.
+    """
+
+    @classmethod
+    def success_dialog(cls, msg: str):
+        success_dialog = QtWidgets.QMessageBox()
+        success_dialog.setText(f"{msg}")
+        success_dialog.setIcon(QtWidgets.QMessageBox.Information)
+        success_dialog.setWindowTitle("Success")
+        success_dialog.setStyleSheet(css)
+        return success_dialog
+
+    @classmethod
+    def error_dialog(cls, where: str, msg: str):
+        error_dialog = QtWidgets.QMessageBox()
+        error_dialog.setText(msg)
+        error_dialog.setIcon(QtWidgets.QMessageBox.Critical)
+        error_dialog.setWindowTitle(f"Error during {where}")
+        error_dialog.setStyleSheet(css)
+        return error_dialog
+
+
 class SmartCardConfirmationDialog(QtWidgets.QDialog):
     # passphrase, adminpin
     writetocard = Signal(
@@ -130,22 +174,17 @@ class SmartCardConfirmationDialog(QtWidgets.QDialog):
         passphrase = self.passphraseEdit.text().strip()
         adminpin = self.addminPinEdit.text().strip()
         if len(adminpin) < 8:
-            self.smallpin = QtWidgets.QMessageBox()
-            self.smallpin.setText("Admin pin must be 8 character or more.")
-            self.smallpin.setIcon(QtWidgets.QMessageBox.Critical)
-            self.smallpin.setWindowTitle("Admin pin too small")
-            self.smallpin.setStyleSheet(css)
-            self.smallpin.show()
+            self.error_dialog = MessageDialogs.error_dialog(
+                "Editing smart card details", "Admin pin must be 8 character or more."
+            )
+            self.error_dialog.show()
             return
         if len(passphrase) < 6:
-            self.smallpin = QtWidgets.QMessageBox()
-            self.smallpin.setText(
-                "{} must be 6 character or more.".format(self.firstinput)
+            self.error_dialog = MessageDialogs.error_dialog(
+                "Editing smart card details",
+                "{} must be 6 character or more.".format(self.firstinput),
             )
-            self.smallpin.setIcon(QtWidgets.QMessageBox.Critical)
-            self.smallpin.setWindowTitle("{} is too small".format(self.firstinput))
-            self.smallpin.setStyleSheet(css)
-            self.smallpin.show()
+            self.error_dialog.show()
             return
 
         self.hide()
@@ -200,22 +239,24 @@ class SmartCardTextDialog(QtWidgets.QDialog):
         text = self.textField.text().strip()
         adminpin = self.adminPinEdit.text().strip()
         if len(adminpin) < 8:
-            self.smallpin = QtWidgets.QMessageBox()
-            self.smallpin.setText("Admin pin must be 8 character or more.")
-            self.smallpin.setIcon(QtWidgets.QMessageBox.Critical)
-            self.smallpin.setWindowTitle("Admin pin too small")
-            self.smallpin.setStyleSheet(css)
-            self.smallpin.show()
+            self.error_dialog = MessageDialogs.error_dialog(
+                "Editing smart card details", "Admin pin must be 8 character or more."
+            )
+            self.error_dialog.show()
             return
         if len(text) > 35:
-            self.smallpin = QtWidgets.QMessageBox()
-            self.smallpin.setText(
-                "{} must be less than 35 characters.".format(self.textInput)
+            self.error_dialog = MessageDialogs.error_dialog(
+                "Editing smart card details",
+                "{} must be less than 35 characters.".format(self.textInput),
             )
-            self.smallpin.setIcon(QtWidgets.QMessageBox.Critical)
-            self.smallpin.setWindowTitle("{} is too big".format(self.textInput))
-            self.smallpin.setStyleSheet(css)
-            self.smallpin.show()
+            self.error_dialog.show()
+            return
+        if not len(text):
+            self.error_dialog = MessageDialogs.error_dialog(
+                "Editing smart card details",
+                "{} cannot be blank.".format(self.textInput),
+            )
+            self.error_dialog.show()
             return
 
         self.hide()
@@ -224,11 +265,15 @@ class SmartCardTextDialog(QtWidgets.QDialog):
 
 class NewKeyDialog(QtWidgets.QDialog):
     update_ui = Signal((jce.Key,))
+    disable_button = Signal()
+    enable_button = Signal()
 
-    def __init__(self, ks: jce.KeyStore, newkey_slot):
+    def __init__(self, ks: jce.KeyStore, newkey_slot, disable_slot, enable_slot):
         super(NewKeyDialog, self).__init__()
         self.setModal(True)
         self.update_ui.connect(newkey_slot)
+        self.disable_button.connect(disable_slot)
+        self.enable_button.connect(enable_slot)
         self.ks = ks  # jce.KeyStore
         self.setFixedSize(QSize(800, 600))
         vboxlayout = QtWidgets.QVBoxLayout()
@@ -244,7 +289,7 @@ class NewKeyDialog(QtWidgets.QDialog):
         vboxlayout.addWidget(email_label)
         vboxlayout.addWidget(self.email_box)
         passphrase_label = QtWidgets.QLabel(
-            "Key Passphrase (must be 12+ chars in length):"
+            "Key Passphrase (recommended: 12+ chars in length):"
         )
         self.passphrase_box = PasswordEdit(self)
 
@@ -266,11 +311,41 @@ class NewKeyDialog(QtWidgets.QDialog):
         name = self.name_box.text().strip()
         password = self.passphrase_box.text().strip()
 
+        if not len(name):
+            self.error_dialog = MessageDialogs.error_dialog(
+                "generating new key", "Name cannot be blank."
+            )
+            self.error_dialog.show()
+            self.generateButton.setEnabled(True)
+            return
+
+        if not len(emails):
+            self.error_dialog = MessageDialogs.error_dialog(
+                "generating new key", "There must be at least one email."
+            )
+            self.error_dialog.show()
+            self.generateButton.setEnabled(True)
+            return
+
+        if not len(password):
+            self.error_dialog = MessageDialogs.error_dialog(
+                "generating new key", "Key passphrase cannot be blank."
+            )
+            self.error_dialog.show()
+            self.generateButton.setEnabled(True)
+            return
+
         uids = []
         for email in emails.split("\n"):
             value = f"{name} <{email}>"
             uids.append(value)
         edate = datetime.datetime.now() + datetime.timedelta(days=3 * 365)
+        self.disable_button.emit()
+        # To make sure that the Generate button is disabled first
+        self.generateButton.setEnabled(False)
+        self.update()
+        self.repaint()
+        # Now let us try to create a key
         newk = self.ks.create_newkey(
             password,
             uids,
@@ -280,6 +355,11 @@ class NewKeyDialog(QtWidgets.QDialog):
         )
         self.update_ui.emit(newk)
         self.hide()
+        self.enable_button.emit()
+        self.success_dialog = MessageDialogs.success_dialog(
+            "Generated keys successfully!"
+        )
+        self.success_dialog.show()
 
 
 class KeyWidget(QtWidgets.QWidget):
@@ -290,25 +370,43 @@ class KeyWidget(QtWidgets.QWidget):
         super(KeyWidget, self).__init__()
         self.setObjectName("KeyWidgetItem")
         self.setMinimumWidth(400)
+        self.setMinimumHeight(84)
         self.key = key
         fingerprint = key.fingerprint
         self.fingerprint = fingerprint
-        date = key.creationtime.date()
         self.keyfingerprint = QtWidgets.QLabel(fingerprint)
-        date_label = QtWidgets.QLabel(date.strftime("%Y-%m-%d"))
-        hlayout = QtWidgets.QHBoxLayout()
-        hlayout.addWidget(self.keyfingerprint)
-        hlayout.addWidget(date_label)
-        fp_date_label = QtWidgets.QWidget()
-        fp_date_label.setLayout(hlayout)
-        group_vboxlayout = QtWidgets.QVBoxLayout()
-        group_vboxlayout.setSpacing(0)
-        group_vboxlayout.setContentsMargins(0, 0, 0, 0)
-        group_vboxlayout.addWidget(fp_date_label)
+        self.keyfingerprint.setObjectName("keyfingerprint")
+        date = key.creationtime.date()
+        date_label = QtWidgets.QLabel(f"Created at: {date.strftime('%Y-%m-%d')}")
+        date_label.setAlignment(Qt.AlignTop)
+        date_label.setContentsMargins(0, 0, 0, 0)
+
+        # UIDs
+        uid_vboxlayout = QtWidgets.QVBoxLayout()
+        uid_vboxlayout.setSpacing(0)
+        uid_vboxlayout.setContentsMargins(0, 0, 0, 0)
         for uid in key.uids:
             uid_label = QtWidgets.QLabel(uid["value"])
-            group_vboxlayout.addWidget(uid_label)
-        self.setLayout(group_vboxlayout)
+            uid_vboxlayout.addWidget(uid_label)
+        uid_widget = QtWidgets.QWidget()
+        uid_widget.setLayout(uid_vboxlayout)
+
+        # UID and date layout
+        hlayout = QtWidgets.QHBoxLayout()
+        hlayout.addWidget(uid_widget)
+        hlayout.addWidget(date_label)
+        hlayout.setAlignment(Qt.AlignTop)
+        hlayout.setContentsMargins(11, 0, 11, 11)
+        group_widget = QtWidgets.QWidget()
+        group_widget.setLayout(hlayout)
+
+        fp_group_layout = QtWidgets.QVBoxLayout()
+        fp_group_layout.addWidget(self.keyfingerprint)
+        fp_group_layout.addWidget(group_widget)
+
+        self.setLayout(fp_group_layout)
+        self.setToolTip("Double click to export public key")
+        self.setObjectName("keywidget")
 
     def mouseDoubleClickEvent(self, event):
         select_path = QtWidgets.QFileDialog.getExistingDirectory(
@@ -327,28 +425,27 @@ class KeyWidget(QtWidgets.QWidget):
 class KeyWidgetList(QtWidgets.QListWidget):
     def __init__(self, ks):
         super(KeyWidgetList, self).__init__()
-        self.setUniformItemSizes(True)
         self.setObjectName("KeyWidgetList")
         self.ks = ks
 
-        self.key_widgets = []
         # Set layout.
         # self.layout = QtWidgets.QVBoxLayout(self)
         # self.setLayout(self.layout)
         self.updateList()
         self.setSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
-        self.setMinimumHeight(500)
+        self.setMinimumHeight(400)
         self.currentItemChanged.connect(self.on_item_changed)
 
     def updateList(self):
         try:
-            for key in self.ks.get_all_keys():
+            keys = self.ks.get_all_keys()
+            keys.sort(key=lambda x: x.creationtime, reverse=True)
+            for key in keys:
                 kw = KeyWidget(key)
                 item = QtWidgets.QListWidgetItem()
                 item.setSizeHint(kw.sizeHint())
                 self.addItem(item)
                 self.setItemWidget(item, kw)
-                self.key_widgets.append(kw)
         except Exception as e:
             print(e)
 
@@ -359,9 +456,8 @@ class KeyWidgetList(QtWidgets.QListWidget):
         kw = KeyWidget(key)
         item = QtWidgets.QListWidgetItem()
         item.setSizeHint(kw.sizeHint())
-        self.addItem(item)
+        self.insertItem(0, item)
         self.setItemWidget(item, kw)
-        self.key_widgets.append(kw)
 
 
 class MainWindow(QtWidgets.QMainWindow):
@@ -369,7 +465,7 @@ class MainWindow(QtWidgets.QMainWindow):
         super(MainWindow, self).__init__(parent)
         self.setWindowTitle("Tumpa")
         self.setMinimumWidth(600)
-        self.setMinimumHeight(500)
+        self.setMinimumHeight(575)
         self.ks = jce.KeyStore("./")
         self.vboxlayout_for_keys = QtWidgets.QVBoxLayout()
         self.widget = KeyWidgetList(self.ks)
@@ -383,11 +479,11 @@ class MainWindow(QtWidgets.QMainWindow):
         filemenu.addAction(exitAction)
 
         # smartcard menu
-        changepinAction = QtWidgets.QAction("Change &User pin", self)
+        changepinAction = QtWidgets.QAction("Change user &pin", self)
         changepinAction.triggered.connect(self.show_change_user_pin_dialog)
-        changeadminpinAction = QtWidgets.QAction("Change &Admin pin", self)
+        changeadminpinAction = QtWidgets.QAction("Change &admin pin", self)
         changeadminpinAction.triggered.connect(self.show_change_admin_pin_dialog)
-        changenameAction = QtWidgets.QAction("Set Chardholder &Name", self)
+        changenameAction = QtWidgets.QAction("Set cardholder &name", self)
         changenameAction.triggered.connect(self.show_set_name)
         changeurlAction = QtWidgets.QAction("Set public key &URL", self)
         changeurlAction.triggered.connect(self.show_set_public_url)
@@ -416,8 +512,14 @@ class MainWindow(QtWidgets.QMainWindow):
 
         keyring_label = QtWidgets.QLabel("Available keys")
         keyring_label.setObjectName("keyring_label")
+        keyring_instruction_label = QtWidgets.QLabel(
+            "Single click on a key to enable writing to smart card. "
+            + "Double click on a key to export the public key."
+        )
+        keyring_instruction_label.setObjectName("keyring_instruction")
         vboxlayout = QtWidgets.QVBoxLayout()
         vboxlayout.addWidget(keyring_label)
+        vboxlayout.addWidget(keyring_instruction_label)
         vboxlayout.addWidget(self.widget)
         vboxlayout.addWidget(wd)
         self.cwidget.setLayout(vboxlayout)
@@ -435,10 +537,16 @@ class MainWindow(QtWidgets.QMainWindow):
             try:
                 rjce.reset_yubikey()
             except Exception as e:
-                self.show_error_dialog(str(e), "YubiKey reset.")
+                self.error_dialog = MessageDialogs.error_dialog(
+                    "YubiKey reset.", str(e)
+                )
+                self.error_dialog.show()
         else:
             return
-        self.show_success_dialog("YubiKey successfully reset.")
+        self.success_dialog = MessageDialogs.success_dialog(
+            "YubiKey successfully reset."
+        )
+        self.success_dialog.show()
 
     def enable_upload(self):
         "Slot to enable the upload to smartcard button"
@@ -468,7 +576,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def show_change_admin_pin_dialog(self):
         "This slot shows the input dialog to change admin pin"
         self.smalldialog = SmartCardConfirmationDialog(
-            self.change_admin_pin_on_card_slot, "Chnage admin pin", "New Admin pin"
+            self.change_admin_pin_on_card_slot, "Change admin pin", "New Admin pin"
         )
         self.smalldialog.show()
 
@@ -477,26 +585,41 @@ class MainWindow(QtWidgets.QMainWindow):
         try:
             rjce.change_user_pin(adminpin.encode("utf-8"), userpin.encode("utf-8"))
         except Exception as e:
-            self.show_error_dialog(str(e), "changing user pin")
+            self.error_dialog = MessageDialogs.error_dialog("changing user pin", str(e))
+            self.error_dialog.show()
             return
-        self.show_success_dialog("Chnaged user pin successfully.")
+        self.success_dialog = MessageDialogs.success_dialog(
+            "Changed user pin successfully."
+        )
+        self.success_dialog.show()
 
     def change_admin_pin_on_card_slot(self, userpin, adminpin):
         "Final slot which will try to change the adminpin"
         try:
             rjce.change_admin_pin(adminpin.encode("utf-8"), userpin.encode("utf-8"))
         except Exception as e:
-            self.show_error_dialog(str(e), "changing admin pin")
+            self.error_dialog = MessageDialogs.error_dialog(
+                "changing admin pin", str(e)
+            )
+            self.error_dialog.show()
             return
-        self.show_success_dialog("Chnaged admin pin successfully.")
+        self.success_dialog = MessageDialogs.success_dialog(
+            "Changed admin pin successfully."
+        )
+        self.success_dialog.show()
+
     def set_url_on_card_slot(self, publicURL, adminpin):
         "Final slot which will try to change the publicURL"
         try:
             rjce.set_url(publicURL.encode("utf-8"), adminpin.encode("utf-8"))
         except Exception as e:
-            self.show_error_dialog(str(e), "adding public URL")
+            self.error_dialog = MessageDialogs.error_dialog("adding public URL", str(e))
+            self.error_dialog.show()
             return
-        self.show_success_dialog("Added public URL successfully.")
+        self.success_dialog = MessageDialogs.success_dialog(
+            "Added public URL successfully."
+        )
+        self.success_dialog.show()
 
     def set_name_on_card_slot(self, name, adminpin):
         "Final slot which will try to change the name"
@@ -506,22 +629,31 @@ class MainWindow(QtWidgets.QMainWindow):
             name = "<<".join(name.split()[::-1])
             rjce.set_name(name.encode("utf-8"), adminpin.encode("utf-8"))
         except Exception as e:
-            self.show_error_dialog(str(e), "adding name")
+            self.error_dialog = MessageDialogs.error_dialog("adding name", str(e))
+            self.error_dialog.show()
             return
-        self.show_success_dialog("Added name successfully.")
-
-    def show_error_dialog(self, msg, where):
-        self.error_dialog = QtWidgets.QMessageBox()
-        self.error_dialog.setText(msg)
-        self.error_dialog.setIcon(QtWidgets.QMessageBox.Critical)
-        self.error_dialog.setWindowTitle(f"Error during {where}")
-        self.error_dialog.setStyleSheet(css)
-        self.error_dialog.show()
+        self.success_dialog = MessageDialogs.success_dialog("Added name successfully.")
+        self.success_dialog.show()
 
     def show_generate_dialog(self):
         "Shows the dialog to generate new key"
-        self.newd = NewKeyDialog(self.ks, self.widget.addnewKey)
+        self.newd = NewKeyDialog(
+            self.ks,
+            self.widget.addnewKey,
+            self.disable_generate_button,
+            self.enable_generate_button,
+        )
         self.newd.show()
+
+    def disable_generate_button(self):
+        self.generateButton.setEnabled(False)
+        self.update()
+        self.repaint()
+
+    def enable_generate_button(self):
+        self.generateButton.setEnabled(True)
+        self.update()
+        self.repaint()
 
     def upload_to_smartcard(self):
         "Shows the userinput dialog to upload the selected key to the smartcard"
@@ -548,17 +680,15 @@ class MainWindow(QtWidgets.QMainWindow):
         try:
             rjce.upload_to_smartcard(certdata, adminpin.encode("utf-8"), passphrase)
         except Exception as e:
-            self.show_error_dialog(str(e), "upload to smartcard.")
+            self.error_dialog = MessageDialogs.error_dialog(
+                "upload to smartcard.", str(e)
+            )
+            self.error_dialog.show()
             return
-        self.show_success_dialog("Uploaded to the smartcard successfully.")
-
-    def show_success_dialog(self, msg: str):
-        self.success = QtWidgets.QMessageBox()
-        self.success.setText(f"{msg}")
-        self.success.setIcon(QtWidgets.QMessageBox.Information)
-        self.success.setWindowTitle("Success")
-        self.success.setStyleSheet(css)
-        self.success.show()
+        self.success_dialog = MessageDialogs.success_dialog(
+            "Uploaded to the smartcard successfully."
+        )
+        self.success_dialog.show()
 
     def exit_process(self):
         sys.exit(0)

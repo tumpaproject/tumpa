@@ -26,7 +26,7 @@ def load_font(font_folder_name: str) -> None:
             QFontDatabase.addApplicationFont(directory + "/" + filename)
 
 
-def load_icon( iconpath: str) -> QIcon:
+def load_icon(iconpath: str) -> QIcon:
     """
     Return a QIcon from the given icon
     """
