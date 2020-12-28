@@ -244,11 +244,15 @@ class SmartCardTextDialog(QtWidgets.QDialog):
 
 class NewKeyDialog(QtWidgets.QDialog):
     update_ui = Signal((jce.Key,))
+    disable_button = Signal()
+    enable_button = Signal()
 
-    def __init__(self, ks: jce.KeyStore, newkey_slot):
+    def __init__(self, ks: jce.KeyStore, newkey_slot, disable_slot, enable_slot):
         super(NewKeyDialog, self).__init__()
         self.setModal(True)
         self.update_ui.connect(newkey_slot)
+        self.disable_button.connect(disable_slot)
+        self.enable_button.connect(enable_slot)
         self.ks = ks  # jce.KeyStore
         self.setFixedSize(QSize(800, 600))
         vboxlayout = QtWidgets.QVBoxLayout()
@@ -316,7 +320,7 @@ class NewKeyDialog(QtWidgets.QDialog):
             self.generateButton.setEnabled(True)
             return
 
-        if len(password) < 12:
+        if len(password) < 1:
             self.smallpin = QtWidgets.QMessageBox()
             self.smallpin.setText("Key passphrase must be more than 12 character.")
             self.smallpin.setIcon(QtWidgets.QMessageBox.Critical)
@@ -331,6 +335,12 @@ class NewKeyDialog(QtWidgets.QDialog):
             value = f"{name} <{email}>"
             uids.append(value)
         edate = datetime.datetime.now() + datetime.timedelta(days=3 * 365)
+        self.disable_button.emit()
+        # To make sure that the Generate button is disabled first
+        self.generateButton.setEnabled(False)
+        self.update()
+        self.repaint()
+        # Now let us try to create a key
         newk = self.ks.create_newkey(
             password,
             uids,
@@ -340,6 +350,7 @@ class NewKeyDialog(QtWidgets.QDialog):
         )
         self.update_ui.emit(newk)
         self.hide()
+        self.enable_button.emit()
         success_dialog = QtWidgets.QMessageBox()
         success_dialog.setIcon(QtWidgets.QMessageBox.Information)
         success_dialog.setWindowTitle("New key generated")
@@ -500,8 +511,8 @@ class MainWindow(QtWidgets.QMainWindow):
         keyring_label = QtWidgets.QLabel("Available keys")
         keyring_label.setObjectName("keyring_label")
         keyring_instruction_label = QtWidgets.QLabel(
-            "Single click on a key to enable writing to smart card. " +
-            "Double click on a key to export the public key."
+            "Single click on a key to enable writing to smart card. "
+            + "Double click on a key to export the public key."
         )
         keyring_instruction_label.setObjectName("keyring_instruction")
         vboxlayout = QtWidgets.QVBoxLayout()
@@ -578,6 +589,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.show_error_dialog(str(e), "changing admin pin")
             return
         self.show_success_dialog("Changed admin pin successfully.")
+
     def set_url_on_card_slot(self, publicURL, adminpin):
         "Final slot which will try to change the publicURL"
         try:
@@ -609,8 +621,23 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def show_generate_dialog(self):
         "Shows the dialog to generate new key"
-        self.newd = NewKeyDialog(self.ks, self.widget.addnewKey)
+        self.newd = NewKeyDialog(
+            self.ks,
+            self.widget.addnewKey,
+            self.disable_generate_button,
+            self.enable_generate_button,
+        )
         self.newd.show()
+
+    def disable_generate_button(self):
+        self.generateButton.setEnabled(False)
+        self.update()
+        self.repaint()
+
+    def enable_generate_button(self):
+        self.generateButton.setEnabled(True)
+        self.update()
+        self.repaint()
 
     def upload_to_smartcard(self):
         "Shows the userinput dialog to upload the selected key to the smartcard"
