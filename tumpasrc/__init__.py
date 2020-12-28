@@ -428,7 +428,6 @@ class KeyWidgetList(QtWidgets.QListWidget):
         self.setObjectName("KeyWidgetList")
         self.ks = ks
 
-        self.key_widgets = []
         # Set layout.
         # self.layout = QtWidgets.QVBoxLayout(self)
         # self.setLayout(self.layout)
@@ -447,7 +446,6 @@ class KeyWidgetList(QtWidgets.QListWidget):
                 item.setSizeHint(kw.sizeHint())
                 self.addItem(item)
                 self.setItemWidget(item, kw)
-                self.key_widgets.append(kw)
         except Exception as e:
             print(e)
 
@@ -458,9 +456,8 @@ class KeyWidgetList(QtWidgets.QListWidget):
         kw = KeyWidget(key)
         item = QtWidgets.QListWidgetItem()
         item.setSizeHint(kw.sizeHint())
-        self.addItem(item)
+        self.insertItem(0, item)
         self.setItemWidget(item, kw)
-        self.key_widgets.append(kw)
 
 
 class MainWindow(QtWidgets.QMainWindow):
