@@ -509,7 +509,7 @@ class KeyWidgetList(QtWidgets.QListWidget):
 class MainWindow(QtWidgets.QMainWindow):
     def __init__(self, parent=None, config={}):
         super(MainWindow, self).__init__(parent)
-        self.setWindowTitle("Tumpa")
+        self.setWindowTitle("Tumpa: OpenPGP made simple")
         self.setMinimumWidth(600)
         self.setMinimumHeight(575)
         self.setMaximumWidth(600)
