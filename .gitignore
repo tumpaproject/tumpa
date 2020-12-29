@@ -139,4 +139,5 @@ cython_debug/
 
 # Key and DB files
 *.sec
+*.pub
 *.db
