@@ -296,6 +296,23 @@ class NewKeyDialog(QtWidgets.QDialog):
         vboxlayout.addWidget(passphrase_label)
         vboxlayout.addWidget(self.passphrase_box)
 
+        # now the checkboxes for subkey
+        self.encryptionSubkey = QtWidgets.QCheckBox("Encryption subkey")
+        self.encryptionSubkey.setCheckState(Qt.Checked)
+        self.signingSubkey = QtWidgets.QCheckBox("Signing subkey")
+        self.signingSubkey.setCheckState(Qt.Checked)
+        self.authenticationSubkey = QtWidgets.QCheckBox("Authentication subkey")
+
+        hboxlayout = QtWidgets.QHBoxLayout()
+        hboxlayout.addWidget(self.encryptionSubkey)
+        hboxlayout.addWidget(self.signingSubkey)
+        hboxlayout.addWidget(self.authenticationSubkey)
+
+        widget = QtWidgets.QWidget()
+        widget.setLayout(hboxlayout)
+        vboxlayout.addWidget(widget)
+
+
         self.generateButton = QtWidgets.QPushButton("Generate")
         self.generateButton.clicked.connect(self.generate)
         self.generateButton.setMaximumWidth(50)
@@ -344,6 +361,15 @@ class NewKeyDialog(QtWidgets.QDialog):
             self.generateButton.setEnabled(True)
             return
 
+        # Now check which all subkeys are required
+        whichkeys = 0
+        if self.encryptionSubkey.checkState():
+            whichkeys += 1
+        if self.signingSubkey.checkState():
+            whichkeys += 2
+        if self.authenticationSubkey.checkState():
+            whichkeys += 4
+
         uids = []
         for email in emails.split("\n"):
             value = f"{name} <{email}>"
@@ -361,6 +387,7 @@ class NewKeyDialog(QtWidgets.QDialog):
             ciphersuite=jce.Cipher.Cv25519,
             expiration=edate,
             subkeys_expiration=True,
+            whichkeys=whichkeys,
         )
         self.update_ui.emit(newk)
         self.hide()
