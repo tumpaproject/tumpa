@@ -146,36 +146,46 @@ class SmartCardConfirmationDialog(QtWidgets.QDialog):
         title="Enter passphrase and pin for the smartcard",
         firstinput="Key passphrase",
         key=None,
+        enable_window=None,
     ):
         super(SmartCardConfirmationDialog, self).__init__()
         self.setModal(True)
         self.setFixedSize(600, 220)
         self.setWindowTitle(title)
+        if enable_window:
+            self.rejected.connect(enable_window)
         layout = QtWidgets.QFormLayout(self)
         label = QtWidgets.QLabel(firstinput)
         self.firstinput = firstinput
         self.key = key
         self.encryptionSubkey = QtWidgets.QCheckBox("Encryption")
+        self.encryptionSubkey.setEnabled(False)
         self.signingSubkey = QtWidgets.QCheckBox("Signing")
+        self.signingSubkey.setEnabled(False)
         self.authenticationSubkey = QtWidgets.QCheckBox("Authentication")
+        self.authenticationSubkey.setEnabled(False)
         self.passphraseEdit = PasswordEdit(self)
         layout.addRow(label, self.passphraseEdit)
         label = QtWidgets.QLabel("Current Admin Pin")
         self.addminPinEdit = PasswordEdit(self)
         layout.addRow(label, self.addminPinEdit)
         if self.key is not None:
-            label = QtWidgets.QLabel("Subkeys available:")
+            label = QtWidgets.QLabel("Choose subkeys to upload:")
             inhlayout = QtWidgets.QHBoxLayout()
             got_enc, got_sign, got_auth = self.key.available_subkeys()
+            inhlayout.addWidget(self.encryptionSubkey)
+            inhlayout.addWidget(self.signingSubkey)
+            inhlayout.addWidget(self.authenticationSubkey)
+
             if got_enc:
                 self.encryptionSubkey.setCheckState(Qt.Checked)
-                inhlayout.addWidget(self.encryptionSubkey)
+                self.encryptionSubkey.setEnabled(True)
             if got_sign:
                 self.signingSubkey.setCheckState(Qt.Checked)
-                inhlayout.addWidget(self.signingSubkey)
+                self.signingSubkey.setEnabled(True)
             if got_auth:
                 self.authenticationSubkey.setCheckState(Qt.Checked)
-                inhlayout.addWidget(self.authenticationSubkey)
+                self.authenticationSubkey.setEnabled(True)
             if any([got_enc, got_auth, got_sign]):  # Means we have at least one subkey
                 widget = QtWidgets.QWidget()
                 widget.setLayout(inhlayout)
@@ -221,11 +231,10 @@ class SmartCardConfirmationDialog(QtWidgets.QDialog):
         # At least one subkey must be selected
         if whichkeys == 0:
             self.error_dialog = MessageDialogs.error_dialog(
-                "Editing smart card details",
-                "At least one subkey must be selected")
+                "Editing smart card details", "At least one subkey must be selected"
+            )
             self.error_dialog.show()
             return
-
 
         self.hide()
 
@@ -353,7 +362,6 @@ class NewKeyDialog(QtWidgets.QDialog):
         widget.setLayout(hboxlayout)
         vboxlayout.addWidget(widget)
 
-
         self.generateButton = QtWidgets.QPushButton("Generate")
         self.generateButton.clicked.connect(self.generate)
         self.generateButton.setMaximumWidth(50)
@@ -410,6 +418,14 @@ class NewKeyDialog(QtWidgets.QDialog):
             whichkeys += 2
         if self.authenticationSubkey.checkState():
             whichkeys += 4
+
+        # At least one subkey must be selected
+        if whichkeys == 0:
+            self.error_dialog = MessageDialogs.error_dialog(
+                "Generating new key", "At least one subkey must be selected"
+            )
+            self.error_dialog.show()
+            return
 
         uids = []
         for email in emails.split("\n"):
@@ -749,6 +765,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.update()
         self.repaint()
 
+    def enable_mainwindow(self):
+        self.setEnabled(True)
+
     def upload_to_smartcard(self):
         "Shows the userinput dialog to upload the selected key to the smartcard"
         # This means no key is selected on the list
@@ -759,17 +778,26 @@ class MainWindow(QtWidgets.QMainWindow):
             self.error_dialog.show()
             return
 
+        self.setEnabled(False)
         item = self.widget.selectedItems()[0]
         kw = self.widget.itemWidget(item)
         self.current_key = kw.key
-        self.sccd = SmartCardConfirmationDialog(self.get_pins_and_passphrase_and_write, key=kw.key)
+        self.sccd = SmartCardConfirmationDialog(
+            self.get_pins_and_passphrase_and_write,
+            key=kw.key,
+            enable_window=self.enable_mainwindow,
+        )
         self.sccd.show()
 
-    def get_pins_and_passphrase_and_write(self, passphrase: str, adminpin: str, whichkeys: int):
+    def get_pins_and_passphrase_and_write(
+        self, passphrase: str, adminpin: str, whichkeys: int
+    ):
         "This method uploads the cert to the card"
         certdata = self.current_key.keyvalue
         try:
-            rjce.upload_to_smartcard(certdata, adminpin.encode("utf-8"), passphrase, whichkeys)
+            rjce.upload_to_smartcard(
+                certdata, adminpin.encode("utf-8"), passphrase, whichkeys
+            )
         except Exception as e:
             self.error_dialog = MessageDialogs.error_dialog(
                 "upload to smartcard.", str(e)
@@ -780,6 +808,7 @@ class MainWindow(QtWidgets.QMainWindow):
             "Uploaded to the smartcard successfully."
         )
         self.success_dialog.show()
+        self.setEnabled(True)
 
     def export_public_key(self):
         # This means no key is selected on the list
