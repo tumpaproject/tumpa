@@ -137,7 +137,7 @@ class MessageDialogs:
 class SmartCardConfirmationDialog(QtWidgets.QDialog):
     # passphrase, adminpin
     writetocard = Signal(
-        (str, str),
+        (str, str, int),
     )
 
     def __init__(
@@ -145,19 +145,42 @@ class SmartCardConfirmationDialog(QtWidgets.QDialog):
         nextsteps_slot,
         title="Enter passphrase and pin for the smartcard",
         firstinput="Key passphrase",
+        key=None,
     ):
         super(SmartCardConfirmationDialog, self).__init__()
         self.setModal(True)
-        self.setFixedSize(600, 200)
+        self.setFixedSize(600, 220)
         self.setWindowTitle(title)
         layout = QtWidgets.QFormLayout(self)
         label = QtWidgets.QLabel(firstinput)
         self.firstinput = firstinput
+        self.key = key
+        self.encryptionSubkey = QtWidgets.QCheckBox("Encryption")
+        self.signingSubkey = QtWidgets.QCheckBox("Signing")
+        self.authenticationSubkey = QtWidgets.QCheckBox("Authentication")
         self.passphraseEdit = PasswordEdit(self)
         layout.addRow(label, self.passphraseEdit)
         label = QtWidgets.QLabel("Current Admin Pin")
         self.addminPinEdit = PasswordEdit(self)
         layout.addRow(label, self.addminPinEdit)
+        if self.key is not None:
+            label = QtWidgets.QLabel("Subkeys available:")
+            inhlayout = QtWidgets.QHBoxLayout()
+            got_enc, got_sign, got_auth = self.key.available_subkeys()
+            if got_enc:
+                self.encryptionSubkey.setCheckState(Qt.Checked)
+                inhlayout.addWidget(self.encryptionSubkey)
+            if got_sign:
+                self.signingSubkey.setCheckState(Qt.Checked)
+                inhlayout.addWidget(self.signingSubkey)
+            if got_auth:
+                self.authenticationSubkey.setCheckState(Qt.Checked)
+                inhlayout.addWidget(self.authenticationSubkey)
+            if any([got_enc, got_auth, got_sign]):  # Means we have at least one subkey
+                widget = QtWidgets.QWidget()
+                widget.setLayout(inhlayout)
+                # Now add in the formlayout
+                layout.addRow(label, widget)
         widget = QtWidgets.QWidget()
         widget.setLayout(layout)
         # now the button
@@ -187,8 +210,26 @@ class SmartCardConfirmationDialog(QtWidgets.QDialog):
             self.error_dialog.show()
             return
 
+        whichkeys = 0
+        if self.encryptionSubkey.checkState():
+            whichkeys += 1
+        if self.signingSubkey.checkState():
+            whichkeys += 2
+        if self.authenticationSubkey.checkState():
+            whichkeys += 4
+
+        # At least one subkey must be selected
+        if whichkeys == 0:
+            self.error_dialog = MessageDialogs.error_dialog(
+                "Editing smart card details",
+                "At least one subkey must be selected")
+            self.error_dialog.show()
+            return
+
+
         self.hide()
-        self.writetocard.emit(passphrase, adminpin)
+
+        self.writetocard.emit(passphrase, adminpin, whichkeys)
 
 
 class SmartCardTextDialog(QtWidgets.QDialog):
@@ -721,15 +762,14 @@ class MainWindow(QtWidgets.QMainWindow):
         item = self.widget.selectedItems()[0]
         kw = self.widget.itemWidget(item)
         self.current_key = kw.key
-        self.sccd = SmartCardConfirmationDialog(self.get_pins_and_passphrase_and_write)
+        self.sccd = SmartCardConfirmationDialog(self.get_pins_and_passphrase_and_write, key=kw.key)
         self.sccd.show()
 
-    def get_pins_and_passphrase_and_write(self, passphrase, adminpin):
+    def get_pins_and_passphrase_and_write(self, passphrase: str, adminpin: str, whichkeys: int):
         "This method uploads the cert to the card"
-        print(passphrase, adminpin)
         certdata = self.current_key.keyvalue
         try:
-            rjce.upload_to_smartcard(certdata, adminpin.encode("utf-8"), passphrase)
+            rjce.upload_to_smartcard(certdata, adminpin.encode("utf-8"), passphrase, whichkeys)
         except Exception as e:
             self.error_dialog = MessageDialogs.error_dialog(
                 "upload to smartcard.", str(e)
