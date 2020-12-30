@@ -149,7 +149,7 @@ class SmartCardConfirmationDialog(QtWidgets.QDialog):
     ):
         super(SmartCardConfirmationDialog, self).__init__()
         self.setModal(True)
-        self.setFixedSize(600, 200)
+        self.setFixedSize(600, 220)
         self.setWindowTitle(title)
         layout = QtWidgets.QFormLayout(self)
         label = QtWidgets.QLabel(firstinput)
