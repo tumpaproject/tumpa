@@ -1,0 +1,7 @@
+[Desktop Entry]
+Name=Tumpa
+Exec=tumpa
+Terminal=false
+Icon=in.kushaldas.Tumpa
+Categories=Utility;Security;
+Type=Application
