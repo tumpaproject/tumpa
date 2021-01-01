@@ -3,5 +3,5 @@ Name=Tumpa
 Exec=tumpa
 Terminal=false
 Icon=in.kushaldas.Tumpa
-Categories=Utilities;Security
+Categories=Utility;Security;
 Type=Application
