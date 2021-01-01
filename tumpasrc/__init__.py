@@ -9,66 +9,10 @@ from PySide2 import QtGui
 
 import johnnycanencrypt as jce
 import johnnycanencrypt.johnnycanencrypt as rjce
-from tumpasrc.resources import load_icon
+from tumpasrc.resources import load_icon, load_css
 
-css = """QPushButton {
-    background-color: #3c99dc;
-    border-style: outset;
-    border-width: 2px;
-    border-radius: 10px;
-    border-color: beige;
-    font: 18px;
-    color: white;
-    min-width: 10em;
-    min-height: 40px;
-    padding: 6px;
-}
-QPushButton:pressed {
-    background-color: rgb(224, 0, 0);
-    border-style: inset;
-}
+css = load_css("mainwindow.css")
 
-QPushButton:disabled {
-    background-color: #BEBEBE;
-}
-QLineEdit {
-    height: 40px;
-    margin: 0px 0px 0px 0px;
-    padding-left: 5px;
-    border-radius: 10px;
-}
-
-QLabel#keyring_label {
-    font-size: 24px;
-}
-
-QLabel#keyring_instruction {
-    font-size: 12px;
-}
-
-QPlainTextEdit {
-    border-radius: 20px;
-    background-color: palette(base);
-    padding-left: 5px;
-    padding-top: 5px;
-}
-
-
-QLabel#keyfingerprint {
-    font-size: 18px;
-    font-weight: 600;
-}
-
-QListWidget::item {
-    background-color: #F1F8FD;
-    border: 1px solid #9DCCEE;
-    margin: 4px;
-}
-QListWidget::item:selected {
-    background-color: #9DCCEE;
-}
-
-"""
 
 class HardwareThread(QThread):
     signal = Signal((bool,))
@@ -83,7 +27,6 @@ class HardwareThread(QThread):
             time.sleep(1)
             result = rjce.is_smartcard_connected()
             self.signal.emit(result)
-
 
 
 class PasswordEdit(QtWidgets.QLineEdit):
@@ -337,7 +280,14 @@ class NewKeyDialog(QtWidgets.QDialog):
     disable_button = Signal()
     enable_button = Signal()
 
-    def __init__(self, ks: jce.KeyStore, newkey_slot, disable_slot, enable_slot, enable_window=None):
+    def __init__(
+        self,
+        ks: jce.KeyStore,
+        newkey_slot,
+        disable_slot,
+        enable_slot,
+        enable_window=None,
+    ):
         super(NewKeyDialog, self).__init__()
         self.setModal(True)
         self.update_ui.connect(newkey_slot)
@@ -697,7 +647,10 @@ class MainWindow(QtWidgets.QMainWindow):
         "This slot shows the input dialog to change user pin"
         self.cardcheck_thread.flag = False
         self.smalldialog = SmartCardConfirmationDialog(
-            self.change_pin_on_card_slot, "Change user pin", "New User pin", enable_window=self.enable_mainwindow
+            self.change_pin_on_card_slot,
+            "Change user pin",
+            "New User pin",
+            enable_window=self.enable_mainwindow,
         )
         self.smalldialog.show()
 
@@ -705,7 +658,10 @@ class MainWindow(QtWidgets.QMainWindow):
         "This slot shows the input dialog to set public url"
         self.cardcheck_thread.flag = False
         self.smalldialog = SmartCardTextDialog(
-            self.set_url_on_card_slot, "Add public URL", "Public URL", enable_window=self.enable_mainwindow
+            self.set_url_on_card_slot,
+            "Add public URL",
+            "Public URL",
+            enable_window=self.enable_mainwindow,
         )
         self.smalldialog.show()
 
@@ -713,7 +669,10 @@ class MainWindow(QtWidgets.QMainWindow):
         "This slot shows the input dialog to set name"
         self.cardcheck_thread.flag = False
         self.smalldialog = SmartCardTextDialog(
-            self.set_name_on_card_slot, "Add Name", "Name", enable_window=self.enable_mainwindow
+            self.set_name_on_card_slot,
+            "Add Name",
+            "Name",
+            enable_window=self.enable_mainwindow,
         )
         self.smalldialog.show()
 
@@ -721,7 +680,10 @@ class MainWindow(QtWidgets.QMainWindow):
         "This slot shows the input dialog to change admin pin"
         self.cardcheck_thread.flag = False
         self.smalldialog = SmartCardConfirmationDialog(
-            self.change_admin_pin_on_card_slot, "Change admin pin", "New Admin pin", enable_window=self.enable_mainwindow
+            self.change_admin_pin_on_card_slot,
+            "Change admin pin",
+            "New Admin pin",
+            enable_window=self.enable_mainwindow,
         )
         self.smalldialog.show()
 
@@ -788,7 +750,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.widget.addnewKey,
             self.disable_generate_button,
             self.enable_generate_button,
-            enable_window=self.enable_mainwindow
+            enable_window=self.enable_mainwindow,
         )
         self.newd.show()
         self.setEnabled(False)
