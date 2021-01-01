@@ -694,11 +694,13 @@ class MainWindow(QtWidgets.QMainWindow):
         except Exception as e:
             self.error_dialog = MessageDialogs.error_dialog("changing user pin", str(e))
             self.error_dialog.show()
+            self.enable_cardcheck_thread_slot()
             return
         self.success_dialog = MessageDialogs.success_dialog(
             "Changed user pin successfully."
         )
         self.success_dialog.show()
+        self.enable_cardcheck_thread_slot()
 
     def change_admin_pin_on_card_slot(self, userpin, adminpin):
         "Final slot which will try to change the adminpin"
@@ -709,11 +711,13 @@ class MainWindow(QtWidgets.QMainWindow):
                 "changing admin pin", str(e)
             )
             self.error_dialog.show()
+            self.enable_cardcheck_thread_slot()
             return
         self.success_dialog = MessageDialogs.success_dialog(
             "Changed admin pin successfully."
         )
         self.success_dialog.show()
+        self.enable_cardcheck_thread_slot()
 
     def set_url_on_card_slot(self, publicURL, adminpin):
         "Final slot which will try to change the publicURL"
@@ -722,11 +726,13 @@ class MainWindow(QtWidgets.QMainWindow):
         except Exception as e:
             self.error_dialog = MessageDialogs.error_dialog("adding public URL", str(e))
             self.error_dialog.show()
+            self.enable_cardcheck_thread_slot()
             return
         self.success_dialog = MessageDialogs.success_dialog(
             "Added public URL successfully."
         )
         self.success_dialog.show()
+        self.enable_cardcheck_thread_slot()
 
     def set_name_on_card_slot(self, name, adminpin):
         "Final slot which will try to change the name"
@@ -738,9 +744,11 @@ class MainWindow(QtWidgets.QMainWindow):
         except Exception as e:
             self.error_dialog = MessageDialogs.error_dialog("adding name", str(e))
             self.error_dialog.show()
+            self.enable_cardcheck_thread_slot()
             return
         self.success_dialog = MessageDialogs.success_dialog("Added name successfully.")
         self.success_dialog.show()
+        self.enable_cardcheck_thread_slot()
 
     def show_generate_dialog(self):
         "Shows the dialog to generate new key"
