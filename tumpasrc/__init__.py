@@ -1,73 +1,32 @@
 import io
 import os
 import sys
+import time
 import datetime
 from PySide2 import QtWidgets
-from PySide2.QtCore import QObject, Signal, QSize, Qt
+from PySide2.QtCore import QObject, Signal, QSize, Qt, QThread
 from PySide2 import QtGui
 
 import johnnycanencrypt as jce
 import johnnycanencrypt.johnnycanencrypt as rjce
-from tumpasrc.resources import load_icon
+from tumpasrc.resources import load_icon, load_css
 
-css = """QPushButton {
-    background-color: #3c99dc;
-    border-style: outset;
-    border-width: 2px;
-    border-radius: 10px;
-    border-color: beige;
-    font: 18px;
-    color: white;
-    min-width: 10em;
-    min-height: 40px;
-    padding: 6px;
-}
-QPushButton:pressed {
-    background-color: rgb(224, 0, 0);
-    border-style: inset;
-}
-
-QPushButton:disabled {
-    background-color: #BEBEBE;
-}
-QLineEdit {
-    height: 40px;
-    margin: 0px 0px 0px 0px;
-    padding-left: 5px;
-    border-radius: 10px;
-}
-
-QLabel#keyring_label {
-    font-size: 24px;
-}
-
-QLabel#keyring_instruction {
-    font-size: 12px;
-}
-
-QPlainTextEdit {
-    border-radius: 20px;
-    background-color: palette(base);
-    padding-left: 5px;
-    padding-top: 5px;
-}
+css = load_css("mainwindow.css")
 
 
-QLabel#keyfingerprint {
-    font-size: 18px;
-    font-weight: 600;
-}
+class HardwareThread(QThread):
+    signal = Signal((bool,))
 
-QListWidget::item {
-    background-color: #F1F8FD;
-    border: 1px solid #9DCCEE;
-    margin: 4px;
-}
-QListWidget::item:selected {
-    background-color: #9DCCEE;
-}
+    def __init__(self, nextsteps_slot):
+        QThread.__init__(self)
+        self.flag = True
+        self.signal.connect(nextsteps_slot)
 
-"""
+    def run(self):
+        while self.flag:
+            time.sleep(1)
+            result = rjce.is_smartcard_connected()
+            self.signal.emit(result)
 
 
 class PasswordEdit(QtWidgets.QLineEdit):
@@ -259,11 +218,14 @@ class SmartCardTextDialog(QtWidgets.QDialog):
         nextsteps_slot,
         title="Enter public URL",
         textInput="Public URL",
+        enable_window=None,
     ):
         super(SmartCardTextDialog, self).__init__()
         self.setModal(True)
         self.setFixedSize(600, 200)
         self.setWindowTitle(title)
+        if enable_window:
+            self.rejected.connect(enable_window)
         layout = QtWidgets.QFormLayout(self)
         label = QtWidgets.QLabel(textInput)
         self.textInput = textInput
@@ -318,7 +280,14 @@ class NewKeyDialog(QtWidgets.QDialog):
     disable_button = Signal()
     enable_button = Signal()
 
-    def __init__(self, ks: jce.KeyStore, newkey_slot, disable_slot, enable_slot):
+    def __init__(
+        self,
+        ks: jce.KeyStore,
+        newkey_slot,
+        disable_slot,
+        enable_slot,
+        enable_window=None,
+    ):
         super(NewKeyDialog, self).__init__()
         self.setModal(True)
         self.update_ui.connect(newkey_slot)
@@ -329,6 +298,8 @@ class NewKeyDialog(QtWidgets.QDialog):
         vboxlayout = QtWidgets.QVBoxLayout()
         name_label = QtWidgets.QLabel("Your name:")
         self.name_box = QtWidgets.QLineEdit("")
+        if enable_window:
+            self.rejected.connect(enable_window)
 
         vboxlayout.addWidget(name_label)
         vboxlayout.addWidget(self.name_box)
@@ -549,6 +520,9 @@ class KeyWidgetList(QtWidgets.QListWidget):
                 item.setSizeHint(kw.sizeHint())
                 self.addItem(item)
                 self.setItemWidget(item, kw)
+            if len(keys) > 0:
+                # Select the top most row
+                self.setCurrentRow(0)
         except Exception as e:
             print(e)
 
@@ -561,6 +535,7 @@ class KeyWidgetList(QtWidgets.QListWidget):
         item.setSizeHint(kw.sizeHint())
         self.insertItem(0, item)
         self.setItemWidget(item, kw)
+        self.setCurrentRow(0)
 
 
 class MainWindow(QtWidgets.QMainWindow):
@@ -575,6 +550,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.vboxlayout_for_keys = QtWidgets.QVBoxLayout()
         self.widget = KeyWidgetList(self.ks)
         self.current_fingerprint = ""
+        self.cardcheck_thread = HardwareThread(self.enable_upload)
 
         # File menu
         exportPubKey = QtWidgets.QAction("&Export public key", self)
@@ -610,7 +586,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.uploadButton = QtWidgets.QPushButton(text="Upload to SmartCard")
         self.uploadButton.clicked.connect(self.upload_to_smartcard)
         self.uploadButton.setEnabled(False)
-        self.widget.itemSelectionChanged.connect(self.enable_upload)
+        # self.widget.itemSelectionChanged.connect(self.enable_upload)
 
         hlayout = QtWidgets.QHBoxLayout()
         hlayout.addWidget(self.generateButton)
@@ -633,6 +609,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.cwidget.setLayout(vboxlayout)
         self.setCentralWidget(self.cwidget)
         self.setStyleSheet(css)
+        self.cardcheck_thread.start()
 
     def reset_yubikey_dialog(self):
         "Verify if the user really wants to reset the smartcard"
@@ -658,35 +635,55 @@ class MainWindow(QtWidgets.QMainWindow):
         )
         self.success_dialog.show()
 
-    def enable_upload(self):
+    def enable_upload(self, value):
         "Slot to enable the upload to smartcard button"
-        self.uploadButton.setEnabled(True)
+        # If no item is selected on the ListWidget, then
+        # no need to update the uploadButton status.
+        if not self.widget.selectedItems():
+            return
+        self.uploadButton.setEnabled(value)
 
     def show_change_user_pin_dialog(self):
         "This slot shows the input dialog to change user pin"
+        self.cardcheck_thread.flag = False
         self.smalldialog = SmartCardConfirmationDialog(
-            self.change_pin_on_card_slot, "Change user pin", "New User pin"
+            self.change_pin_on_card_slot,
+            "Change user pin",
+            "New User pin",
+            enable_window=self.enable_mainwindow,
         )
         self.smalldialog.show()
 
     def show_set_public_url(self):
         "This slot shows the input dialog to set public url"
+        self.cardcheck_thread.flag = False
         self.smalldialog = SmartCardTextDialog(
-            self.set_url_on_card_slot, "Add public URL", "Public URL"
+            self.set_url_on_card_slot,
+            "Add public URL",
+            "Public URL",
+            enable_window=self.enable_mainwindow,
         )
         self.smalldialog.show()
 
     def show_set_name(self):
         "This slot shows the input dialog to set name"
+        self.cardcheck_thread.flag = False
         self.smalldialog = SmartCardTextDialog(
-            self.set_name_on_card_slot, "Add Name", "Name"
+            self.set_name_on_card_slot,
+            "Add Name",
+            "Name",
+            enable_window=self.enable_mainwindow,
         )
         self.smalldialog.show()
 
     def show_change_admin_pin_dialog(self):
         "This slot shows the input dialog to change admin pin"
+        self.cardcheck_thread.flag = False
         self.smalldialog = SmartCardConfirmationDialog(
-            self.change_admin_pin_on_card_slot, "Change admin pin", "New Admin pin"
+            self.change_admin_pin_on_card_slot,
+            "Change admin pin",
+            "New Admin pin",
+            enable_window=self.enable_mainwindow,
         )
         self.smalldialog.show()
 
@@ -747,26 +744,40 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def show_generate_dialog(self):
         "Shows the dialog to generate new key"
+        self.disable_cardcheck_thread_slot()
         self.newd = NewKeyDialog(
             self.ks,
             self.widget.addnewKey,
             self.disable_generate_button,
             self.enable_generate_button,
+            enable_window=self.enable_mainwindow,
         )
         self.newd.show()
+        self.setEnabled(False)
 
     def disable_generate_button(self):
+        self.cardcheck_thread.flag = False
         self.generateButton.setEnabled(False)
         self.update()
         self.repaint()
 
     def enable_generate_button(self):
+        self.enable_cardcheck_thread_slot()
+        self.setEnabled(True)
         self.generateButton.setEnabled(True)
         self.update()
         self.repaint()
 
     def enable_mainwindow(self):
+        self.enable_cardcheck_thread_slot()
         self.setEnabled(True)
+
+    def disable_cardcheck_thread_slot(self):
+        self.cardcheck_thread.flag = False
+
+    def enable_cardcheck_thread_slot(self):
+        self.cardcheck_thread.flag = True
+        self.cardcheck_thread.start()
 
     def upload_to_smartcard(self):
         "Shows the userinput dialog to upload the selected key to the smartcard"
@@ -778,6 +789,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.error_dialog.show()
             return
 
+        self.disable_cardcheck_thread_slot()
         self.setEnabled(False)
         item = self.widget.selectedItems()[0]
         kw = self.widget.itemWidget(item)
@@ -809,6 +821,7 @@ class MainWindow(QtWidgets.QMainWindow):
         )
         self.success_dialog.show()
         self.setEnabled(True)
+        self.enable_cardcheck_thread_slot()
 
     def export_public_key(self):
         # This means no key is selected on the list
@@ -828,7 +841,14 @@ class MainWindow(QtWidgets.QMainWindow):
             self.success_dialog.show()
 
     def exit_process(self):
+        self.cardcheck_thread.flag = False
+        time.sleep(1)
         sys.exit(0)
+
+    def closeEvent(self, event):
+        self.cardcheck_thread.flag = False
+        time.sleep(1)
+        return super().closeEvent(event)
 
 
 def main():
