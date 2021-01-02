@@ -54,7 +54,7 @@ def get_configuration_file() -> str:
     return filepath
 
 
-def get_keystore_directory():
+def get_keystore_directory() -> str:
     "Returns the jce KeyStore directory path"
     # We will hardcode for now
     if has_persistent():
