@@ -3,6 +3,7 @@ include LICENSE
 include setup.py
 include files/in.kushaldas.Tumpa.desktop
 include files/in.kushaldas.Tumpa.png
+include requirements.*
 
 recursive-include tumpasrc *
 
