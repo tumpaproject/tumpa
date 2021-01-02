@@ -13,7 +13,7 @@ for name in os.listdir("./tumpasrc/resources/images/"):
     package_resources.append(os.path.join("./tumpasrc/resources/images", name))
 
 setuptools.setup(
-    name="Tumpa",
+    name="tumpa",
     version="0.1.0",
     author="Kushal Das",
     author_email="mail@kushaldas.in",
