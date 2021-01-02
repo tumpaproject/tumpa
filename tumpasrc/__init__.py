@@ -10,6 +10,7 @@ from PySide2 import QtGui
 import johnnycanencrypt as jce
 import johnnycanencrypt.johnnycanencrypt as rjce
 from tumpasrc.resources import load_icon, load_css
+from tumpasrc.configuration import get_keystore_directory
 
 css = load_css("mainwindow.css")
 
@@ -546,7 +547,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setMinimumHeight(575)
         self.setMaximumWidth(600)
         self.setMaximumHeight(575)
-        self.ks = jce.KeyStore("./")
+        self.ks = jce.KeyStore(get_keystore_directory())
         self.vboxlayout_for_keys = QtWidgets.QVBoxLayout()
         self.widget = KeyWidgetList(self.ks)
         self.current_fingerprint = ""
