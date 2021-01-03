@@ -1,7 +1,5 @@
-tumpa (0.1.0+buster+nmu1) UNRELEASED; urgency=medium
+tumpa (0.1.0+buster+nmu1) UNSTABLE; urgency=medium
 
-  * Non-maintainer upload.
   * check changelog.md
-  * 
 
- -- Kushal Das <mail@kushaldas.in>  Fri, 01 Jan 2021 19:13:51 +0530
+ -- Kushal Das <mail@kushaldas.in>  Sun, 03 Jan 2021 09:20:51 +0530
