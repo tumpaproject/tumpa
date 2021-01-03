@@ -42,9 +42,8 @@ class PasswordEdit(QtWidgets.QLineEdit):
     }
     """
 
-    def __init__(self, parent):
-        self.parent = parent
-        super().__init__(self.parent)
+    def __init__(self):
+        super().__init__()
 
         # Set styles
         self.setStyleSheet(self.CSS)
@@ -124,10 +123,10 @@ class SmartCardConfirmationDialog(QtWidgets.QDialog):
         self.signingSubkey.setEnabled(False)
         self.authenticationSubkey = QtWidgets.QCheckBox("Authentication")
         self.authenticationSubkey.setEnabled(False)
-        self.passphraseEdit = PasswordEdit(self)
+        self.passphraseEdit = PasswordEdit()
         layout.addRow(label, self.passphraseEdit)
         label = QtWidgets.QLabel("Current Admin Pin")
-        self.addminPinEdit = PasswordEdit(self)
+        self.addminPinEdit = PasswordEdit()
         layout.addRow(label, self.addminPinEdit)
         if self.key is not None:
             label = QtWidgets.QLabel("Choose subkeys to upload:")
@@ -234,7 +233,7 @@ class SmartCardTextDialog(QtWidgets.QDialog):
         self.textField.setStyleSheet(self.CSS)
         layout.addRow(label, self.textField)
         label = QtWidgets.QLabel("Admin Pin")
-        self.adminPinEdit = PasswordEdit(self)
+        self.adminPinEdit = PasswordEdit()
         layout.addRow(label, self.adminPinEdit)
         widget = QtWidgets.QWidget()
         widget.setLayout(layout)
@@ -307,13 +306,14 @@ class NewKeyDialog(QtWidgets.QDialog):
 
         email_label = QtWidgets.QLabel("Email addresses (one email per line)")
         self.email_box = QtWidgets.QPlainTextEdit()
+        self.email_box.setTabChangesFocus(True)
 
         vboxlayout.addWidget(email_label)
         vboxlayout.addWidget(self.email_box)
         passphrase_label = QtWidgets.QLabel(
             "Key Passphrase (recommended: 12+ chars in length):"
         )
-        self.passphrase_box = PasswordEdit(self)
+        self.passphrase_box = PasswordEdit()
 
         vboxlayout.addWidget(passphrase_label)
         vboxlayout.addWidget(self.passphrase_box)
