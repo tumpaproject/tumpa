@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.1.1] - 2021-01-05
+
+### Fixed
+
+- Admin and user pin dialogs now work accordingly #27
+
 ## [0.1.0] - 2021-01-03
 
 ### Added
