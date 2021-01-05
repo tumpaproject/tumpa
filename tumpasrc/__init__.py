@@ -200,6 +200,73 @@ class SmartCardConfirmationDialog(QtWidgets.QDialog):
         self.writetocard.emit(passphrase, adminpin, whichkeys)
 
 
+class SmartPinDialog(QtWidgets.QDialog):
+    # passphrase, adminpin
+    writetocard = Signal(
+        (str, str),
+    )
+
+    def __init__(
+        self,
+        nextsteps_slot,
+        title="Change user pin",
+        firstinput="New user pin",
+        enable_window=None,
+    ):
+        super(SmartPinDialog, self).__init__()
+        self.setModal(True)
+        self.setFixedSize(600, 220)
+        self.setWindowTitle(title)
+        if enable_window:
+            self.rejected.connect(enable_window)
+        layout = QtWidgets.QFormLayout(self)
+        label = QtWidgets.QLabel(firstinput)
+        self.firstinput = firstinput
+        self.passphraseEdit = PasswordEdit()
+        layout.addRow(label, self.passphraseEdit)
+        label = QtWidgets.QLabel("Current Admin Pin")
+        self.addminPinEdit = PasswordEdit()
+        layout.addRow(label, self.addminPinEdit)
+        widget = QtWidgets.QWidget()
+        widget.setLayout(layout)
+        # now the button
+        self.finalButton = QtWidgets.QPushButton(text="Write to smartcard")
+        self.finalButton.clicked.connect(self.getPassphrases)
+        vboxlayout = QtWidgets.QVBoxLayout()
+        vboxlayout.addWidget(widget)
+        vboxlayout.addWidget(self.finalButton)
+        self.setLayout(vboxlayout)
+        self.writetocard.connect(nextsteps_slot)
+        self.setStyleSheet(css)
+
+    def getPassphrases(self):
+        passphrase = self.passphraseEdit.text().strip()
+        adminpin = self.addminPinEdit.text().strip()
+        if len(adminpin) < 8:
+            self.error_dialog = MessageDialogs.error_dialog(
+                "Editing smart card details", "Admin pin must be 8 character or more."
+            )
+            self.error_dialog.show()
+            return
+        if self.firstinput == "New Admin pin" and len(passphrase) < 8:
+            self.error_dialog = MessageDialogs.error_dialog(
+                "Editing smart card details", "Admin pin must be 8 character or more."
+            )
+            self.error_dialog.show()
+            return
+        if len(passphrase) < 6:
+            self.error_dialog = MessageDialogs.error_dialog(
+                "Editing smart card details",
+                "{} must be 6 character or more.".format(self.firstinput),
+            )
+            self.error_dialog.show()
+            return
+
+        self.hide()
+
+        self.writetocard.emit(passphrase, adminpin)
+
+
 class SmartCardTextDialog(QtWidgets.QDialog):
     # Public URL and Name
     writetocard = Signal(
@@ -647,7 +714,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def show_change_user_pin_dialog(self):
         "This slot shows the input dialog to change user pin"
         self.cardcheck_thread.flag = False
-        self.smalldialog = SmartCardConfirmationDialog(
+        self.smalldialog = SmartPinDialog(
             self.change_pin_on_card_slot,
             "Change user pin",
             "New User pin",
@@ -680,7 +747,7 @@ class MainWindow(QtWidgets.QMainWindow):
     def show_change_admin_pin_dialog(self):
         "This slot shows the input dialog to change admin pin"
         self.cardcheck_thread.flag = False
-        self.smalldialog = SmartCardConfirmationDialog(
+        self.smalldialog = SmartPinDialog(
             self.change_admin_pin_on_card_slot,
             "Change admin pin",
             "New Admin pin",
