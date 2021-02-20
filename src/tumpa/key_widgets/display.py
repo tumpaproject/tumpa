@@ -2,8 +2,13 @@ import johnnycanencrypt as jce
 from PySide2 import QtWidgets
 from PySide2.QtCore import QObject, QSize, Qt, QThread, Signal
 
+<<<<<<< HEAD
 import tumpa.key_widgets.utils as key_utils
 from tumpa.commons import MessageDialogs
+=======
+import tumpasrc.key_widgets.utils as key_utils
+from tumpasrc.commons import MessageDialogs
+>>>>>>> 25c721c (Refactor UI structure)
 
 
 class KeyWidget(QtWidgets.QWidget):

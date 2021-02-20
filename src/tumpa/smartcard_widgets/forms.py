@@ -1,7 +1,11 @@
 from PySide2 import QtWidgets
 from PySide2.QtCore import Qt, Signal
 
+<<<<<<< HEAD
 from tumpa.commons import MessageDialogs, PasswordEdit, css
+=======
+from tumpasrc.commons import MessageDialogs, PasswordEdit, css
+>>>>>>> 25c721c (Refactor UI structure)
 
 
 class SmartCardConfirmationDialog(QtWidgets.QDialog):
@@ -117,11 +121,14 @@ class SmartPinFormWidget(QtWidgets.QWidget):
         (str, str),
     )
 
+<<<<<<< HEAD
     CSS = """QLabel {
         margin-top:20px;
     }
     """
 
+=======
+>>>>>>> 25c721c (Refactor UI structure)
     def __init__(
         self,
         nextsteps_slot,
@@ -129,7 +136,11 @@ class SmartPinFormWidget(QtWidgets.QWidget):
         firstinput="New user pin",
     ):
         super(SmartPinFormWidget, self).__init__()
+<<<<<<< HEAD
         self.setFixedSize(390, 420)
+=======
+        self.setFixedSize(390, 220)
+>>>>>>> 25c721c (Refactor UI structure)
         self.setWindowTitle(title)
         layout = QtWidgets.QFormLayout(self)
         label = QtWidgets.QLabel(firstinput)
@@ -148,11 +159,17 @@ class SmartPinFormWidget(QtWidgets.QWidget):
         vboxlayout = QtWidgets.QVBoxLayout()
         vboxlayout.addWidget(widget)
         vboxlayout.addWidget(self.finalButton)
+<<<<<<< HEAD
         vboxlayout.setAlignment(Qt.AlignTop)
         self.setLayout(vboxlayout)
         self.writetocard.connect(nextsteps_slot)
         self.setStyleSheet(css)
         self.setStyleSheet(self.CSS)
+=======
+        self.setLayout(vboxlayout)
+        self.writetocard.connect(nextsteps_slot)
+        self.setStyleSheet(css)
+>>>>>>> 25c721c (Refactor UI structure)
 
     def getPassphrases(self):
         passphrase = self.passphraseEdit.text().strip()
@@ -186,6 +203,17 @@ class SmartCardTextFormWidget(QtWidgets.QWidget):
         (str, str),
     )
 
+<<<<<<< HEAD
+=======
+    CSS = """QLineEdit {
+        border-radius: 5px;
+        height: 30px;
+        margin: 0px 0px 0px 0px;
+        border: 1px solid black;
+    }
+    """
+
+>>>>>>> 25c721c (Refactor UI structure)
     def __init__(
         self,
         nextsteps_slot,
@@ -193,12 +221,20 @@ class SmartCardTextFormWidget(QtWidgets.QWidget):
         textInput="Public URL",
     ):
         super(SmartCardTextFormWidget, self).__init__()
+<<<<<<< HEAD
         self.setFixedSize(390, 420)
+=======
+        self.setFixedSize(390, 220)
+>>>>>>> 25c721c (Refactor UI structure)
         self.setWindowTitle(title)
         layout = QtWidgets.QFormLayout(self)
         label = QtWidgets.QLabel(textInput)
         self.textInput = textInput
         self.textField = QtWidgets.QLineEdit("")
+<<<<<<< HEAD
+=======
+        self.textField.setStyleSheet(self.CSS)
+>>>>>>> 25c721c (Refactor UI structure)
         layout.addRow(label, self.textField)
         label = QtWidgets.QLabel("Admin Pin")
         self.adminPinEdit = PasswordEdit()
@@ -212,7 +248,10 @@ class SmartCardTextFormWidget(QtWidgets.QWidget):
         vboxlayout = QtWidgets.QVBoxLayout()
         vboxlayout.addWidget(widget)
         vboxlayout.addWidget(self.finalButton)
+<<<<<<< HEAD
         vboxlayout.setAlignment(Qt.AlignTop)
+=======
+>>>>>>> 25c721c (Refactor UI structure)
         self.setLayout(vboxlayout)
         self.writetocard.connect(nextsteps_slot)
         self.setStyleSheet(css)

@@ -4,7 +4,11 @@ import johnnycanencrypt as jce
 from PySide2 import QtWidgets
 from PySide2.QtCore import QObject, QSize, Qt, QThread, Signal
 
+<<<<<<< HEAD
 from tumpa.commons import MessageDialogs, PasswordEdit, css
+=======
+from tumpasrc.commons import MessageDialogs, PasswordEdit, css
+>>>>>>> 25c721c (Refactor UI structure)
 
 
 class NewKeyFormWidget(QtWidgets.QWidget):
@@ -59,11 +63,20 @@ class NewKeyFormWidget(QtWidgets.QWidget):
         hboxbuttonslayout = QtWidgets.QHBoxLayout()
         self.generateButton = QtWidgets.QPushButton("Generate")
         self.generateButton.clicked.connect(self.generate)
+<<<<<<< HEAD
         hboxbuttonslayout.addWidget(self.generateButton)
 
         self.cancelButton = QtWidgets.QPushButton("Cancel")
         self.cancelButton.setObjectName("secondary_button")
         self.cancelButton.clicked.connect(restore_list_view)
+=======
+        self.generateButton.setMaximumWidth(50)
+        hboxbuttonslayout.addWidget(self.generateButton)
+
+        self.cancelButton = QtWidgets.QPushButton("Cancel")
+        self.cancelButton.clicked.connect(restore_list_view)
+        self.cancelButton.setMaximumWidth(50)
+>>>>>>> 25c721c (Refactor UI structure)
         hboxbuttonslayout.addWidget(self.cancelButton)
         hbuttons = QtWidgets.QWidget()
         hbuttons.setLayout(hboxbuttonslayout)

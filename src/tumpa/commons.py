@@ -1,6 +1,10 @@
 from PySide2 import QtWidgets
 
+<<<<<<< HEAD
 from tumpa.resources import load_css, load_icon
+=======
+from tumpasrc.resources import load_css, load_icon
+>>>>>>> 25c721c (Refactor UI structure)
 
 css = load_css("mainwindow.css")
 
@@ -35,7 +39,14 @@ class PasswordEdit(QtWidgets.QLineEdit):
     """
 
     CSS = """QLineEdit {
+<<<<<<< HEAD
         margin: 0px;
+=======
+        border-radius: 5px;
+        height: 30px;
+        margin: 0px 0px 0px 0px;
+        border: 1px solid black;
+>>>>>>> 25c721c (Refactor UI structure)
     }
     """
 
