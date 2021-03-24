@@ -6,7 +6,7 @@ QPushButton {
     border-color: beige;
     font: 18px;
     color: white;
-    min-width: 10em;
+    min-width: 158px;
     min-height: 40px;
     padding: 6px;
 }
@@ -51,6 +51,16 @@ QWidget#sidenavbar QPushButton {
     background-color: #D1E5F4;
     color: black;
     min-width: 0;
+    min-height: 32px;
+    border-radius: 0;
+    text-align: left;
+    padding: 10px;
+    margin: 15px 0;
+}
+
+QWidget#sidenavbar QPushButton[active="True"] {
+    background-color: #2D7AD4;
+    color: #FFFFFF;
 }
 
 QLabel#keyfingerprint {

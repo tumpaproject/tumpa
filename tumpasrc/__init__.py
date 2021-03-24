@@ -15,9 +15,11 @@ from tumpasrc.configuration import get_keystore_directory
 from tumpasrc.key_widgets.display import KeyWidgetList
 from tumpasrc.key_widgets.forms import NewKeyFormWidget
 from tumpasrc.resources import load_css, load_icon
-from tumpasrc.smartcard_widgets.forms import (SmartCardConfirmationDialog,
-                                              SmartCardTextFormWidget,
-                                              SmartPinFormWidget)
+from tumpasrc.smartcard_widgets.forms import (
+    SmartCardConfirmationDialog,
+    SmartCardTextFormWidget,
+    SmartPinFormWidget,
+)
 from tumpasrc.threads import HardwareThread
 
 
@@ -55,11 +57,17 @@ class KeyViewWidget(QtWidgets.QWidget):
 class SmartCardViewWidget(QtWidgets.QWidget):
     def __init__(self, parent=None):
         super(SmartCardViewWidget, self).__init__(parent)
-        self.main_area = QtWidgets.QLabel("This is where smart card stuff go.")
+        self.main_area = SmartCardTextFormWidget(
+            self.parent().set_name_on_card_slot,
+            "Add Name",
+            "Name",
+        )
+        self.main_area.setObjectName("mainarea")
 
         # Left Navbar
         self.editNameButton = QtWidgets.QPushButton(text="Edit Name")
         self.editNameButton.clicked.connect(self.parent().show_set_name)
+        self.editNameButton.setProperty("active", "True")
         self.editPublicUrlButton = QtWidgets.QPushButton(text="Edit Public URL")
         self.editPublicUrlButton.clicked.connect(self.parent().show_set_public_url)
         self.editUserPinButton = QtWidgets.QPushButton(text="Edit User Pin")
@@ -71,14 +79,16 @@ class SmartCardViewWidget(QtWidgets.QWidget):
         vnavlayout.addWidget(self.editPublicUrlButton)
         vnavlayout.addWidget(self.editUserPinButton)
         vnavlayout.addWidget(self.editAdminPinButton)
+        vnavlayout.setAlignment(Qt.AlignTop)
         navbarWidget = QtWidgets.QWidget()
         navbarWidget.setLayout(vnavlayout)
         navbarWidget.setObjectName("sidenavbar")
-        navbarWidget.setMaximumWidth(180)
+        navbarWidget.setMaximumWidth(200)
 
         self.hlayout = QtWidgets.QHBoxLayout()
         self.hlayout.addWidget(navbarWidget)
         self.hlayout.addWidget(self.main_area)
+        self.hlayout.setMargin(0)
         self.setLayout(self.hlayout)
 
 
@@ -171,6 +181,7 @@ class MainWindow(QtWidgets.QMainWindow):
         "This slot shows the input widget to change user pin"
         self.cardcheck_thread.flag = False
         self.tabs.setCurrentIndex(1)
+        self.activateSmartCardOption("userPin")
         self.smartCardWidget.hlayout.removeWidget(self.smartCardWidget.main_area)
         self.smartCardWidget.main_area.deleteLater()
         self.smartCardWidget.main_area = SmartPinFormWidget(
@@ -184,6 +195,7 @@ class MainWindow(QtWidgets.QMainWindow):
         "This slot shows the input widget to set public url"
         self.cardcheck_thread.flag = False
         self.tabs.setCurrentIndex(1)
+        self.activateSmartCardOption("url")
         self.smartCardWidget.hlayout.removeWidget(self.smartCardWidget.main_area)
         self.smartCardWidget.main_area.deleteLater()
         self.smartCardWidget.main_area = SmartCardTextFormWidget(
@@ -197,6 +209,7 @@ class MainWindow(QtWidgets.QMainWindow):
         "This slot shows the input widget to set name"
         self.cardcheck_thread.flag = False
         self.tabs.setCurrentIndex(1)
+        self.activateSmartCardOption("name")
         self.smartCardWidget.hlayout.removeWidget(self.smartCardWidget.main_area)
         self.smartCardWidget.main_area.deleteLater()
         self.smartCardWidget.main_area = SmartCardTextFormWidget(
@@ -210,6 +223,7 @@ class MainWindow(QtWidgets.QMainWindow):
         "This slot shows the input widget to change admin pin"
         self.cardcheck_thread.flag = False
         self.tabs.setCurrentIndex(1)
+        self.activateSmartCardOption("adminPin")
         self.smartCardWidget.hlayout.removeWidget(self.smartCardWidget.main_area)
         self.smartCardWidget.main_area.deleteLater()
         self.smartCardWidget.main_area = SmartPinFormWidget(
@@ -218,6 +232,71 @@ class MainWindow(QtWidgets.QMainWindow):
             "New Admin pin",
         )
         self.smartCardWidget.hlayout.addWidget(self.smartCardWidget.main_area)
+
+    def activateSmartCardOption(self, buttonName: str):
+        self.deactivateAllSmartCardOption()
+        if buttonName == "adminPin":
+            self.smartCardWidget.editAdminPinButton.setProperty("active", "True")
+            self.smartCardWidget.editAdminPinButton.style().unpolish(
+                self.smartCardWidget.editAdminPinButton
+            )
+            self.smartCardWidget.editAdminPinButton.style().polish(
+                self.smartCardWidget.editAdminPinButton
+            )
+        elif buttonName == "userPin":
+            self.smartCardWidget.editUserPinButton.setProperty("active", "True")
+            self.smartCardWidget.editUserPinButton.style().unpolish(
+                self.smartCardWidget.editUserPinButton
+            )
+            self.smartCardWidget.editUserPinButton.style().polish(
+                self.smartCardWidget.editUserPinButton
+            )
+        elif buttonName == "url":
+            self.smartCardWidget.editPublicUrlButton.setProperty("active", "True")
+            self.smartCardWidget.editPublicUrlButton.style().unpolish(
+                self.smartCardWidget.editPublicUrlButton
+            )
+            self.smartCardWidget.editPublicUrlButton.style().polish(
+                self.smartCardWidget.editPublicUrlButton
+            )
+        elif buttonName == "name":
+            self.smartCardWidget.editNameButton.setProperty("active", "True")
+            self.smartCardWidget.editNameButton.style().unpolish(
+                self.smartCardWidget.editNameButton
+            )
+            self.smartCardWidget.editNameButton.style().polish(
+                self.smartCardWidget.editNameButton
+            )
+
+    def deactivateAllSmartCardOption(self):
+        self.smartCardWidget.editNameButton.setProperty("active", "False")
+        self.smartCardWidget.editPublicUrlButton.setProperty("active", "False")
+        self.smartCardWidget.editUserPinButton.setProperty("active", "False")
+        self.smartCardWidget.editAdminPinButton.setProperty("active", "False")
+        self.smartCardWidget.editNameButton.style().unpolish(
+            self.smartCardWidget.editNameButton
+        )
+        self.smartCardWidget.editPublicUrlButton.style().unpolish(
+            self.smartCardWidget.editPublicUrlButton
+        )
+        self.smartCardWidget.editUserPinButton.style().unpolish(
+            self.smartCardWidget.editUserPinButton
+        )
+        self.smartCardWidget.editAdminPinButton.style().unpolish(
+            self.smartCardWidget.editAdminPinButton
+        )
+        self.smartCardWidget.editNameButton.style().polish(
+            self.smartCardWidget.editNameButton
+        )
+        self.smartCardWidget.editPublicUrlButton.style().polish(
+            self.smartCardWidget.editPublicUrlButton
+        )
+        self.smartCardWidget.editUserPinButton.style().polish(
+            self.smartCardWidget.editUserPinButton
+        )
+        self.smartCardWidget.editAdminPinButton.style().polish(
+            self.smartCardWidget.editAdminPinButton
+        )
 
     def change_pin_on_card_slot(self, userpin, adminpin):
         "Final slot which will try to change the userpin"
