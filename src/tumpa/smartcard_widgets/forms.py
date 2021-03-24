@@ -160,6 +160,9 @@ class SmartPinFormWidget(QtWidgets.QWidget):
         vboxlayout.addWidget(widget)
         vboxlayout.addWidget(self.finalButton)
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 2e3e6df (Adds active state for smart card settings options on click)
         vboxlayout.setAlignment(Qt.AlignTop)
         self.setLayout(vboxlayout)
         self.writetocard.connect(nextsteps_slot)
@@ -249,9 +252,13 @@ class SmartCardTextFormWidget(QtWidgets.QWidget):
         vboxlayout.addWidget(widget)
         vboxlayout.addWidget(self.finalButton)
 <<<<<<< HEAD
+<<<<<<< HEAD
         vboxlayout.setAlignment(Qt.AlignTop)
 =======
 >>>>>>> 25c721c (Refactor UI structure)
+=======
+        vboxlayout.setAlignment(Qt.AlignTop)
+>>>>>>> 2e3e6df (Adds active state for smart card settings options on click)
         self.setLayout(vboxlayout)
         self.writetocard.connect(nextsteps_slot)
         self.setStyleSheet(css)

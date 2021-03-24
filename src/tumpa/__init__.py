@@ -13,13 +13,13 @@ css = load_css("mainwindow.css")
 from PySide2 import QtGui, QtWidgets
 from PySide2.QtCore import QObject, QSize, Qt, QThread, Signal
 
-import tumpasrc.key_widgets.utils as key_utils
-from tumpasrc.commons import MessageDialogs, PasswordEdit, css
-from tumpasrc.configuration import get_keystore_directory
-from tumpasrc.key_widgets.display import KeyWidgetList
-from tumpasrc.key_widgets.forms import NewKeyFormWidget
-from tumpasrc.resources import load_css, load_icon
-from tumpasrc.smartcard_widgets.forms import (SmartCardConfirmationDialog,
+import tumpa.key_widgets.utils as key_utils
+from tumpa.commons import MessageDialogs, PasswordEdit, css
+from tumpa.configuration import get_keystore_directory
+from tumpa.key_widgets.display import KeyWidgetList
+from tumpa.key_widgets.forms import NewKeyFormWidget
+from tumpa.resources import load_css, load_icon
+from tumpa.smartcard_widgets.forms import (SmartCardConfirmationDialog,
                                               SmartCardTextFormWidget,
                                               SmartPinFormWidget)
 from tumpasrc.threads import HardwareThread
@@ -492,18 +492,12 @@ class KeyWidget(QtWidgets.QWidget):
         uid_widget.setLayout(uid_vboxlayout)
 
         # UID and date layout
-=======
->>>>>>> 25c721c (Refactor UI structure)
         # Buttons
         self.generateButton = QtWidgets.QPushButton(text="Generate new key")
         self.generateButton.clicked.connect(self.parent().show_generate_dialog)
         self.uploadButton = QtWidgets.QPushButton(text="Upload to SmartCard")
         self.uploadButton.clicked.connect(self.parent().upload_to_smartcard)
         self.uploadButton.setEnabled(False)
-<<<<<<< HEAD
-=======
->>>>>>> 9c4a15f (Refactor UI structure):tumpasrc/__init__.py
->>>>>>> 25c721c (Refactor UI structure)
         hlayout = QtWidgets.QHBoxLayout()
         hlayout.addWidget(self.generateButton)
         hlayout.addWidget(self.uploadButton)

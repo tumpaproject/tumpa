@@ -6,8 +6,13 @@ QPushButton {
     border-color: #2F538B;
     font: 18px;
     color: white;
+<<<<<<< HEAD
     min-width: 122px;
     min-height: 36px;
+=======
+    min-width: 158px;
+    min-height: 40px;
+>>>>>>> 2e3e6df (Adds active state for smart card settings options on click)
     padding: 6px;
     margin-top: 10px;
 }
@@ -78,6 +83,9 @@ QWidget#sidenavbar QPushButton {
     color: black;
     min-width: 0;
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 2e3e6df (Adds active state for smart card settings options on click)
     min-height: 32px;
     border-radius: 0;
     text-align: left;
@@ -88,8 +96,11 @@ QWidget#sidenavbar QPushButton {
 QWidget#sidenavbar QPushButton[active="True"] {
     background-color: #2D7AD4;
     color: #FFFFFF;
+<<<<<<< HEAD
 =======
 >>>>>>> 25c721c (Refactor UI structure)
+=======
+>>>>>>> 2e3e6df (Adds active state for smart card settings options on click)
 }
 
 QLabel#keyfingerprint {
