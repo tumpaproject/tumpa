@@ -117,6 +117,11 @@ class SmartPinFormWidget(QtWidgets.QWidget):
         (str, str),
     )
 
+    CSS = """QLabel {
+        margin-top:20px;
+    }
+    """
+
     def __init__(
         self,
         nextsteps_slot,
@@ -124,7 +129,7 @@ class SmartPinFormWidget(QtWidgets.QWidget):
         firstinput="New user pin",
     ):
         super(SmartPinFormWidget, self).__init__()
-        self.setFixedSize(390, 220)
+        self.setFixedSize(390, 420)
         self.setWindowTitle(title)
         layout = QtWidgets.QFormLayout(self)
         label = QtWidgets.QLabel(firstinput)
@@ -147,6 +152,7 @@ class SmartPinFormWidget(QtWidgets.QWidget):
         self.setLayout(vboxlayout)
         self.writetocard.connect(nextsteps_slot)
         self.setStyleSheet(css)
+        self.setStyleSheet(self.CSS)
 
     def getPassphrases(self):
         passphrase = self.passphraseEdit.text().strip()
@@ -180,14 +186,6 @@ class SmartCardTextFormWidget(QtWidgets.QWidget):
         (str, str),
     )
 
-    CSS = """QLineEdit {
-        border-radius: 5px;
-        height: 30px;
-        margin: 0px 0px 0px 0px;
-        border: 1px solid black;
-    }
-    """
-
     def __init__(
         self,
         nextsteps_slot,
@@ -195,13 +193,12 @@ class SmartCardTextFormWidget(QtWidgets.QWidget):
         textInput="Public URL",
     ):
         super(SmartCardTextFormWidget, self).__init__()
-        self.setFixedSize(390, 220)
+        self.setFixedSize(390, 420)
         self.setWindowTitle(title)
         layout = QtWidgets.QFormLayout(self)
         label = QtWidgets.QLabel(textInput)
         self.textInput = textInput
         self.textField = QtWidgets.QLineEdit("")
-        self.textField.setStyleSheet(self.CSS)
         layout.addRow(label, self.textField)
         label = QtWidgets.QLabel("Admin Pin")
         self.adminPinEdit = PasswordEdit()

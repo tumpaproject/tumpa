@@ -35,10 +35,7 @@ class PasswordEdit(QtWidgets.QLineEdit):
     """
 
     CSS = """QLineEdit {
-        border-radius: 5px;
-        height: 30px;
-        margin: 0px 0px 0px 0px;
-        border: 1px solid black;
+        margin: 0px;
     }
     """
 

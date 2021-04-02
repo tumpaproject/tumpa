@@ -19,11 +19,11 @@ QPushButton:disabled {
     background-color: #BEBEBE;
 }
 QLineEdit {
-    height: 40px;
-    margin: 0px 0px 0px 0px;
-    padding-left: 5px;
-    border-radius: 5px;
-    border: 1px solid black;
+    height: 32px;
+    padding: 0 5px;
+    border-radius: 2px;
+    border: 1px solid #A7ABA7;
+    margin-bottom: 20px;
 }
 
 QLabel#keyring_label {
@@ -35,11 +35,11 @@ QLabel#keyring_instruction {
 }
 
 QPlainTextEdit {
-    border-radius: 5px;
+    border-radius: 2px;
     background-color: palette(base);
-    padding-left: 5px;
-    padding-top: 5px;
-    border: 1px solid black;
+    padding: 5px;
+    margin-bottom: 20px;
+    border: 1px solid #A7ABA7;
 }
 
 QWidget#sidenavbar {
