@@ -1,23 +1,33 @@
 QPushButton {
-    background-color: #3c99dc;
+    background-color: #2D7AD4;
     border-style: outset;
-    border-width: 2px;
-    border-radius: 10px;
-    border-color: beige;
+    border-width: 1px;
+    border-radius: 2px;
+    border-color: #2F538B;
     font: 18px;
     color: white;
-    min-width: 158px;
-    min-height: 40px;
+    min-width: 122px;
+    min-height: 36px;
     padding: 6px;
+    margin-top: 10px;
 }
 QPushButton:pressed {
-    background-color: rgb(224, 0, 0);
+    background-color: #BEBEBE;
     border-style: inset;
+    border-color: #B6B6B6;
 }
 
 QPushButton:disabled {
     background-color: #BEBEBE;
+    border-color: #B6B6B6;
 }
+
+QPushButton#secondary_button {
+    background: transparent;
+    color: #363B3D;
+    border-color: #363B3D;
+}
+
 QLineEdit {
     height: 32px;
     padding: 0 5px;

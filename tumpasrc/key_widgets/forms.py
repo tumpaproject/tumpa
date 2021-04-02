@@ -59,12 +59,11 @@ class NewKeyFormWidget(QtWidgets.QWidget):
         hboxbuttonslayout = QtWidgets.QHBoxLayout()
         self.generateButton = QtWidgets.QPushButton("Generate")
         self.generateButton.clicked.connect(self.generate)
-        self.generateButton.setMaximumWidth(50)
         hboxbuttonslayout.addWidget(self.generateButton)
 
         self.cancelButton = QtWidgets.QPushButton("Cancel")
+        self.cancelButton.setObjectName("secondary_button")
         self.cancelButton.clicked.connect(restore_list_view)
-        self.cancelButton.setMaximumWidth(50)
         hboxbuttonslayout.addWidget(self.cancelButton)
         hbuttons = QtWidgets.QWidget()
         hbuttons.setLayout(hboxbuttonslayout)
