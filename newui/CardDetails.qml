@@ -10,14 +10,14 @@ Item {
     property string clicked_color: "dodgerblue"
     property int internal_window_height: 560
 
-    width: 800
     // We have a row with two items
-    Row {
+    RowLayout {
+        spacing: 0
         // For the buttons
         Rectangle {
             color: "lightblue"
             width: 220
-            height: internal_window_height
+            Layout.preferredHeight: internal_window_height
 
             Column {
                 anchors.centerIn: parent
@@ -51,6 +51,7 @@ Item {
                         editNameID.border.color = "black"
                         editNameButtonID.color = "white"
                         editNameWindow.visible = true
+                        mousearea_editNameID.ifClicked = true
                     }
 
                     Text {
@@ -267,9 +268,8 @@ Item {
         // For the input details
         Rectangle {
             id: cardInputRecID
+            Layout.preferredHeight: internal_window_height
             width: 580
-            height: internal_window_height
-
             // Here we will have all the rectangles and show only what is required.
 
             // For Name
