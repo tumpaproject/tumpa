@@ -1,0 +1,3 @@
+{
+    "files": ["main.qml","USaveButton.qml","BMouseArea.qml","CardDetails.qml","main.py","UInput.qml","UPassword.qml","KeysDetails.qml"]
+}
