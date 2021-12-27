@@ -14,7 +14,7 @@ for name in os.listdir("./tumpasrc/resources/images/"):
 
 setuptools.setup(
     name="tumpa",
-    version="0.1.1",
+    version="0.1.2",
     author="Kushal Das",
     author_email="mail@kushaldas.in",
     description="OpenPGP key creation and smartcard access.",
