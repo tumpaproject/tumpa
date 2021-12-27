@@ -5,9 +5,9 @@ Maintainer: Kushal Das <mail@kushaldas.in>
 Build-Depends: debhelper (>= 9), dh-python, python3-all, python3-setuptools, dh-virtualenv
 Standards-Version: 3.9.8
 Homepage: https://github.com/kushaldas/tumpa
-X-Python3-Version: >= 3.7
+X-Python3-Version: >= 3.9
 
 Package: tumpa
 Architecture: all
-Depends: ${python3:Depends}, ${misc:Depends}, libnettle6, libhogweed4, libpcsclite1
+Depends: ${python3:Depends}, ${misc:Depends}, libnettle8, libhogweed6, libpcsclite1, libxcb-xineram0
 Description: Tumpa desktop tool to make OpenPGP simple.
