@@ -6,15 +6,15 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 # The CSS file
-package_resources = ["tumpasrc/resources/css/sdclient.css"]
+package_resources = ["src/tumpa/resources/css/mainwindow.css"]
 
 # All other graphics used in the client
-for name in os.listdir("./tumpasrc/resources/images/"):
-    package_resources.append(os.path.join("./tumpasrc/resources/images", name))
+for name in os.listdir("./src//tumpa/resources/images/"):
+    package_resources.append(os.path.join("./src/tumpa/resources/images", name))
 
 setuptools.setup(
     name="tumpa",
-    version="0.1.2",
+    version="0.1.3",
     author="Kushal Das",
     author_email="mail@kushaldas.in",
     description="OpenPGP key creation and smartcard access.",
@@ -23,7 +23,7 @@ setuptools.setup(
     license="GPLv3+",
     python_requires=">=3.5",
     url="https://github.com/kushaldas/tumpa",
-    packages=["tumpasrc", "tumpasrc.resources"],
+    packages=["src/tumpa", "src/tumpa.resources"],
     include_package_data=True,
     classifiers=[
         "Development Status :: 3 - Alpha",
@@ -33,5 +33,5 @@ setuptools.setup(
         "Intended Audience :: Developers",
         "Operating System :: OS Independent",
         ],
-    entry_points={"console_scripts": ["tumpa = tumpasrc:main"]},
+    entry_points={"console_scripts": ["tumpa = tumpa:main"]},
 )
