@@ -1,0 +1,5 @@
+[paths]
+app_path = "tumpa.app/Contents/Resources/app"
+app_packages_path = "tumpa.app/Contents/Resources/app_packages"
+support_path = "tumpa.app/Contents/Resources/Support"
+icon = "tumpa.app/Contents/Resources/tumpa.icns"

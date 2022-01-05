@@ -9,8 +9,8 @@ from PySide2 import QtGui
 
 import johnnycanencrypt as jce
 import johnnycanencrypt.johnnycanencrypt as rjce
-from tumpasrc.resources import load_icon, load_css
-from tumpasrc.configuration import get_keystore_directory
+from tumpa.resources import load_icon, load_css
+from tumpa.configuration import get_keystore_directory
 
 css = load_css("mainwindow.css")
 
@@ -480,7 +480,7 @@ class NewKeyDialog(QtWidgets.QDialog):
         newk = self.ks.create_newkey(
             password,
             uids,
-            ciphersuite=jce.Cipher.Cv25519,
+            ciphersuite=jce.Cipher.RSA4k,
             expiration=edate,
             subkeys_expiration=True,
             whichkeys=whichkeys,
