@@ -189,73 +189,75 @@ def main():
         entitlements_plist_path = os.path.join(
             root, "packaging", "mac", "Entitlements.plist"
         )
-        run(["cp", entitlements_plist_path, os.path.join(root, "macOS/app/tumpa/")])
+        #run(["cp", entitlements_plist_path, os.path.join(root, "macOS/app/tumpa/")])
 
         print("○ Code sign app bundle")
-        run(["briefcase", "package"])
-        # for path in itertools.chain(
-        #     glob.glob(
-        #         f"{app_path}/Contents/Resources/app_packages/**/*.dylib", recursive=True
-        #     ),
-        #     glob.glob(
-        #         f"{app_path}/Contents/Resources/app_packages/**/*.so", recursive=True
-        #     ),
-        #     glob.glob(
-        #         f"{app_path}/Contents/Resources/Support/**/*.dylib", recursive=True
-        #     ),
-        #     glob.glob(f"{app_path}/Contents/Resources/Support/**/*.so", recursive=True),
-        #     glob.glob(
-        #         f"{app_path}/Contents/Resources/app_packages/PySide2/Qt/lib/**/Versions/5/*",
-        #         recursive=True,
-        #     ),
-        #     [
-        #         f"{app_path}/Contents/Resources/app_packages/PySide2/pyside2-lupdate",
-        #         f"{app_path}/Contents/Resources/app_packages/PySide2/rcc",
-        #         f"{app_path}/Contents/Resources/app_packages/PySide2/uic",
-        #         app_path,
-        #     ],
-        # ):
-        #     codesign(path, entitlements_plist_path, identity_name_application)
-        # codesign(app_path, entitlements_plist_path, identity_name_application)
-        # print(f"○ Signed app bundle: {app_path}")
+        #run(["briefcase", "package"])
+        for path in itertools.chain(
+            glob.glob(
+                f"{app_path}/Contents/Resources/app_packages/**/*.dylib", recursive=True
+            ),
+            glob.glob(
+                f"{app_path}/Contents/Resources/app_packages/**/*.so", recursive=True
+            ),
+            glob.glob(
+                f"{app_path}/Contents/Resources/Support/**/*.dylib", recursive=True
+            ),
+            glob.glob(f"{app_path}/Contents/Resources/Support/**/*.so", recursive=True),
+            glob.glob(
+                f"{app_path}/Contents/Resources/app_packages/PySide2/Qt/lib/**/Versions/5/*",
+                recursive=True,
+            ),
+            [
+                f"{app_path}/Contents/Resources/app_packages/PySide2/pyside2-lupdate",
+                f"{app_path}/Contents/Resources/app_packages/PySide2/rcc",
+                f"{app_path}/Contents/Resources/app_packages/PySide2/uic",
+                app_path,
+            ],
+            glob.glob(f"{app_path}/Contents/Resources/app_packages/johnnycanencrypt/.dylibs/*.dylib")
+        ):
+            codesign(path, entitlements_plist_path, identity_name_application)
+        codesign(app_path, entitlements_plist_path, identity_name_application)
+        print(f"○ Signed app bundle: {app_path}")
 
-        # if not os.path.exists("/usr/local/bin/create-dmg"):
-        #     print("○ Error: create-dmg is not installed")
-        #     return
+        if not os.path.exists("/usr/local/bin/create-dmg"):
+            print("○ Error: create-dmg is not installed")
+            return
 
-        # print("○ Create DMG")
-        # dmg_path = os.path.join(root, "macOS", "tumpa.dmg")
-        # run(
-        #     [
-        #         "create-dmg",
-        #         "--volname",
-        #         "Tumpa",
-        #         "--volicon",
-        #         os.path.join(
-        #             root, "files", "in.kushaldas.Tumpa.icns"
-        #         ),
-        #         "--window-size",
-        #         "400",
-        #         "200",
-        #         "--icon-size",
-        #         "100",
-        #         "--icon",
-        #         "tumpa.app",
-        #         "100",
-        #         "70",
-        #         "--hide-extension",
-        #         "tmpa.app",
-        #         "--app-drop-link",
-        #         "300",
-        #         "70",
-        #         dmg_path,
-        #         app_path,
-        #         "--identity",
-        #         identity_name_application,
-        #     ]
-        # )
+        print("○ Create DMG")
+        dmg_path = os.path.join(root, "macOS", "tumpa-0.1.3.dmg")
+        cmd = [
+                "create-dmg",
+                "--volname",
+                "Tumpa",
+                "--volicon",
+                os.path.join(
+                    root, "files", "in.kushaldas.Tumpa.icns"
+                ),
+                "--window-size",
+                "600",
+                "400",
+                "--icon-size",
+                "100",
+                "--icon",
+                "tumpa.app",
+                "100",
+                "150",
+                "--hide-extension",
+                "tumpa.app",
+                "--app-drop-link",
+                "300",
+                "150",
+                dmg_path,
+                app_path,
+                "--identity",
+                identity_name_application,
+            ]
+        
+        print("Running: {0}".format(" ".join(cmd)))
+        run(cmd)
 
-        # print(f"○ Finished building DMG: {dmg_path}")
+        print(f"○ Finished building DMG: {dmg_path}")
 
 
 if __name__ == "__main__":
