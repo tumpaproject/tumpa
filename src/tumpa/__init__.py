@@ -928,6 +928,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
 
 def main():
+    os.environ["QT_MAC_WANTS_LAYER"] = "1"
     app = QtWidgets.QApplication(sys.argv)
     form = MainWindow()
     form.show()
