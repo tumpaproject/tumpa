@@ -6,7 +6,7 @@ buildmac:
   python3 packaging/mac/build_mac_app.py --with-codesign
 
 # To create a development environment
-createdevenv:
+dev:
   python3 -m venv .venv
   .venv/bin/python3 -m pip install --require-hashes -r requirements.txt
 
