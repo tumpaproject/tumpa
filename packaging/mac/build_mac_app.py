@@ -31,8 +31,7 @@ def codesign(path, entitlements, identity):
             "--deep",
             str(path),
             "--force",
-            "--options",
-            "runtime",
+            "--options=runtime,library",
         ]
     )
 
@@ -52,8 +51,6 @@ def main():
     )
     args = parser.parse_args()
 
-
-
     print("○ Clean up from last build")
 
     print(root)
@@ -64,7 +61,6 @@ def main():
     print("○ Building Tumpa")
 
     run(["briefcase", "create"])
-
 
     app_path = os.path.join(root, "macOS", "app", "tumpa", "tumpa.app")
 
@@ -189,75 +185,40 @@ def main():
         entitlements_plist_path = os.path.join(
             root, "packaging", "mac", "Entitlements.plist"
         )
-        #run(["cp", entitlements_plist_path, os.path.join(root, "macOS/app/tumpa/")])
+        # run(["cp", entitlements_plist_path, os.path.join(root, "macOS/app/tumpa/")])
 
         print("○ Code sign app bundle")
-        #run(["briefcase", "package"])
-        for path in itertools.chain(
-            glob.glob(
-                f"{app_path}/Contents/Resources/app_packages/**/*.dylib", recursive=True
-            ),
-            glob.glob(
-                f"{app_path}/Contents/Resources/app_packages/**/*.so", recursive=True
-            ),
-            glob.glob(
-                f"{app_path}/Contents/Resources/Support/**/*.dylib", recursive=True
-            ),
-            glob.glob(f"{app_path}/Contents/Resources/Support/**/*.so", recursive=True),
-            glob.glob(
-                f"{app_path}/Contents/Resources/app_packages/PySide2/Qt/lib/**/Versions/5/*",
-                recursive=True,
-            ),
-            [
-                f"{app_path}/Contents/Resources/app_packages/PySide2/pyside2-lupdate",
-                f"{app_path}/Contents/Resources/app_packages/PySide2/rcc",
-                f"{app_path}/Contents/Resources/app_packages/PySide2/uic",
-                app_path,
-            ],
-            glob.glob(f"{app_path}/Contents/Resources/app_packages/johnnycanencrypt/.dylibs/*.dylib")
-        ):
-            codesign(path, entitlements_plist_path, identity_name_application)
-        codesign(app_path, entitlements_plist_path, identity_name_application)
-        print(f"○ Signed app bundle: {app_path}")
 
-        if not os.path.exists("/usr/local/bin/create-dmg"):
-            print("○ Error: create-dmg is not installed")
-            return
+        # Sign for briefcase package
+        files = [
+            "Contents/Resources/app_packages/PySide2/Qt/lib/QtCore.framework/Versions/5/QtCore",
+            "Contents/Resources/app_packages/PySide2/Qt/lib/QtDBus.framework/Versions/5/QtDBus",
+            "Contents/Resources/app_packages/PySide2/Qt/lib/QtGui.framework/Versions/5/QtGui",
+            "Contents/Resources/app_packages/PySide2/Qt/lib/QtMacExtras.framework/Versions/5/QtMacExtras",
+            "Contents/Resources/app_packages/PySide2/Qt/lib/QtNetwork.framework/Versions/5/QtNetwork",
+            "Contents/Resources/app_packages/PySide2/Qt/lib/QtNetworkAuth.framework/Versions/5/QtNetworkAuth",
+            "Contents/Resources/app_packages/PySide2/Qt/lib/QtPrintSupport.framework/Versions/5/QtPrintSupport",
+            "Contents/Resources/app_packages/PySide2/Qt/lib/QtQml.framework/Versions/5/QtQml",
+            "Contents/Resources/app_packages/PySide2/Qt/lib/QtQmlModels.framework/Versions/5/QtQmlModels",
+            "Contents/Resources/app_packages/PySide2/Qt/lib/QtQmlWorkerScript.framework/Versions/5/QtQmlWorkerScript",
+            "Contents/Resources/app_packages/PySide2/Qt/lib/QtSvg.framework/Versions/5/QtSvg",
+            "Contents/Resources/app_packages/PySide2/Qt/lib/QtWidgets.framework/Versions/5/QtWidgets",
+            "Contents/Resources/app_packages/PySide2/pyside2-lupdate",
+            "Contents/Resources/app_packages/PySide2/rcc",
+            "Contents/Resources/app_packages/PySide2/uic",
+        ]
 
-        print("○ Create DMG")
-        dmg_path = os.path.join(root, "macOS", "tumpa-0.1.3.dmg")
-        cmd = [
-                "create-dmg",
-                "--volname",
-                "Tumpa",
-                "--volicon",
-                os.path.join(
-                    root, "files", "in.kushaldas.Tumpa.icns"
-                ),
-                "--window-size",
-                "600",
-                "400",
-                "--icon-size",
-                "100",
-                "--icon",
-                "tumpa.app",
-                "100",
-                "150",
-                "--hide-extension",
-                "tumpa.app",
-                "--app-drop-link",
-                "300",
-                "150",
-                dmg_path,
-                app_path,
-                "--identity",
-                identity_name_application,
-            ]
-        
-        print("Running: {0}".format(" ".join(cmd)))
-        run(cmd)
+        for f in files:
+            try:
+                codesign(
+                    os.path.join(app_path, f),
+                    entitlements_plist_path,
+                    identity_name_application,
+                )
+            except FileNotFoundError:
+                pass
 
-        print(f"○ Finished building DMG: {dmg_path}")
+        run(["briefcase", "package"])
 
 
 if __name__ == "__main__":

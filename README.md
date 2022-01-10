@@ -20,7 +20,11 @@ We earnestly hope this tool makes your life much, much simpler when it comes to 
 
 ## Installation
 
-We are still in the process of packaging for different Operating Systems. Please go through the
+We have [Mac dmg](https://kushaldas.in/posts/releasing-tumpa-for-mac.html) and [Debian 11 package](https://github.com/kushaldas/tumpa/releases/tag/v0.1.2) (should work on Tails too) available.
+
+## Development setup
+
+Please go through the
 [development steps](https://github.com/kushaldas/tumpa/wiki#development-setup) if you are interested
 in trying out Tumpa.
 
