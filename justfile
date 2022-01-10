@@ -18,6 +18,14 @@ installjce:
 run:
   .venv/bin/python3 ./run.py
 
+# Updates the runtime requirements file
+update-runtime:
+  pip-compile --generate-hashes --output-file=requirements.txt requirements.in
+
+# Updates the dev requirments file
+update-dev:
+  pip-compile --generate-hashes --output-file=dev-requirements.txt dev-requirements.in
+
 # Creates the source tarball
 sdist:
   ./scripts/create-sourcetarball
