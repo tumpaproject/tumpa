@@ -41,9 +41,10 @@ class HardwareThread(QThread):
                     status_text = f'Yubikey with serial {serial} found'
                 else:
                     status_text = ''
+            else:
+                status_text = 'No Yubikey found'
 
-                self.status_signal.emit(status_text)
-
+            self.status_signal.emit(status_text)
             self.signal.emit(result)
 
 
