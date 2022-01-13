@@ -1,6 +1,6 @@
 from PySide2 import QtWidgets
 
-from src.tumpa.resources import load_css, load_icon
+from tumpa.resources import load_css, load_icon
 
 css = load_css("mainwindow.css")
 

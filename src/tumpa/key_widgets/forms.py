@@ -4,7 +4,7 @@ import johnnycanencrypt as jce
 from PySide2 import QtWidgets
 from PySide2.QtCore import QObject, QSize, Qt, QThread, Signal
 
-from src.tumpa.commons import MessageDialogs, PasswordEdit, css
+from tumpa.commons import MessageDialogs, PasswordEdit, css
 
 
 class NewKeyFormWidget(QtWidgets.QWidget):

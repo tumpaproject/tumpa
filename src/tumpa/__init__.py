@@ -9,18 +9,18 @@ import johnnycanencrypt.johnnycanencrypt as rjce
 from PySide2 import QtGui, QtWidgets
 from PySide2.QtCore import QObject, QSize, Qt, QThread, Signal
 
-import src.tumpa.key_widgets.utils as key_utils
-from src.tumpa.commons import MessageDialogs, PasswordEdit, css
-from src.tumpa.configuration import get_keystore_directory
-from src.tumpa.key_widgets.display import KeyWidgetList
-from src.tumpa.key_widgets.forms import NewKeyFormWidget
-from src.tumpa.resources import load_css, load_icon
-from src.tumpa.smartcard_widgets.forms import (
+import tumpa.key_widgets.utils as key_utils
+from tumpa.commons import MessageDialogs, PasswordEdit, css
+from tumpa.configuration import get_keystore_directory
+from tumpa.key_widgets.display import KeyWidgetList
+from tumpa.key_widgets.forms import NewKeyFormWidget
+from tumpa.resources import load_css, load_icon
+from tumpa.smartcard_widgets.forms import (
     SmartCardConfirmationDialog,
     SmartCardTextFormWidget,
     SmartPinFormWidget,
 )
-from src.tumpa.threads import HardwareThread
+from tumpa.threads import HardwareThread
 
 
 class KeyViewWidget(QtWidgets.QWidget):
@@ -102,7 +102,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setMaximumHeight(575)
         self.ks = jce.KeyStore(get_keystore_directory())
         self.current_fingerprint = ""
-        self.cardcheck_thread = HardwareThread(self.enable_upload)
+        self.cardcheck_thread = HardwareThread(
+            self.enable_upload, self.update_statusbar)
+        self.statusBar = QtWidgets.QStatusBar()
+        self.setStatusBar(self.statusBar)
 
         # File menu
         exportPubKey = QtWidgets.QAction("&Export public key", self)
@@ -141,6 +144,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setCentralWidget(self.tabs)
         self.setStyleSheet(css)
         self.cardcheck_thread.start()
+
+    def update_statusbar(self, value):
+        self.statusBar.showMessage(value)
 
     def reset_yubikey_dialog(self):
         "Verify if the user really wants to reset the smartcard"
@@ -301,9 +307,11 @@ class MainWindow(QtWidgets.QMainWindow):
     def change_pin_on_card_slot(self, userpin, adminpin):
         "Final slot which will try to change the userpin"
         try:
-            rjce.change_user_pin(adminpin.encode("utf-8"), userpin.encode("utf-8"))
+            rjce.change_user_pin(adminpin.encode(
+                "utf-8"), userpin.encode("utf-8"))
         except Exception as e:
-            self.error_dialog = MessageDialogs.error_dialog("changing user pin", str(e))
+            self.error_dialog = MessageDialogs.error_dialog(
+                "changing user pin", str(e))
             self.error_dialog.show()
             self.enable_cardcheck_thread_slot()
             return
@@ -316,7 +324,8 @@ class MainWindow(QtWidgets.QMainWindow):
     def change_admin_pin_on_card_slot(self, userpin, adminpin):
         "Final slot which will try to change the adminpin"
         try:
-            rjce.change_admin_pin(adminpin.encode("utf-8"), userpin.encode("utf-8"))
+            rjce.change_admin_pin(adminpin.encode(
+                "utf-8"), userpin.encode("utf-8"))
         except Exception as e:
             self.error_dialog = MessageDialogs.error_dialog(
                 "changing admin pin", str(e)
@@ -335,7 +344,8 @@ class MainWindow(QtWidgets.QMainWindow):
         try:
             rjce.set_url(publicURL.encode("utf-8"), adminpin.encode("utf-8"))
         except Exception as e:
-            self.error_dialog = MessageDialogs.error_dialog("adding public URL", str(e))
+            self.error_dialog = MessageDialogs.error_dialog(
+                "adding public URL", str(e))
             self.error_dialog.show()
             self.enable_cardcheck_thread_slot()
             return
@@ -353,11 +363,13 @@ class MainWindow(QtWidgets.QMainWindow):
             name = "<<".join(name.split()[::-1])
             rjce.set_name(name.encode("utf-8"), adminpin.encode("utf-8"))
         except Exception as e:
-            self.error_dialog = MessageDialogs.error_dialog("adding name", str(e))
+            self.error_dialog = MessageDialogs.error_dialog(
+                "adding name", str(e))
             self.error_dialog.show()
             self.enable_cardcheck_thread_slot()
             return
-        self.success_dialog = MessageDialogs.success_dialog("Added name successfully.")
+        self.success_dialog = MessageDialogs.success_dialog(
+            "Added name successfully.")
         self.success_dialog.show()
         self.enable_cardcheck_thread_slot()
 
