@@ -1,7 +1,7 @@
 from PySide2 import QtWidgets
 from PySide2.QtCore import Qt, Signal
 
-from tumpasrc.commons import MessageDialogs, PasswordEdit, css
+from src.tumpa.commons import MessageDialogs, PasswordEdit, css
 
 
 class SmartCardConfirmationDialog(QtWidgets.QDialog):

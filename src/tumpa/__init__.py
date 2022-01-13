@@ -9,18 +9,18 @@ import johnnycanencrypt.johnnycanencrypt as rjce
 from PySide2 import QtGui, QtWidgets
 from PySide2.QtCore import QObject, QSize, Qt, QThread, Signal
 
-import tumpasrc.key_widgets.utils as key_utils
-from tumpasrc.commons import MessageDialogs, PasswordEdit, css
-from tumpasrc.configuration import get_keystore_directory
-from tumpasrc.key_widgets.display import KeyWidgetList
-from tumpasrc.key_widgets.forms import NewKeyFormWidget
-from tumpasrc.resources import load_css, load_icon
-from tumpasrc.smartcard_widgets.forms import (
+import src.tumpa.key_widgets.utils as key_utils
+from src.tumpa.commons import MessageDialogs, PasswordEdit, css
+from src.tumpa.configuration import get_keystore_directory
+from src.tumpa.key_widgets.display import KeyWidgetList
+from src.tumpa.key_widgets.forms import NewKeyFormWidget
+from src.tumpa.resources import load_css, load_icon
+from src.tumpa.smartcard_widgets.forms import (
     SmartCardConfirmationDialog,
     SmartCardTextFormWidget,
     SmartPinFormWidget,
 )
-from tumpasrc.threads import HardwareThread
+from src.tumpa.threads import HardwareThread
 
 
 class KeyViewWidget(QtWidgets.QWidget):

@@ -2,8 +2,8 @@ import johnnycanencrypt as jce
 from PySide2 import QtWidgets
 from PySide2.QtCore import QObject, QSize, Qt, QThread, Signal
 
-import tumpasrc.key_widgets.utils as key_utils
-from tumpasrc.commons import MessageDialogs
+import src.tumpa.key_widgets.utils as key_utils
+from src.tumpa.commons import MessageDialogs
 
 
 class KeyWidget(QtWidgets.QWidget):
