@@ -1,0 +1,36 @@
+[tool.briefcase]
+project_name = "tumpa"
+bundle = "in.kushaldas"
+version = "0.1.3"
+url = "https://tumpa.rocks"
+license = "GNU General Public License v3 or later (GPLv3+)"
+author = 'Kushal Das'
+author_email = "mail@kushaldas.in"
+
+[tool.briefcase.app.tumpa]
+formal_name = "tumpa"
+description = "The Usability Minded PGP Application"
+icon = "files/in.kushaldas.Tumpa"
+sources = ['src/tumpa']
+requires = [
+    './johnnycanencrypt-0.6.0-cp39-cp39-macosx_10_7_x86_64.whl',
+    'pyside2>=5.15.2',
+    'setuptools']
+
+
+[tool.briefcase.app.tumpa.macOS]
+requires = []
+
+[tool.briefcase.app.tumpa.linux]
+requires = []
+system_requires = []
+
+[tool.briefcase.app.tumpa.windows]
+requires = []
+
+# Mobile deployments
+[tool.briefcase.app.tumpa.iOS]
+requires = []
+
+[tool.briefcase.app.tumpa.android]
+requires = []

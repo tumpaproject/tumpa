@@ -1,5 +1,5 @@
 ![tumpa logo](https://github.com/kushaldas/tumpa/blob/main/files/in.kushaldas.Tumpa.png?raw=true)
-# Tumpa - Desktop tool to make OpenPGP simpler
+# Tumpa - The Usability Minded PGP Application
 
 Tumpa is a desktop application that makes OpenPGP key creation and smart card access
 easier. No more terminals, no more typing and entering options multiple times.
@@ -20,7 +20,11 @@ We earnestly hope this tool makes your life much, much simpler when it comes to 
 
 ## Installation
 
-We are still in the process of packaging for different Operating Systems. Please go through the
+We have [Mac dmg](https://kushaldas.in/posts/releasing-tumpa-for-mac.html) and [Debian 11 package](https://github.com/kushaldas/tumpa/releases/tag/v0.1.2) (should work on Tails too) available.
+
+## Development setup
+
+Please go through the
 [development steps](https://github.com/kushaldas/tumpa/wiki#development-setup) if you are interested
 in trying out Tumpa.
 
