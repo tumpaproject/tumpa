@@ -26,21 +26,18 @@ class HardwareThread(QThread):
         self.status_signal.connect(update_statusbar)
 
     def run(self):
-        if self.flag is False:
-            self.card_details = None
-
         while self.flag:
             time.sleep(1)
             result = rjce.is_smartcard_connected()
 
-            if result is True:
+            if result:
                 card_details = rjce.get_card_details()
 
                 if 'serial_number' in card_details:
                     serial = card_details['serial_number']
                     status_text = f'Yubikey with serial {serial} found'
                 else:
-                    status_text = ''
+                    status_text = 'Yubikey found'
             else:
                 status_text = 'No Yubikey found'
 
