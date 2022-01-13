@@ -17,16 +17,31 @@ css = load_css("mainwindow.css")
 
 class HardwareThread(QThread):
     signal = Signal((bool,))
+    status_signal = Signal((str,))
 
-    def __init__(self, nextsteps_slot):
+    def __init__(self, nextsteps_slot, update_statusbar):
         QThread.__init__(self)
         self.flag = True
         self.signal.connect(nextsteps_slot)
+        self.status_signal.connect(update_statusbar)
 
     def run(self):
         while self.flag:
             time.sleep(1)
             result = rjce.is_smartcard_connected()
+
+            if result:
+                card_details = rjce.get_card_details()
+
+                if 'serial_number' in card_details:
+                    serial = card_details['serial_number']
+                    status_text = f'Yubikey with serial {serial} found'
+                else:
+                    status_text = 'Yubikey found'
+            else:
+                status_text = 'No Yubikey found'
+
+            self.status_signal.emit(status_text)
             self.signal.emit(result)
 
 
@@ -55,7 +70,8 @@ class PasswordEdit(QtWidgets.QLineEdit):
         self.togglepasswordAction = self.addAction(
             self.visibleIcon, QtWidgets.QLineEdit.TrailingPosition
         )
-        self.togglepasswordAction.triggered.connect(self.on_toggle_password_Action)
+        self.togglepasswordAction.triggered.connect(
+            self.on_toggle_password_Action)
         self.password_shown = False
 
     def on_toggle_password_Action(self):
@@ -390,7 +406,8 @@ class NewKeyDialog(QtWidgets.QDialog):
         self.encryptionSubkey.setCheckState(Qt.Checked)
         self.signingSubkey = QtWidgets.QCheckBox("Signing subkey")
         self.signingSubkey.setCheckState(Qt.Checked)
-        self.authenticationSubkey = QtWidgets.QCheckBox("Authentication subkey")
+        self.authenticationSubkey = QtWidgets.QCheckBox(
+            "Authentication subkey")
 
         hboxlayout = QtWidgets.QHBoxLayout()
         hboxlayout.addWidget(self.encryptionSubkey)
@@ -509,7 +526,8 @@ class KeyWidget(QtWidgets.QWidget):
         self.keyfingerprint = QtWidgets.QLabel(fingerprint)
         self.keyfingerprint.setObjectName("keyfingerprint")
         date = key.creationtime.date()
-        date_label = QtWidgets.QLabel(f"Created at: {date.strftime('%Y-%m-%d')}")
+        date_label = QtWidgets.QLabel(
+            f"Created at: {date.strftime('%Y-%m-%d')}")
         date_label.setAlignment(Qt.AlignTop)
         date_label.setContentsMargins(0, 0, 0, 0)
 
@@ -574,7 +592,8 @@ class KeyWidgetList(QtWidgets.QListWidget):
         # self.layout = QtWidgets.QVBoxLayout(self)
         # self.setLayout(self.layout)
         self.updateList()
-        self.setSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
+        self.setSizePolicy(QtWidgets.QSizePolicy.Minimum,
+                           QtWidgets.QSizePolicy.Minimum)
         self.setMinimumHeight(400)
         self.currentItemChanged.connect(self.on_item_changed)
 
@@ -618,7 +637,10 @@ class MainWindow(QtWidgets.QMainWindow):
         self.vboxlayout_for_keys = QtWidgets.QVBoxLayout()
         self.widget = KeyWidgetList(self.ks)
         self.current_fingerprint = ""
-        self.cardcheck_thread = HardwareThread(self.enable_upload)
+        self.cardcheck_thread = HardwareThread(
+            self.enable_upload, self.update_statusbar)
+        self.statusBar = QtWidgets.QStatusBar()
+        self.setStatusBar(self.statusBar)
 
         # File menu
         exportPubKey = QtWidgets.QAction("&Export public key", self)
@@ -634,7 +656,8 @@ class MainWindow(QtWidgets.QMainWindow):
         changepinAction = QtWidgets.QAction("Change user &pin", self)
         changepinAction.triggered.connect(self.show_change_user_pin_dialog)
         changeadminpinAction = QtWidgets.QAction("Change &admin pin", self)
-        changeadminpinAction.triggered.connect(self.show_change_admin_pin_dialog)
+        changeadminpinAction.triggered.connect(
+            self.show_change_admin_pin_dialog)
         changenameAction = QtWidgets.QAction("Set cardholder &name", self)
         changenameAction.triggered.connect(self.show_set_name)
         changeurlAction = QtWidgets.QAction("Set public key &URL", self)
@@ -678,6 +701,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setCentralWidget(self.cwidget)
         self.setStyleSheet(css)
         self.cardcheck_thread.start()
+
+    def update_statusbar(self, value):
+        self.statusBar.showMessage(value)
 
     def reset_yubikey_dialog(self):
         "Verify if the user really wants to reset the smartcard"
@@ -758,9 +784,11 @@ class MainWindow(QtWidgets.QMainWindow):
     def change_pin_on_card_slot(self, userpin, adminpin):
         "Final slot which will try to change the userpin"
         try:
-            rjce.change_user_pin(adminpin.encode("utf-8"), userpin.encode("utf-8"))
+            rjce.change_user_pin(adminpin.encode(
+                "utf-8"), userpin.encode("utf-8"))
         except Exception as e:
-            self.error_dialog = MessageDialogs.error_dialog("changing user pin", str(e))
+            self.error_dialog = MessageDialogs.error_dialog(
+                "changing user pin", str(e))
             self.error_dialog.show()
             self.enable_cardcheck_thread_slot()
             return
@@ -773,7 +801,8 @@ class MainWindow(QtWidgets.QMainWindow):
     def change_admin_pin_on_card_slot(self, userpin, adminpin):
         "Final slot which will try to change the adminpin"
         try:
-            rjce.change_admin_pin(adminpin.encode("utf-8"), userpin.encode("utf-8"))
+            rjce.change_admin_pin(adminpin.encode(
+                "utf-8"), userpin.encode("utf-8"))
         except Exception as e:
             self.error_dialog = MessageDialogs.error_dialog(
                 "changing admin pin", str(e)
@@ -792,7 +821,8 @@ class MainWindow(QtWidgets.QMainWindow):
         try:
             rjce.set_url(publicURL.encode("utf-8"), adminpin.encode("utf-8"))
         except Exception as e:
-            self.error_dialog = MessageDialogs.error_dialog("adding public URL", str(e))
+            self.error_dialog = MessageDialogs.error_dialog(
+                "adding public URL", str(e))
             self.error_dialog.show()
             self.enable_cardcheck_thread_slot()
             return
@@ -810,11 +840,13 @@ class MainWindow(QtWidgets.QMainWindow):
             name = "<<".join(name.split()[::-1])
             rjce.set_name(name.encode("utf-8"), adminpin.encode("utf-8"))
         except Exception as e:
-            self.error_dialog = MessageDialogs.error_dialog("adding name", str(e))
+            self.error_dialog = MessageDialogs.error_dialog(
+                "adding name", str(e))
             self.error_dialog.show()
             self.enable_cardcheck_thread_slot()
             return
-        self.success_dialog = MessageDialogs.success_dialog("Added name successfully.")
+        self.success_dialog = MessageDialogs.success_dialog(
+            "Added name successfully.")
         self.success_dialog.show()
         self.enable_cardcheck_thread_slot()
 
