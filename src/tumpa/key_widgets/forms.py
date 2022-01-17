@@ -1,8 +1,9 @@
 import datetime
-
+import diceware
 import johnnycanencrypt as jce
+
 from PySide2 import QtWidgets
-from PySide2.QtCore import QObject, QSize, Qt, QThread, Signal
+from PySide2.QtCore import QSize, Qt, Signal
 
 from tumpa.commons import MessageDialogs, PasswordEdit, css
 
@@ -40,12 +41,17 @@ class NewKeyFormWidget(QtWidgets.QWidget):
         vboxlayout.addWidget(passphrase_label)
         vboxlayout.addWidget(self.passphrase_box)
 
+        self.passphraseButton = QtWidgets.QPushButton("Random passphrase")
+        self.passphraseButton.clicked.connect(self.randomPassphrase)
+        vboxlayout.addWidget(self.passphraseButton)
+
         # now the checkboxes for subkey
         self.encryptionSubkey = QtWidgets.QCheckBox("Encryption subkey")
         self.encryptionSubkey.setCheckState(Qt.Checked)
         self.signingSubkey = QtWidgets.QCheckBox("Signing subkey")
         self.signingSubkey.setCheckState(Qt.Checked)
-        self.authenticationSubkey = QtWidgets.QCheckBox("Authentication subkey")
+        self.authenticationSubkey = QtWidgets.QCheckBox(
+            "Authentication subkey")
 
         hboxlayout = QtWidgets.QHBoxLayout()
         hboxlayout.addWidget(self.encryptionSubkey)
@@ -72,6 +78,9 @@ class NewKeyFormWidget(QtWidgets.QWidget):
         self.setLayout(vboxlayout)
         self.setWindowTitle("Generate a new OpenPGP key")
         self.setStyleSheet(css)
+
+    def randomPassphrase(self):
+        self.passphrase_box.setText(diceware.get_passphrase())
 
     def generate(self):
         self.generateButton.setEnabled(False)
