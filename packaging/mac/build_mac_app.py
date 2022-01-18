@@ -1,17 +1,16 @@
 #!/usr/bin/env python3
 
-import os
-import inspect
-import subprocess
 import argparse
+import inspect
+import os
 import shutil
-import glob
-import itertools
+import subprocess
 
 root = os.path.dirname(
     os.path.dirname(
         os.path.dirname(
-            os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+            os.path.dirname(os.path.abspath(
+                inspect.getfile(inspect.currentframe())))
         )
     )
 )
@@ -138,7 +137,7 @@ def main():
                 "Contents",
                 "Resources",
                 "app_packages",
-                "PySide2",
+                "PySide6",
                 "Qt",
                 "lib",
                 f"{framework}.framework",
@@ -151,7 +150,7 @@ def main():
                     "Contents",
                     "Resources",
                     "app_packages",
-                    "PySide2",
+                    "PySide6",
                     f"{framework}.abi3.so",
                 )
             )
@@ -161,7 +160,7 @@ def main():
                     "Contents",
                     "Resources",
                     "app_packages",
-                    "PySide2",
+                    "PySide6",
                     f"{framework}.pyi",
                 )
             )
@@ -173,7 +172,7 @@ def main():
             "Contents",
             "Resources",
             "app_packages",
-            "PySide2",
+            "PySide6",
             "Designer.app",
         )
     )
@@ -191,21 +190,21 @@ def main():
 
         # Sign for briefcase package
         files = [
-            "Contents/Resources/app_packages/PySide2/Qt/lib/QtCore.framework/Versions/5/QtCore",
-            "Contents/Resources/app_packages/PySide2/Qt/lib/QtDBus.framework/Versions/5/QtDBus",
-            "Contents/Resources/app_packages/PySide2/Qt/lib/QtGui.framework/Versions/5/QtGui",
-            "Contents/Resources/app_packages/PySide2/Qt/lib/QtMacExtras.framework/Versions/5/QtMacExtras",
-            "Contents/Resources/app_packages/PySide2/Qt/lib/QtNetwork.framework/Versions/5/QtNetwork",
-            "Contents/Resources/app_packages/PySide2/Qt/lib/QtNetworkAuth.framework/Versions/5/QtNetworkAuth",
-            "Contents/Resources/app_packages/PySide2/Qt/lib/QtPrintSupport.framework/Versions/5/QtPrintSupport",
-            "Contents/Resources/app_packages/PySide2/Qt/lib/QtQml.framework/Versions/5/QtQml",
-            "Contents/Resources/app_packages/PySide2/Qt/lib/QtQmlModels.framework/Versions/5/QtQmlModels",
-            "Contents/Resources/app_packages/PySide2/Qt/lib/QtQmlWorkerScript.framework/Versions/5/QtQmlWorkerScript",
-            "Contents/Resources/app_packages/PySide2/Qt/lib/QtSvg.framework/Versions/5/QtSvg",
-            "Contents/Resources/app_packages/PySide2/Qt/lib/QtWidgets.framework/Versions/5/QtWidgets",
-            "Contents/Resources/app_packages/PySide2/pyside2-lupdate",
-            "Contents/Resources/app_packages/PySide2/rcc",
-            "Contents/Resources/app_packages/PySide2/uic",
+            "Contents/Resources/app_packages/PySide6/Qt/lib/QtCore.framework/Versions/5/QtCore",
+            "Contents/Resources/app_packages/PySide6/Qt/lib/QtDBus.framework/Versions/5/QtDBus",
+            "Contents/Resources/app_packages/PySide6/Qt/lib/QtGui.framework/Versions/5/QtGui",
+            "Contents/Resources/app_packages/PySide6/Qt/lib/QtMacExtras.framework/Versions/5/QtMacExtras",
+            "Contents/Resources/app_packages/PySide6/Qt/lib/QtNetwork.framework/Versions/5/QtNetwork",
+            "Contents/Resources/app_packages/PySide6/Qt/lib/QtNetworkAuth.framework/Versions/5/QtNetworkAuth",
+            "Contents/Resources/app_packages/PySide6/Qt/lib/QtPrintSupport.framework/Versions/5/QtPrintSupport",
+            "Contents/Resources/app_packages/PySide6/Qt/lib/QtQml.framework/Versions/5/QtQml",
+            "Contents/Resources/app_packages/PySide6/Qt/lib/QtQmlModels.framework/Versions/5/QtQmlModels",
+            "Contents/Resources/app_packages/PySide6/Qt/lib/QtQmlWorkerScript.framework/Versions/5/QtQmlWorkerScript",
+            "Contents/Resources/app_packages/PySide6/Qt/lib/QtSvg.framework/Versions/5/QtSvg",
+            "Contents/Resources/app_packages/PySide6/Qt/lib/QtWidgets.framework/Versions/5/QtWidgets",
+            "Contents/Resources/app_packages/PySide6/pyside6-lupdate",
+            "Contents/Resources/app_packages/PySide6/rcc",
+            "Contents/Resources/app_packages/PySide6/uic",
         ]
 
         for f in files:
