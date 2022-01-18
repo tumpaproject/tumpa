@@ -1,9 +1,9 @@
 import os
 
 from pkg_resources import resource_filename, resource_string
-from PySide2.QtCore import QDir
-from PySide2.QtGui import QFontDatabase, QIcon, QPixmap
-from PySide2.QtSvg import QSvgWidget
+from PySide6.QtCore import QDir
+from PySide6.QtGui import QFontDatabase, QIcon, QPixmap
+from PySide6.QtSvgWidgets import QSvgWidget
 
 # Add resource directories to the search path.
 QDir.addSearchPath("images", resource_filename(__name__, "images"))

@@ -1,9 +1,8 @@
 import datetime
 
 import johnnycanencrypt as jce
-from PySide2 import QtWidgets
-from PySide2.QtCore import QObject, QSize, Qt, QThread, Signal
-
+from PySide6 import QtWidgets
+from PySide6.QtCore import QSize, Qt, Signal
 from tumpa.commons import MessageDialogs, PasswordEdit, css
 
 
@@ -45,7 +44,8 @@ class NewKeyFormWidget(QtWidgets.QWidget):
         self.encryptionSubkey.setCheckState(Qt.Checked)
         self.signingSubkey = QtWidgets.QCheckBox("Signing subkey")
         self.signingSubkey.setCheckState(Qt.Checked)
-        self.authenticationSubkey = QtWidgets.QCheckBox("Authentication subkey")
+        self.authenticationSubkey = QtWidgets.QCheckBox(
+            "Authentication subkey")
 
         hboxlayout = QtWidgets.QHBoxLayout()
         hboxlayout.addWidget(self.encryptionSubkey)

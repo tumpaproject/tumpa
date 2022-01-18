@@ -1,4 +1,4 @@
-from PySide2 import QtWidgets
+from PySide6 import QtWidgets
 
 from tumpa.resources import load_css, load_icon
 
@@ -52,7 +52,8 @@ class PasswordEdit(QtWidgets.QLineEdit):
         self.togglepasswordAction = self.addAction(
             self.visibleIcon, QtWidgets.QLineEdit.TrailingPosition
         )
-        self.togglepasswordAction.triggered.connect(self.on_toggle_password_Action)
+        self.togglepasswordAction.triggered.connect(
+            self.on_toggle_password_Action)
         self.password_shown = False
 
     def on_toggle_password_Action(self):

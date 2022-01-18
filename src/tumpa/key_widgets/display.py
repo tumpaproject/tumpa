@@ -1,8 +1,7 @@
 import johnnycanencrypt as jce
-from PySide2 import QtWidgets
-from PySide2.QtCore import QObject, QSize, Qt, QThread, Signal
-
 import tumpa.key_widgets.utils as key_utils
+from PySide6 import QtWidgets
+from PySide6.QtCore import Qt
 from tumpa.commons import MessageDialogs
 
 
@@ -21,7 +20,8 @@ class KeyWidget(QtWidgets.QWidget):
         self.keyfingerprint = QtWidgets.QLabel(fingerprint)
         self.keyfingerprint.setObjectName("keyfingerprint")
         date = key.creationtime.date()
-        date_label = QtWidgets.QLabel(f"Created at: {date.strftime('%Y-%m-%d')}")
+        date_label = QtWidgets.QLabel(
+            f"Created at: {date.strftime('%Y-%m-%d')}")
         date_label.setAlignment(Qt.AlignTop)
         date_label.setContentsMargins(0, 0, 0, 0)
 
@@ -70,7 +70,8 @@ class KeyWidgetList(QtWidgets.QListWidget):
         # self.layout = QtWidgets.QVBoxLayout(self)
         # self.setLayout(self.layout)
         self.updateList()
-        self.setSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
+        self.setSizePolicy(QtWidgets.QSizePolicy.Minimum,
+                           QtWidgets.QSizePolicy.Minimum)
         self.setMinimumHeight(400)
         self.currentItemChanged.connect(self.on_item_changed)
 

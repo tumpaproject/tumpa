@@ -1,7 +1,7 @@
 import time
 
 import johnnycanencrypt.johnnycanencrypt as rjce
-from PySide2.QtCore import QThread, Signal
+from PySide6.QtCore import QThread, Signal
 
 
 class HardwareThread(QThread):

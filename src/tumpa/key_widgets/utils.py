@@ -1,6 +1,6 @@
 import os
 
-from PySide2 import QtWidgets
+from PySide6 import QtWidgets
 
 
 def export_public_key(widget, fingerprint, public_key):

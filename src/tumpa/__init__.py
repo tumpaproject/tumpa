@@ -1,25 +1,21 @@
-import datetime
-import io
 import os
 import sys
 import time
 
 import johnnycanencrypt as jce
 import johnnycanencrypt.johnnycanencrypt as rjce
-from PySide2 import QtGui, QtWidgets
-from PySide2.QtCore import QObject, QSize, Qt, QThread, Signal
+from PySide6 import QtWidgets
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QAction
 
 import tumpa.key_widgets.utils as key_utils
-from tumpa.commons import MessageDialogs, PasswordEdit, css
+from tumpa.commons import MessageDialogs, css
 from tumpa.configuration import get_keystore_directory
 from tumpa.key_widgets.display import KeyWidgetList
 from tumpa.key_widgets.forms import NewKeyFormWidget
-from tumpa.resources import load_css, load_icon
-from tumpa.smartcard_widgets.forms import (
-    SmartCardConfirmationDialog,
-    SmartCardTextFormWidget,
-    SmartPinFormWidget,
-)
+from tumpa.smartcard_widgets.forms import (SmartCardConfirmationDialog,
+                                           SmartCardTextFormWidget,
+                                           SmartPinFormWidget)
 from tumpa.threads import HardwareThread
 
 
@@ -68,12 +64,16 @@ class SmartCardViewWidget(QtWidgets.QWidget):
         self.editNameButton = QtWidgets.QPushButton(text="Edit Name")
         self.editNameButton.clicked.connect(self.parent().show_set_name)
         self.editNameButton.setProperty("active", "True")
-        self.editPublicUrlButton = QtWidgets.QPushButton(text="Edit Public URL")
-        self.editPublicUrlButton.clicked.connect(self.parent().show_set_public_url)
+        self.editPublicUrlButton = QtWidgets.QPushButton(
+            text="Edit Public URL")
+        self.editPublicUrlButton.clicked.connect(
+            self.parent().show_set_public_url)
         self.editUserPinButton = QtWidgets.QPushButton(text="Edit User Pin")
-        self.editUserPinButton.clicked.connect(self.parent().show_change_user_pin)
+        self.editUserPinButton.clicked.connect(
+            self.parent().show_change_user_pin)
         self.editAdminPinButton = QtWidgets.QPushButton(text="Edit Admin Pin")
-        self.editAdminPinButton.clicked.connect(self.parent().show_change_admin_pin)
+        self.editAdminPinButton.clicked.connect(
+            self.parent().show_change_admin_pin)
         vnavlayout = QtWidgets.QVBoxLayout()
         vnavlayout.addWidget(self.editNameButton)
         vnavlayout.addWidget(self.editPublicUrlButton)
@@ -88,7 +88,7 @@ class SmartCardViewWidget(QtWidgets.QWidget):
         self.hlayout = QtWidgets.QHBoxLayout()
         self.hlayout.addWidget(navbarWidget)
         self.hlayout.addWidget(self.main_area)
-        self.hlayout.setMargin(0)
+        self.hlayout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(self.hlayout)
 
 
@@ -108,9 +108,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setStatusBar(self.statusBar)
 
         # File menu
-        exportPubKey = QtWidgets.QAction("&Export public key", self)
+        exportPubKey = QAction("&Export public key", self)
         exportPubKey.triggered.connect(self.export_public_key)
-        exitAction = QtWidgets.QAction("E&xit", self)
+        exitAction = QAction("E&xit", self)
         exitAction.triggered.connect(self.exit_process)
         menu = self.menuBar()
         filemenu = menu.addMenu("&File")
@@ -118,15 +118,15 @@ class MainWindow(QtWidgets.QMainWindow):
         filemenu.addAction(exitAction)
 
         # smartcard menu
-        changepinAction = QtWidgets.QAction("Change user &pin", self)
+        changepinAction = QAction("Change user &pin", self)
         changepinAction.triggered.connect(self.show_change_user_pin)
-        changeadminpinAction = QtWidgets.QAction("Change &admin pin", self)
+        changeadminpinAction = QAction("Change &admin pin", self)
         changeadminpinAction.triggered.connect(self.show_change_admin_pin)
-        changenameAction = QtWidgets.QAction("Set cardholder &name", self)
+        changenameAction = QAction("Set cardholder &name", self)
         changenameAction.triggered.connect(self.show_set_name)
-        changeurlAction = QtWidgets.QAction("Set public key &URL", self)
+        changeurlAction = QAction("Set public key &URL", self)
         changeurlAction.triggered.connect(self.show_set_public_url)
-        resetYubiKeylAction = QtWidgets.QAction("Reset the YubiKey", self)
+        resetYubiKeylAction = QAction("Reset the YubiKey", self)
         resetYubiKeylAction.triggered.connect(self.reset_yubikey_dialog)
         smartcardmenu = menu.addMenu("&SmartCard")
         smartcardmenu.addAction(changepinAction)
@@ -188,7 +188,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.cardcheck_thread.flag = False
         self.tabs.setCurrentIndex(1)
         self.activateSmartCardOption("userPin")
-        self.smartCardWidget.hlayout.removeWidget(self.smartCardWidget.main_area)
+        self.smartCardWidget.hlayout.removeWidget(
+            self.smartCardWidget.main_area)
         self.smartCardWidget.main_area.deleteLater()
         self.smartCardWidget.main_area = SmartPinFormWidget(
             self.change_pin_on_card_slot,
@@ -202,7 +203,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.cardcheck_thread.flag = False
         self.tabs.setCurrentIndex(1)
         self.activateSmartCardOption("url")
-        self.smartCardWidget.hlayout.removeWidget(self.smartCardWidget.main_area)
+        self.smartCardWidget.hlayout.removeWidget(
+            self.smartCardWidget.main_area)
         self.smartCardWidget.main_area.deleteLater()
         self.smartCardWidget.main_area = SmartCardTextFormWidget(
             self.set_url_on_card_slot,
@@ -216,7 +218,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.cardcheck_thread.flag = False
         self.tabs.setCurrentIndex(1)
         self.activateSmartCardOption("name")
-        self.smartCardWidget.hlayout.removeWidget(self.smartCardWidget.main_area)
+        self.smartCardWidget.hlayout.removeWidget(
+            self.smartCardWidget.main_area)
         self.smartCardWidget.main_area.deleteLater()
         self.smartCardWidget.main_area = SmartCardTextFormWidget(
             self.set_name_on_card_slot,
@@ -230,7 +233,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.cardcheck_thread.flag = False
         self.tabs.setCurrentIndex(1)
         self.activateSmartCardOption("adminPin")
-        self.smartCardWidget.hlayout.removeWidget(self.smartCardWidget.main_area)
+        self.smartCardWidget.hlayout.removeWidget(
+            self.smartCardWidget.main_area)
         self.smartCardWidget.main_area.deleteLater()
         self.smartCardWidget.main_area = SmartPinFormWidget(
             self.change_admin_pin_on_card_slot,
@@ -242,7 +246,8 @@ class MainWindow(QtWidgets.QMainWindow):
     def activateSmartCardOption(self, buttonName: str):
         self.deactivateAllSmartCardOption()
         if buttonName == "adminPin":
-            self.smartCardWidget.editAdminPinButton.setProperty("active", "True")
+            self.smartCardWidget.editAdminPinButton.setProperty(
+                "active", "True")
             self.smartCardWidget.editAdminPinButton.style().unpolish(
                 self.smartCardWidget.editAdminPinButton
             )
@@ -250,7 +255,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.smartCardWidget.editAdminPinButton
             )
         elif buttonName == "userPin":
-            self.smartCardWidget.editUserPinButton.setProperty("active", "True")
+            self.smartCardWidget.editUserPinButton.setProperty(
+                "active", "True")
             self.smartCardWidget.editUserPinButton.style().unpolish(
                 self.smartCardWidget.editUserPinButton
             )
@@ -258,7 +264,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 self.smartCardWidget.editUserPinButton
             )
         elif buttonName == "url":
-            self.smartCardWidget.editPublicUrlButton.setProperty("active", "True")
+            self.smartCardWidget.editPublicUrlButton.setProperty(
+                "active", "True")
             self.smartCardWidget.editPublicUrlButton.style().unpolish(
                 self.smartCardWidget.editPublicUrlButton
             )
