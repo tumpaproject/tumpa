@@ -33,6 +33,22 @@ ApplicationWindow {
                     id: tumpaLogo
                     source: "images/logo.png"
                 }
+                Row {
+                    topPadding: 45
+                    spacing: 11
+
+                    Image {
+                        id: keyIcon
+                        source: "images/key_icon.svg"
+                        anchors.verticalCenter: keymgmtTxt.verticalCenter
+                    }
+
+                    Text {
+                        id: keymgmtTxt
+                        text: "Key Management"
+                        color: "white"
+                    }
+                }
             }
         }
 
