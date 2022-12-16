@@ -141,3 +141,6 @@ cython_debug/
 *.sec
 *.pub
 *.db
+
+# Our QML project file
+tumpa.pyproject.user
