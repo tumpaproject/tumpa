@@ -26,12 +26,13 @@ Button {
         },
         "red": {
             background: "#B91C1C",
-            backgroundPressed: "#FAFAFA",
+            backgroundPressed: "#A81919",
             text: "#FFFFFF",
         },
         "red-alt": {
-            background: "#FFFFFFF",
+            background: "#FFFFFF",
             backgroundPressed: "#FAFAFA",
+            border: "#D1D5DB",
             text: "#991B1B",
         }
     }
@@ -48,16 +49,16 @@ Button {
         color: colorMap[buttonColor].text
         verticalAlignment: Text.AlignVCenter
         elide: Text.ElideRight
-        anchors.leftMargin: iconSrc ? 36 : 12
+        anchors.leftMargin: iconSrc ? 34 : 12
         anchors.left: parent.left
     }
 
     background: Rectangle {
         implicitWidth: implicitContentWidth + (iconSrc ? 48 : 24)
-        implicitHeight: isThin ? 32 : 42
+        implicitHeight: isThin ? 34 : 42
         opacity: enabled ? 1 : 0.3
         color: control.down ? colorMap[buttonColor].backgroundPressed : colorMap[buttonColor].background
-        border.color: colorMap[buttonColor].border ? colorMap[buttonColor].border : transparent
+        border.color: colorMap[buttonColor].border ? colorMap[buttonColor].border : "transparent"
         border.width: colorMap[buttonColor].border ? 1 : 0
         radius: 4
         Image {
@@ -66,10 +67,12 @@ Button {
             anchors.left: parent.left
             anchors.verticalCenter: parent.verticalCenter
             anchors.leftMargin: 12
-            width: 12
-            height: 9
+            width: isThin ? 16 : 18
+            height: isThin ? 16 : 18
+            fillMode: Image.PreserveAspectFit
             sourceSize.width: 1024
             sourceSize.height: 1024
+            mipmap: true
         }
     }
 }

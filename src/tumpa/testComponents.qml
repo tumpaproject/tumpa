@@ -115,8 +115,23 @@ ApplicationWindow {
 
                     SecondaryButton {
                         labelString: "Export public key"
-                        iconSrc: "../../images/tick_mark.svg"
+                        iconSrc: "../../images/export.svg"
                         isThin: true
+                    }
+
+                    DangerButton {
+                        labelString: "Revoke key"
+                        iconSrc: "../../images/revoke.svg"
+                        isThin: true
+                    }
+
+                    DefaultButton {
+                        labelString: "Back"
+                        iconSrc: "../../images/backIcon.svg"
+                    }
+
+                    ModalDangerButton {
+                        labelString: "Revoke"
                     }
 
                     Label {
