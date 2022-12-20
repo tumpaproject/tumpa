@@ -1,3 +1,3 @@
 {
-    "files": ["main.py", "main.qml"]
+    "files": ["components/Forms/TextInputField.qml","components/Buttons/CustomButton.qml","components/Buttons/SecondaryButton.qml","components/Buttons/PrimaryButton.qml","main.qml","components/Forms/CheckboxInputField.qml","components/Forms/DropdownInputField.qml","test_component.py","components/Forms/TextareaInputField.qml","main.py","components/Forms/PasswordInputField.qml","testComponents.qml","components/Buttons/DefaultButton.qml"]
 }
