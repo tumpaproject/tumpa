@@ -5,6 +5,7 @@
         "components/Forms/TextInputField.qml",
         "main.qml",
         "StartView.qml",
+        "UserPin.qml",
         "components/Forms/TextareaInputField.qml",
         "components/Buttons/SecondaryButton.qml",
         "main.py",

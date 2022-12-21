@@ -4,6 +4,8 @@ import QtQuick.Controls
 Item {
     property alias labelString: passwordField.labelString
     property string instruction: ""
+    property alias text: passwordField.text
+    property alias pin: passwordField.pin
 
     width: parent.width
     height: instruction != "" ? 80 : 61

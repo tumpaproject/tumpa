@@ -4,6 +4,8 @@ import QtQuick.Controls
 Item {
     property string labelString: ""
     property string type: "text"
+    property alias text: input.text
+    property bool pin: false
 
     anchors.leftMargin: 20
     height: 61
@@ -24,7 +26,7 @@ Item {
         font.pixelSize: 14
         echoMode: parent.type == "password" ? TextInput.Password : TextInput.Normal
 
-        height: 30
+        height: pin ? 40 : 30
         width: parent.width
         anchors {
             left: parent.left

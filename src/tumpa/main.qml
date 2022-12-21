@@ -126,10 +126,15 @@ ApplicationWindow {
             height: root.height
             SplitView.minimumWidth: 683
 
-            StartView {
+            UserPin {
 
                 anchors.fill: parent
+                height: 67
             }
+            //            StartView {
+
+            //                anchors.fill: parent
+            //            }
         }
     }
 
