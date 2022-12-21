@@ -18,6 +18,7 @@
         "components/Forms/CheckboxInputField.qml",
         "components/Buttons/ModalDangerButton.qml",
         "components/Buttons/LeftMenuButton.qml",
-        "components/Buttons/TransparentButton.qml"
+        "components/Buttons/TransparentButton.qml",
+        "components/Utils/ColSpacer.qml"
     ]
 }

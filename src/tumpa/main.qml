@@ -4,6 +4,7 @@ import QtQuick.Controls
 
 import "components/Forms"
 import "components/Buttons"
+import "components/Utils"
 
 ApplicationWindow {
     title: qsTr("Tumpa")
@@ -37,6 +38,7 @@ ApplicationWindow {
             }
 
             Column {
+                id: menuOptions
                 anchors {
                     topMargin: 45
                     top: tumpaLogo.bottom
@@ -51,6 +53,8 @@ ApplicationWindow {
                     id: leftIconBttn
                     // This is our initial active menu item
                     active: true
+                    anchors.bottomMargin: 18
+                    text: qsTr("Key Management")
                     onClicked: {
                         clearAcitve()
                         active = true
@@ -58,10 +62,15 @@ ApplicationWindow {
                     }
                 }
 
+                ColSpacer {
+                    height: 10
+                }
+
                 LeftIconButton {
                     id: leftKeyBttn
                     // This is our Yubikey button
                     imageSource: "../../images/usbkey.svg"
+                    text: qsTr("Smart Card")
                     onClicked: {
                         clearAcitve()
                         active = true
@@ -120,11 +129,10 @@ ApplicationWindow {
     }
 
     function clearAcitve() {
-        leftIconBttn.active = false
-        leftKeyBttn.active = false
-        editNameBttn.active = false
-        editPublicURLBttn.active = false
-        editUserPinBttn.active = false
-        editAdminPinBttn.active = false
+        for (var i in menuOptions.children) {
+            if (!(menuOptions.children[i] instanceof ColSpacer)) {
+                menuOptions.children[i].active = false
+            }
+        }
     }
 }

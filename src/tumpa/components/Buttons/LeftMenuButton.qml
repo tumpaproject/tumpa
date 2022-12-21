@@ -8,7 +8,6 @@ Rectangle {
 
     width: parent.width
     height: 40
-    anchors.topMargin: 45
     color: active ? "#45187E" : "#54298B"
     radius: 5
 
@@ -16,11 +15,13 @@ Rectangle {
         id: keyTxt
         anchors {
             fill: parent
-            margins: 8
-            leftMargin: 36
+            margins: 10
+            leftMargin: 40
         }
-        text: qsTr("Dummy text")
-        color: "white"
+        text: qsTr("")
+        color: "#DED4E9"
+        font.pixelSize: 14
+        font.weight: 500
     }
 
     MouseArea {

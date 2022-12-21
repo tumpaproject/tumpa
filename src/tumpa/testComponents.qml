@@ -4,6 +4,7 @@ import QtQuick.Controls
 
 import "components/Forms"
 import "components/Buttons"
+import "components/Utils"
 
 ApplicationWindow {
     title: qsTr("Tumpa")
@@ -25,35 +26,100 @@ ApplicationWindow {
             height: root.height
             SplitView.minimumWidth: 217
 
-            Column {
+            Image {
+                id: tumpaLogo
+                source: "images/logo.png"
                 anchors {
                     topMargin: 13
                     top: parent.top
-                    leftMargin: 18
+                    leftMargin: 14
                     left: parent.left
                 }
-                Image {
-                    id: tumpaLogo
-                    source: "images/logo.png"
+            }
+
+            Column {
+                id: menuOptions
+                anchors {
+                    topMargin: 45
+                    top: tumpaLogo.bottom
+                    leftMargin: 14
+                    left: parent.left
+                    right: parent.right
+                    rightMargin: 10
                 }
-                Row {
-                    topPadding: 45
-                    spacing: 11
+                spacing: 4
 
-                    Image {
-                        id: keyIcon
-                        source: "images/key_icon.svg"
-                        anchors.verticalCenter: keymgmtTxt.verticalCenter
+                LeftIconButton {
+                    id: leftIconBttn
+                    // This is our initial active menu item
+                    active: true
+                    anchors.bottomMargin: 18
+                    text: qsTr("Key Management")
+                    onClicked: {
+                        clearAcitve()
+                        active = true
+                        console.log("leftIconBttn")
                     }
+                }
 
-                    Text {
-                        id: keymgmtTxt
-                        text: "Key Management"
-                        color: "white"
+                ColSpacer {
+                    height: 10
+                }
+
+                LeftIconButton {
+                    id: leftKeyBttn
+                    // This is our Yubikey button
+                    imageSource: "../../images/usbkey.svg"
+                    text: qsTr("Smart Card")
+                    onClicked: {
+                        clearAcitve()
+                        active = true
+                        console.log("leftKeyBttn")
+                    }
+                }
+
+                LeftMenuButton {
+                    id: editNameBttn
+                    text: qsTr("Edit Name")
+                    onClicked: {
+                        clearAcitve()
+                        active = true
+                        console.log("editNameBttn")
+                    }
+                }
+
+                LeftMenuButton {
+                    id: editPublicURLBttn
+                    text: qsTr("Edit Public URL")
+                    onClicked: {
+                        clearAcitve()
+                        active = true
+                        console.log("editPublicURLBttn")
+                    }
+                }
+
+                LeftMenuButton {
+                    id: editUserPinBttn
+                    text: qsTr("Change User Pin")
+                    onClicked: {
+                        clearAcitve()
+                        active = true
+                        console.log("editUserPinBttn")
+                    }
+                }
+
+                LeftMenuButton {
+                    id: editAdminPinBttn
+                    text: qsTr("Change Admin Pin")
+                    onClicked: {
+                        clearAcitve()
+                        active = true
+                        console.log("editAdminPinBttn")
                     }
                 }
             }
         }
+
 
         Rectangle {
             id: bigBox
@@ -144,6 +210,13 @@ ApplicationWindow {
                     }
                 }
 
+            }
+        }
+    }
+    function clearAcitve() {
+        for (var i in menuOptions.children) {
+            if (!(menuOptions.children[i] instanceof ColSpacer)) {
+                menuOptions.children[i].active = false
             }
         }
     }
