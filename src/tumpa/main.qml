@@ -28,9 +28,9 @@ ApplicationWindow {
 
             Image {
                 id: tumpaLogo
-                source: "images/logo.png"
+                source: "images/logo.svg"
                 anchors {
-                    topMargin: 13
+                    topMargin: 14
                     top: parent.top
                     leftMargin: 14
                     left: parent.left
@@ -40,7 +40,7 @@ ApplicationWindow {
             Column {
                 id: menuOptions
                 anchors {
-                    topMargin: 45
+                    topMargin: 20
                     top: tumpaLogo.bottom
                     leftMargin: 14
                     left: parent.left
