@@ -58,8 +58,8 @@ Button {
         implicitHeight: isThin ? 34 : 42
         opacity: enabled ? 1 : 0.3
         color: control.down ? colorMap[buttonColor].backgroundPressed : colorMap[buttonColor].background
-        border.color: colorMap[buttonColor].border ? colorMap[buttonColor].border : "transparent"
-        border.width: colorMap[buttonColor].border ? 1 : 0
+        border.color: control.visualFocus ? "#54298B" : (colorMap[buttonColor].border ? colorMap[buttonColor].border : "transparent")
+        border.width: control.visualFocus ? 2 : (colorMap[buttonColor].border ? 1 : 0)
         radius: 4
         Image {
             id: icon

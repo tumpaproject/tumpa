@@ -134,6 +134,11 @@ ApplicationWindow {
                         labelString: "Revoke"
                     }
 
+                    TransparentButton {
+                        labelString: "Export Public Key"
+                        iconSrc: "../../images/export.svg"
+                    }
+
                     Label {
                         text: "Buffer element"
                     }

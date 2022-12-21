@@ -1,3 +1,23 @@
 {
-    "files": ["components/Forms/LeftIconButton.qml","test_component.py","components/Forms/TextInputField.qml","main.qml","components/Forms/TextareaInputField.qml","components/Buttons/SecondaryButton.qml","main.py","components/Buttons/PrimaryButton.qml","components/Buttons/DangerButton.qml","components/Buttons/CustomButton.qml","components/Buttons/DefaultButton.qml","testComponents.qml","components/Buttons/LeftIconButton.qml","components/Forms/DropdownInputField.qml","components/Forms/PasswordInputField.qml","components/Forms/CheckboxInputField.qml","components/Buttons/ModalDangerButton.qml","components/Buttons/LeftMenuButton.qml"]
+    "files": [
+        "components/Forms/LeftIconButton.qml",
+        "test_component.py",
+        "components/Forms/TextInputField.qml",
+        "main.qml",
+        "components/Forms/TextareaInputField.qml",
+        "components/Buttons/SecondaryButton.qml",
+        "main.py",
+        "components/Buttons/PrimaryButton.qml",
+        "components/Buttons/DangerButton.qml",
+        "components/Buttons/CustomButton.qml",
+        "components/Buttons/DefaultButton.qml",
+        "testComponents.qml",
+        "components/Buttons/LeftIconButton.qml",
+        "components/Forms/DropdownInputField.qml",
+        "components/Forms/PasswordInputField.qml",
+        "components/Forms/CheckboxInputField.qml",
+        "components/Buttons/ModalDangerButton.qml",
+        "components/Buttons/LeftMenuButton.qml",
+        "components/Buttons/TransparentButton.qml"
+    ]
 }
