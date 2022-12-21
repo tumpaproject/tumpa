@@ -125,6 +125,11 @@ ApplicationWindow {
             color: "white"
             height: root.height
             SplitView.minimumWidth: 683
+
+            StartView {
+
+                anchors.fill: parent
+            }
         }
     }
 

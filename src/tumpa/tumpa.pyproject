@@ -4,6 +4,7 @@
         "test_component.py",
         "components/Forms/TextInputField.qml",
         "main.qml",
+        "StartView.qml",
         "components/Forms/TextareaInputField.qml",
         "components/Buttons/SecondaryButton.qml",
         "main.py",
