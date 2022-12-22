@@ -8,7 +8,7 @@
         "UserPin.qml",
         "AdminPin.qml",
         "PublicURL.qml",
-        "Name.qml",
+        "NameView.qml",
         "components/Forms/TextareaInputField.qml",
         "components/Buttons/SecondaryButton.qml",
         "main.py",
