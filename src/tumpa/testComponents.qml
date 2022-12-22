@@ -164,9 +164,8 @@ ApplicationWindow {
                         instruction: "Password should be atleast 8 characters."
                     }
 
-                    CheckboxInputField {
+                    KeyTypeCheckboxGroup {
                         labelString: "Key type: "
-                        checkboxItems: keyTypeOptions
                     }
 
                     DropdownInputField {
