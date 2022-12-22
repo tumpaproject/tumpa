@@ -126,7 +126,7 @@ ApplicationWindow {
             height: root.height
             SplitView.minimumWidth: 683
 
-            PublicURL {
+            Name {
 
                 anchors.fill: parent
                 height: 67
