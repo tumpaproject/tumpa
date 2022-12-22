@@ -126,7 +126,7 @@ ApplicationWindow {
             height: root.height
             SplitView.minimumWidth: 683
 
-            AdminPin {
+            PublicURL {
 
                 anchors.fill: parent
                 height: 67
