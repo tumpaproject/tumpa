@@ -179,15 +179,50 @@ ApplicationWindow {
                     }
 
                     SecondaryButton {
-                        labelString: "Export public key"
+                        labelString: "Export public key (press to see info modal)"
                         iconSrc: "../../images/export.svg"
                         isThin: true
+                        onClicked: {
+                            var component1 = Qt.createComponent("components/Utils/InfoModal.qml");
+                            var win = component1.createObject(
+                                root,
+                                {
+                                    headingText: "Expired Key",
+                                    contentText: "This key is expired and cannot be send to your card."
+                                }
+                            );
+                            win.okayed.connect(()=>{
+                                  console.log("Modal okayed");
+                                  win.destroy();
+                              });
+                            win.show();
+                        }
                     }
 
                     DangerButton {
-                        labelString: "Revoke key"
+                        labelString: "Revoke key (Press to see danger modal)"
                         iconSrc: "../../images/revoke.svg"
                         isThin: true
+                        onClicked: {
+                            var component1 = Qt.createComponent("components/Utils/WarningModal.qml");
+                            var win = component1.createObject(
+                                root,
+                                {
+                                    dangerBtnText: "Revoke",
+                                    headingText: "Warning",
+                                    contentText: "Are you sure you want to revoke the email@test.com user ID? This action can’t be undone."
+                                }
+                            );
+                            win.accepted.connect(()=>{
+                                  console.log("Modal accepted");
+                                  win.destroy();
+                              });
+                            win.rejected.connect(()=>{
+                                  console.log("Modal rejected");
+                                  win.destroy();
+                              });
+                            win.show();
+                        }
                     }
 
                     DefaultButton {
