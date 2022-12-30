@@ -1,7 +1,7 @@
 import QtQuick
 
-import "components/Forms"
-import "components/Buttons"
+import "includes/Forms"
+import "includes/Buttons"
 
 Rectangle {
     id: root

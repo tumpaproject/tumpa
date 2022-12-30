@@ -2,9 +2,9 @@ import QtQuick
 import QtQuick.Controls
 import Qt.labs.platform
 
-import "components/Forms"
-import "components/Buttons"
-import "components/Utils"
+import "includes/Forms"
+import "includes/Buttons"
+import "includes/Utils"
 
 Rectangle {
     id: root

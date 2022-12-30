@@ -2,9 +2,9 @@ import QtQuick
 import QtQuick.Window
 import QtQuick.Controls
 
-import "components/Forms"
-import "components/Buttons"
-import "components/Utils"
+import "includes/Forms"
+import "includes/Buttons"
+import "includes/Utils"
 
 ApplicationWindow {
     title: qsTr("Tumpa")
@@ -183,7 +183,7 @@ ApplicationWindow {
                         iconSrc: "../../images/export.svg"
                         isThin: true
                         onClicked: {
-                            var component1 = Qt.createComponent("components/Utils/InfoModal.qml");
+                            var component1 = Qt.createComponent("includes/Utils/InfoModal.qml");
                             var win = component1.createObject(
                                 root,
                                 {
@@ -204,7 +204,7 @@ ApplicationWindow {
                         iconSrc: "../../images/revoke.svg"
                         isThin: true
                         onClicked: {
-                            var component1 = Qt.createComponent("components/Utils/WarningModal.qml");
+                            var component1 = Qt.createComponent("includes/Utils/WarningModal.qml");
                             var win = component1.createObject(
                                 root,
                                 {

@@ -2,9 +2,9 @@ import QtQuick
 import QtQuick.Window
 import QtQuick.Controls
 
-import "components/Forms"
-import "components/Buttons"
-import "components/Utils"
+import "includes/Forms"
+import "includes/Buttons"
+import "includes/Utils"
 
 ApplicationWindow {
     title: qsTr("Tumpa")
