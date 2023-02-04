@@ -5,7 +5,6 @@ Item {
     property alias labelString: passwordField.labelString
     property string instruction: ""
     property alias text: passwordField.text
-    property alias pin: passwordField.pin
 
     width: parent.width
     height: instruction != "" ? 80 : 61
@@ -18,7 +17,7 @@ Item {
     Text {
         anchors {
             top: passwordField.bottom
-            topMargin: 5
+            topMargin: 15
         }
         font.pixelSize: 10
         visible: instruction != ""
