@@ -76,6 +76,7 @@ Rectangle {
                 id: expirationDateTxt
                 width: 645
                 labelString: qsTr("Expiration date:")
+                inputMask: "00/00/0000;_"
                 // This helps to set the current height of the box
             }
 

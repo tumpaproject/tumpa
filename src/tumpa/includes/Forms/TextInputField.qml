@@ -4,6 +4,7 @@ import QtQuick.Controls
 Item {
     property string labelString: ""
     property string type: "text"
+    property alias inputMask: input.inputMask
     property alias text: input.text
 
     anchors.leftMargin: 20
