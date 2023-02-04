@@ -3,6 +3,7 @@ import QtQuick.Controls
 
 Item {
     property string labelString: ""
+    property alias text: input.text
 
     anchors.leftMargin: 20
     height: 130
