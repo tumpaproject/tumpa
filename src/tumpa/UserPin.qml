@@ -40,7 +40,6 @@ Rectangle {
             width: 645
             height: 40
             labelString: qsTr("Current Admin Pin")
-            pin: true
         }
 
         Item {
@@ -53,7 +52,6 @@ Rectangle {
             width: 645
             height: 40
             labelString: qsTr("New User Pin")
-            pin: true
         }
     }
 

@@ -41,11 +41,9 @@ Rectangle {
             height: 40
             labelString: qsTr("Name")
             // This helps to set the current height of the box
-            pin: true
         }
 
-        Item {
-            width: parent.width
+        ColSpacer {
             height: 20
         }
 
@@ -54,7 +52,6 @@ Rectangle {
             width: 645
             height: 40
             labelString: qsTr("Current Admin Pin")
-            pin: true
         }
     }
 

@@ -41,7 +41,6 @@ Rectangle {
             height: 40
             labelString: qsTr("Public URL")
             // This helps to set the current height of the box
-            pin: true
         }
 
         Item {
@@ -54,7 +53,6 @@ Rectangle {
             width: 645
             height: 40
             labelString: qsTr("Current Admin Pin")
-            pin: true
         }
     }
 

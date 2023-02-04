@@ -126,7 +126,7 @@ ApplicationWindow {
             height: root.height
             SplitView.minimumWidth: 683
 
-            NameView {
+            GenerateKeyView {
 
                 anchors.fill: parent
                 height: 67
