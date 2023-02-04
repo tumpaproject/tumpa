@@ -4,6 +4,7 @@ import QtQuick.Controls
 Item {
     property string labelString: ""
     property var dropdownItems: null
+    property alias dropdownValue: control.currentValue
 
     anchors.leftMargin: 20
     height: 61
