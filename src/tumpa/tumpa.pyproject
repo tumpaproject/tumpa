@@ -32,6 +32,7 @@
         "includes/Utils/ColSpacer.qml",
         "includes/Utils/KeyValRow.qml",
         "includes/Utils/KeyItem.qml",
+        "includes/Utils/StatusInfo.qml",
         "includes/Utils/WarningModal.qml",
         "includes/Utils/InfoModal.qml"
     ]
