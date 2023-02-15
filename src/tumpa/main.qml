@@ -17,6 +17,25 @@ ApplicationWindow {
     // This defines if we will allow saving private key
     property bool allowsecret: false
 
+    ListModel {
+        id: keyDetails
+
+        ListElement{
+            name: "Application Type: "
+            value: "OpenPGP"
+        }
+
+        ListElement{
+            name: "Name of Cardholder: "
+            value: "SaptakS"
+        }
+
+        ListElement{
+            name: "Public URL of Cardholder: "
+            value: "https://saptaks.website"
+        }
+    }
+
     SplitView {
         anchors.fill: parent
 
@@ -126,10 +145,9 @@ ApplicationWindow {
             height: root.height
             SplitView.minimumWidth: 683
 
-            GenerateKeyView {
-
+            KeyDetailsView {
+                keyDetailsList: keyDetails
                 anchors.fill: parent
-                height: 67
             }
             //            StartView {
 
