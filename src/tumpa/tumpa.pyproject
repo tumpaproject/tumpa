@@ -11,7 +11,8 @@
         "NameView.qml",
         "AddUserView.qml",
         "GenerateKeyView.qml",
-        "KeyDetailsView.qml",
+        "CardDetailsView.qml",
+        "KeyListView.qml",
         "includes/Forms/TextareaInputField.qml",
         "includes/Buttons/SecondaryButton.qml",
         "main.py",
@@ -30,6 +31,7 @@
         "includes/Buttons/TransparentButton.qml",
         "includes/Utils/ColSpacer.qml",
         "includes/Utils/KeyValRow.qml",
+        "includes/Utils/KeyItem.qml",
         "includes/Utils/WarningModal.qml",
         "includes/Utils/InfoModal.qml"
     ]

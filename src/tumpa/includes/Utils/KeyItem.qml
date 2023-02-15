@@ -1,0 +1,160 @@
+import QtQuick
+
+import "../Buttons"
+
+Rectangle {
+    property alias fingerprint: fingerprint.text
+    property alias createdOn: createdOn.text
+    property alias expiresOn: expiresOn.text
+
+    property var useridList: null
+
+    id: root
+
+    width: parent.width
+    height: 144
+
+    color: "#F9FAFB"
+    border.color: "#E5E7EB"
+    border.width: 1
+
+    radius: 5
+
+    Column {
+        anchors.top: root.top
+        anchors.topMargin: 12
+        anchors.left: root.left
+        anchors.leftMargin: 12
+        spacing: 12
+
+        Row {
+            height: 18
+            spacing: 12
+
+            Image {
+                id: icon
+                source: "../../images/keyIcon.svg"
+                anchors.verticalCenter: parent.verticalCenter
+                width: 18
+                height: 18
+                fillMode: Image.PreserveAspectFit
+                sourceSize.width: 1024
+                sourceSize.height: 1024
+                mipmap: true
+            }
+
+            Text {
+                id: fingerprint
+                text: qsTr("")
+                font.pixelSize: 14
+                font.weight: 600
+                lineHeight: 1.3
+            }
+        }
+
+        Row {
+            spacing: 20
+
+            Row {
+                Text {
+                    text: qsTr("Created on: ")
+                    font.pixelSize: 12
+                    font.weight: 400
+                    lineHeight: 1.5
+                }
+                Text {
+                    id: createdOn
+                    text: qsTr("10 March 2023")
+                    font.pixelSize: 12
+                    font.weight: 500
+                    lineHeight: 1.5
+                }
+            }
+
+            Row {
+                Text {
+                    text: qsTr("Expires on: ")
+                    font.pixelSize: 12
+                    font.weight: 400
+                    lineHeight: 1.5
+                }
+                Text {
+                    id: expiresOn
+                    text: qsTr("10 March 2024")
+                    font.pixelSize: 12
+                    font.weight: 500
+                    lineHeight: 1.5
+                }
+            }
+        }
+
+        Rectangle {
+            color: "#E5E7EB"
+            radius: 16
+            width: userId.width + userIdEmail.width + 24
+            height: 25
+
+            Row {
+                spacing: 8
+                height: 17
+                leftPadding: 8
+                topPadding: 4
+
+                Text {
+                    id: userId
+                    text: qsTr("John Doe Van")
+                    font.pixelSize: 14
+                    font.weight: 500
+                }
+
+                Text {
+                    id: userIdEmail
+                    text: qsTr("<test@email.com>")
+                    font.pixelSize: 14
+                    font.weight: 400
+                }
+            }
+        }
+
+        Row {
+            spacing: 20
+
+            TransparentButton {
+                labelString: "Details"
+                iconSrc: "../../images/details_purple.svg"
+
+                onClicked: {
+                    console.log("Details clicked for: " + fingerprint.text)
+                }
+            }
+
+            TransparentButton {
+                labelString: "Send key to card"
+                iconSrc: "../../images/card_purple.svg"
+
+                onClicked: {
+                    console.log("Send key to card clicked for: " + fingerprint.text)
+                }
+            }
+
+            TransparentButton {
+                labelString: "Export public key"
+                iconSrc: "../../images/export_purple.svg"
+
+                onClicked: {
+                    console.log("Export pub key clicked for: " + fingerprint.text)
+                }
+            }
+
+            TransparentButton {
+                labelString: "Revoke key"
+                iconSrc: "../../images/delete_purple.svg"
+
+                onClicked: {
+                    console.log("Revoke key clicked for: " + fingerprint.text)
+                }
+            }
+
+        }
+    }
+}

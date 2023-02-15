@@ -145,9 +145,7 @@ ApplicationWindow {
             height: root.height
             SplitView.minimumWidth: 683
 
-            KeyDetailsView {
-                keyDetailsList: keyDetails
-                anchors.fill: parent
+            KeyListView {
             }
             //            StartView {
 
