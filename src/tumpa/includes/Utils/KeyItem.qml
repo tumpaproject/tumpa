@@ -3,9 +3,9 @@ import QtQuick
 import "../Buttons"
 
 Rectangle {
-    property alias fingerprint: fingerprint.text
-    property alias createdOn: createdOn.text
-    property alias expiresOn: expiresOn.text
+    property alias fingerprintTxt: fingerprint.text
+    property alias createdOnTxt: createdOn.text
+    property alias expiresOnTxt: expiresOn.text
 
     property var useridList: null
 
@@ -45,7 +45,7 @@ Rectangle {
 
             Text {
                 id: fingerprint
-                text: qsTr("")
+                text: fingerprint
                 font.pixelSize: 14
                 font.weight: 600
                 lineHeight: 1.3

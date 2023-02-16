@@ -18,21 +18,36 @@ ApplicationWindow {
     property bool allowsecret: false
 
     ListModel {
-        id: keyDetails
+        id: keyList
 
         ListElement{
-            name: "Application Type: "
-            value: "OpenPGP"
+            fingerprint: "49CC5563EEE747C8F6C801037D0E7EF2AEDC5E84"
+            createdOn: "10 March 2022"
+            expiresOn: "10 March 2024"
         }
 
         ListElement{
-            name: "Name of Cardholder: "
-            value: "SaptakS"
+            fingerprint: "49CC5563EEE747C8F6C801037D0E7EF2AEDBH213"
+            createdOn: "10 March 2023"
+            expiresOn: "10 March 2024"
         }
 
         ListElement{
-            name: "Public URL of Cardholder: "
-            value: "https://saptaks.website"
+            fingerprint: "501S5563EEE747C8F6C801037D0E7EF2AEDC5E84"
+            createdOn: "10 March 2022"
+            expiresOn: "10 February 2024"
+        }
+
+        ListElement{
+            fingerprint: "501S5563EEE747C8F6C801037D0E7EF2AEDC5E84"
+            createdOn: "10 March 2022"
+            expiresOn: "10 February 2024"
+        }
+
+        ListElement{
+            fingerprint: "501S5563EEE747C8F6C801037D0E7EF2AEDC5E84"
+            createdOn: "10 March 2022"
+            expiresOn: "10 February 2024"
         }
     }
 
@@ -156,6 +171,8 @@ ApplicationWindow {
             SplitView.minimumWidth: 683
 
             KeyListView {
+                anchors.fill: parent
+                keyList: keyList
             }
             //            StartView {
 
