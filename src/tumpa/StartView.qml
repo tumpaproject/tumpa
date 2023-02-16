@@ -6,7 +6,7 @@ import "includes/Buttons"
 Rectangle {
     id: root
     color: "white"
-    signal clicked
+    signal genkeyclicked
 
     Image {
         id: bigKey
@@ -54,7 +54,10 @@ Rectangle {
             labelString: qsTr("Generate New Key")
             iconSrc: "../../images/plus.svg"
 
-            onClicked: console.log("generate clicked")
+            onClicked: {
+                console.log("generate clicked")
+                root.genkeyclicked()
+            }
         }
 
         TransparentButton {

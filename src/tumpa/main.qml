@@ -20,31 +20,31 @@ ApplicationWindow {
     ListModel {
         id: keyList
 
-        ListElement{
+        ListElement {
             fingerprint: "49CC5563EEE747C8F6C801037D0E7EF2AEDC5E84"
             createdOn: "10 March 2022"
             expiresOn: "10 March 2024"
         }
 
-        ListElement{
+        ListElement {
             fingerprint: "49CC5563EEE747C8F6C801037D0E7EF2AEDBH213"
             createdOn: "10 March 2023"
             expiresOn: "10 March 2024"
         }
 
-        ListElement{
+        ListElement {
             fingerprint: "501S5563EEE747C8F6C801037D0E7EF2AEDC5E84"
             createdOn: "10 March 2022"
             expiresOn: "10 February 2024"
         }
 
-        ListElement{
+        ListElement {
             fingerprint: "501S5563EEE747C8F6C801037D0E7EF2AEDC5E84"
             createdOn: "10 March 2022"
             expiresOn: "10 February 2024"
         }
 
-        ListElement{
+        ListElement {
             fingerprint: "501S5563EEE747C8F6C801037D0E7EF2AEDC5E84"
             createdOn: "10 March 2022"
             expiresOn: "10 February 2024"
@@ -170,14 +170,44 @@ ApplicationWindow {
             height: root.height
             SplitView.minimumWidth: 683
 
-            KeyListView {
+            StackView {
+                id: stack
+                initialItem: startView
                 anchors.fill: parent
-                keyList: keyList
-            }
-            //            StartView {
 
-            //                anchors.fill: parent
-            //            }
+                pushEnter: Transition {
+                    PropertyAnimation {
+                        property: "opacity"
+                        from: 0
+                        to: 1
+                        duration: 100
+                    }
+                }
+                pushExit: Transition {
+                    PropertyAnimation {
+                        property: "opacity"
+                        from: 1
+                        to: 0
+                        duration: 100
+                    }
+                }
+                popEnter: Transition {
+                    PropertyAnimation {
+                        property: "opacity"
+                        from: 0
+                        to: 1
+                        duration: 100
+                    }
+                }
+                popExit: Transition {
+                    PropertyAnimation {
+                        property: "opacity"
+                        from: 1
+                        to: 0
+                        duration: 100
+                    }
+                }
+            }
         }
     }
 
@@ -187,5 +217,19 @@ ApplicationWindow {
                 menuOptions.children[i].active = false
             }
         }
+    }
+
+    Component {
+        id: startView
+        StartView {
+            //onClicked: stack.push(userView)
+            onGenkeyclicked: stack.push(genkeyView)
+        }
+    }
+
+    Component {
+        id: genkeyView
+
+        GenerateKeyView {}
     }
 }
