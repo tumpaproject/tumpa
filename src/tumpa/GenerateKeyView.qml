@@ -22,8 +22,14 @@ Rectangle {
 
     ListModel {
         id: keyAlgoOptions
-        ListElement { text: "RSA"; value: "rsa" }
-        ListElement { text: "Curve 25519"; value: "curve25519" }
+        ListElement {
+            text: "RSA 4096"
+            value: "rsa4096"
+        }
+        ListElement {
+            text: "Curve 25519"
+            value: "curve25519"
+        }
     }
 
     ScrollView {
@@ -75,8 +81,8 @@ Rectangle {
             TextInputField {
                 id: expirationDateTxt
                 width: 645
-                labelString: qsTr("Expiration date:")
-                inputMask: "00/00/0000;_"
+                labelString: qsTr("Expiration date (YYYY/MM/DD):")
+                inputMask: "0000/00/00;_"
                 // This helps to set the current height of the box
             }
 
@@ -143,6 +149,4 @@ Rectangle {
             }
         }
     }
-
-
 }
