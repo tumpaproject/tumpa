@@ -7,6 +7,7 @@ Rectangle {
     property alias createdOnTxt: createdOn.text
     property alias expiresOnTxt: expiresOn.text
 
+    property bool hasExpired: false
     property var useridList: null
 
     id: root
@@ -14,8 +15,8 @@ Rectangle {
     width: parent.width
     height: 144
 
-    color: "#F9FAFB"
-    border.color: "#E5E7EB"
+    color: hasExpired ? "#FEF2F2" : "#F9FAFB"
+    border.color: hasExpired ? "#FCA5A5" : "#E5E7EB"
     border.width: 1
 
     radius: 5
