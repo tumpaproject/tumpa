@@ -9,7 +9,7 @@ import "includes/Utils"
 Rectangle {
     id: root
     color: "white"
-    property alias email: emailTxt.text
+    property alias emails: emailTxt.text
     property alias name: nameTxt.text
     property alias passphrase: passphraseTxt.text
     property alias expirationDate: expirationDateTxt.text
@@ -19,6 +19,7 @@ Rectangle {
     property alias authenticationChecked: keyTypeCheckbox.authenticationChecked
 
     signal next
+    signal back
 
     ListModel {
         id: keyAlgoOptions
@@ -136,14 +137,7 @@ Rectangle {
                     iconSrc: "../../images/tick_mark.svg"
 
                     onClicked: {
-                        console.log(emailTxt.text)
-                        console.log(nameTxt.text)
-                        console.log(passphraseTxt.text)
-                        console.log(expirationDateTxt.text)
-                        console.log(keyAlgorithmTxt.dropdownValue)
-                        console.log(keyTypeCheckbox.encryptionChecked)
-                        console.log(keyTypeCheckbox.signingChecked)
-                        console.log(keyTypeCheckbox.authenticationChecked)
+                        root.next()
                     }
                 }
             }

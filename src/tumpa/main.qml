@@ -219,6 +219,20 @@ ApplicationWindow {
         }
     }
 
+    Connections {
+        target: tbackend
+        function onUpdated() {
+            stack.pop()
+            if (tbackend.haveKeys === true) {
+                if (stack.depth === 1) {
+                    stack.pop()
+                }
+                stack.push(keylistView)
+            }
+            //stack.push(ykView)
+        }
+    }
+
     Component {
         id: startView
         StartView {
@@ -230,6 +244,24 @@ ApplicationWindow {
     Component {
         id: genkeyView
 
-        GenerateKeyView {}
+        GenerateKeyView {
+            onNext: {
+                stack.pop()
+                stack.push(waitView)
+                tbackend.generateKey(name, emails, passphrase, expirationDate,
+                                     encryptionChecked, signingChecked,
+                                     authenticationChecked, keyAlgo)
+            }
+        }
+    }
+
+    Component {
+        id: waitView
+        WaitView {}
+    }
+
+    Component {
+        id: keylistView
+        KeyListView {}
     }
 }
