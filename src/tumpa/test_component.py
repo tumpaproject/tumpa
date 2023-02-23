@@ -6,6 +6,7 @@ from typing import final
 from PySide6.QtGui import QGuiApplication, QFontDatabase, QFont
 from PySide6.QtQml import QQmlApplicationEngine
 
+
 def main():
     app = QGuiApplication(sys.argv)
     # First set the font
@@ -22,6 +23,7 @@ def main():
     if not engine.rootObjects():
         sys.exit(-1)
     sys.exit(app.exec())
+
 
 if __name__ == "__main__":
     main()

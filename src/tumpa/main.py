@@ -17,11 +17,16 @@ from PySide6.QtGui import QGuiApplication, QFontDatabase, QFont
 from PySide6.QtQml import QQmlApplicationEngine
 from PySide6.QtCore import QThread, Signal, Slot, QObject, Property
 
+from PySide6 import QtGui as qtg
+from PySide6 import QtCore as qtc
+from PySide6 import QtQml as qml
+
 from johnnycanencrypt import Cipher, Key
 import johnnycanencrypt.johnnycanencrypt as rjce
 import johnnycanencrypt as jce
 
 from tumpa.configuration import get_keystore_directory
+
 
 class KeyThread(QThread):
     "Generates a new key"
@@ -37,7 +42,15 @@ class KeyThread(QThread):
         self.keytype: Optional[Cipher] = None
         self.key: Optional[jce.Key] = None
 
-    def setup(self, uids, password, whichkeys, keytype: Cipher = Cipher.Cv25519, expiration=None, canexpire=True):
+    def setup(
+        self,
+        uids,
+        password,
+        whichkeys,
+        keytype: Cipher = Cipher.Cv25519,
+        expiration=None,
+        canexpire=True,
+    ):
         "To clean itself."
         self.uids = uids
         self.password = password
@@ -46,13 +59,23 @@ class KeyThread(QThread):
         self.keytype = keytype
         self.canexpire = canexpire
 
-
     # run method gets called when we start the thread
     # This is where we will generate the OpenPGP key
     def run(self):
         if isinstance(self.keytype, Cipher):
-            self.key = self.ks.create_key(self.password, self.uids, self.keytype, None, self.expiration,self.canexpire, self.whichkeys, can_primary_sign=False, can_primary_expire=self.canexpire)
+            self.key = self.ks.create_key(
+                self.password,
+                self.uids,
+                self.keytype,
+                None,
+                self.expiration,
+                self.canexpire,
+                self.whichkeys,
+                can_primary_sign=False,
+                can_primary_expire=self.canexpire,
+            )
             self.updated.emit()
+
 
 class TBackend(QObject):
     "Main backend class for all operations"
@@ -60,7 +83,7 @@ class TBackend(QObject):
     uploaded = Signal()
     errored = Signal()
 
-    def __init__(self, ks: Optional[jce.KeyStore]=None):
+    def __init__(self, ks: Optional[jce.KeyStore] = None):
         super(TBackend, self).__init__(None)
         self.havekeys = False
         if ks:
@@ -75,14 +98,24 @@ class TBackend(QObject):
         return self.havekeys
 
     @Slot(str, str, str, str, bool, bool, bool, str)
-    def generateKey(self, name, qemails, password, expiry_date: str, encryption, signing, authentication, keytype) -> None:
+    def generateKey(
+        self,
+        name,
+        qemails,
+        password,
+        expiry_date: str,
+        encryption,
+        signing,
+        authentication,
+        keytype,
+    ) -> None:
         "Setup all the details and then try to generate a new key"
         emails = [email.strip() for email in qemails.split("\n")]
         uids = [f"{name} <{email}>" for email in emails]
         password = password.strip()
         # By default we assume keys are expiring
         canexpire = False
-        expiry = None 
+        expiry = None
 
         expiry_date = expiry_date.strip()
         if not expiry_date.startswith("/"):
@@ -102,7 +135,7 @@ class TBackend(QObject):
         else:
             key_algo = Cipher.Cv25519
 
-        whichsubkeys =  0
+        whichsubkeys = 0
         if encryption:
             whichsubkeys += 1
         if signing:
@@ -115,7 +148,6 @@ class TBackend(QObject):
         # Start the thread
         self.kt.start()
 
-
     @Slot()
     def key_generation_done(self):
         "Receives information that key generation is done"
@@ -125,6 +157,7 @@ class TBackend(QObject):
         print(f"{self.havekeys=}")
         # TODO: update the datamodel.
         self.updated.emit()
+
     haveKeys = Property(bool, get_havekeys, None)
 
 
@@ -132,6 +165,7 @@ def get_creationtime(x: jce.Key):
     if x.creationtime:
         return x.creationtime
     return 0
+
 
 def main():
     app = QGuiApplication(sys.argv)
@@ -155,6 +189,7 @@ def main():
     if not engine.rootObjects():
         sys.exit(-1)
     sys.exit(app.exec())
+
 
 if __name__ == "__main__":
     main()
