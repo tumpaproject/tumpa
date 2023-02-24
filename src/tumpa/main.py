@@ -2,10 +2,10 @@
 import sys
 import os.path
 from pathlib import Path
-from typing import Optional, final
+from typing import List, Optional, final
 from pathlib import Path
 import datetime
-import argparse
+import json
 
 
 # Hack for running in Qt Creator
@@ -77,11 +77,57 @@ class KeyThread(QThread):
             self.updated.emit()
 
 
+def convert_date_to_text(d: datetime = None) -> str:
+    "Converts the datetime for UI"
+    if not d:
+        return ""
+    return d.strftime("%d %B %Y")
+
+
+def convert_none_to_text(data) -> str:
+    "To convert possible None values"
+    if not data:
+        return ""
+    return data
+
+
+class KeyList:
+    def __init__(self, data) -> None:
+        self.keys: List[jce.Key] = data
+
+    def json(self) -> str:
+        "returns a JSON string to QML"
+        result = []
+        for entry in self.keys:
+            data = {}
+            data["fingerprint"] = entry.fingerprint
+            data["creationtime"] = convert_date_to_text(entry.creationtime)
+            data["expirationtime"] = convert_date_to_text(entry.expirationtime)
+            data["uids"] = entry.uids
+            data["keyid"] = entry.keyid
+            data["keytype"] = entry.keytype.value
+            data["can_primary_sign"] = entry.can_primary_sign
+            data["primary_on_card"] = convert_none_to_text(entry.primary_on_card)
+            data["oncard"] = convert_none_to_text(entry.oncard)
+            subkeys = []
+            for subkey in entry.othervalues["subkeys_sorted"]:
+                subkey["creation"] = convert_date_to_text(subkey["creation"])
+                subkey["expiration"] = convert_date_to_text(subkey["expiration"])
+                subkeys.append(subkey)
+
+            # Now add it to the our data
+            data["subkeys"] = subkeys
+            result.append(data)
+
+        return json.dumps(result)
+
+
 class TBackend(QObject):
     "Main backend class for all operations"
     updated = Signal()
     uploaded = Signal()
     errored = Signal()
+    refreshKeys = Signal()
 
     def __init__(self, ks: Optional[jce.KeyStore] = None):
         super(TBackend, self).__init__(None)
@@ -91,8 +137,17 @@ class TBackend(QObject):
         else:
             self.ks = jce.KeyStore(get_keystore_directory())
 
+        # This data we will pass to QML
+        self.keylist = KeyList(self.ks.get_all_keys())
+
         self.kt = KeyThread(self.ks)
         self.kt.updated.connect(self.key_generation_done)
+
+    @Slot(result=str)
+    def get_keys_json(self) -> str:
+        "To get the JSON from inside"
+        data = self.keylist.json()
+        return data
 
     def get_havekeys(self):
         return self.havekeys
@@ -188,6 +243,8 @@ def main():
     engine.load(qml_file)
     if not engine.rootObjects():
         sys.exit(-1)
+    # Let us update the keys list
+    p.refreshKeys.emit()
     sys.exit(app.exec())
 
 

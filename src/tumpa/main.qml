@@ -18,37 +18,7 @@ ApplicationWindow {
     property bool allowsecret: false
 
     ListModel {
-        id: keyList
-
-        ListElement {
-            fingerprint: "49CC5563EEE747C8F6C801037D0E7EF2AEDC5E84"
-            createdOn: "10 March 2022"
-            expiresOn: "10 March 2024"
-        }
-
-        ListElement {
-            fingerprint: "49CC5563EEE747C8F6C801037D0E7EF2AEDBH213"
-            createdOn: "10 March 2023"
-            expiresOn: "10 March 2024"
-        }
-
-        ListElement {
-            fingerprint: "501S5563EEE747C8F6C801037D0E7EF2AEDC5E84"
-            createdOn: "10 March 2022"
-            expiresOn: "10 February 2024"
-        }
-
-        ListElement {
-            fingerprint: "501S5563EEE747C8F6C801037D0E7EF2AEDC5E84"
-            createdOn: "10 March 2022"
-            expiresOn: "10 February 2024"
-        }
-
-        ListElement {
-            fingerprint: "501S5563EEE747C8F6C801037D0E7EF2AEDC5E84"
-            createdOn: "10 March 2022"
-            expiresOn: "10 February 2024"
-        }
+        id: ksKeys
     }
 
     SplitView {
@@ -172,7 +142,7 @@ ApplicationWindow {
 
             StackView {
                 id: stack
-                initialItem: startView
+                initialItem: keylistView
                 anchors.fill: parent
 
                 pushEnter: Transition {
@@ -227,9 +197,19 @@ ApplicationWindow {
                 if (stack.depth === 1) {
                     stack.pop()
                 }
+                // Get the latest keys
+                refreshKeyList()
                 stack.push(keylistView)
             }
             //stack.push(ykView)
+        }
+    }
+
+    Connections {
+        target: tbackend
+        function onRefreshKeys() {
+            // Get the latest keys
+            refreshKeyList()
         }
     }
 
@@ -262,6 +242,18 @@ ApplicationWindow {
 
     Component {
         id: keylistView
-        KeyListView {}
+        KeyListView {
+            keyListData: ksKeys
+        }
+    }
+
+    function refreshKeyList() {
+        var localdata = tbackend.get_keys_json()
+        console.log(localdata)
+        var data = JSON.parse(localdata)
+        ksKeys.clear()
+        for (var i in data) {
+            ksKeys.append(data[i])
+        }
     }
 }

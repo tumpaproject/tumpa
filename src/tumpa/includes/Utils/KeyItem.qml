@@ -103,14 +103,14 @@ Rectangle {
 
                 Text {
                     id: userId
-                    text: qsTr("John Doe Van")
+                    text: getName()
                     font.pixelSize: 14
                     font.weight: 500
                 }
 
                 Text {
                     id: userIdEmail
-                    text: qsTr("<test@email.com>")
+                    text: getEmail()
                     font.pixelSize: 14
                     font.weight: 400
                 }
@@ -155,7 +155,22 @@ Rectangle {
                     console.log("Revoke key clicked for: " + fingerprint.text)
                 }
             }
+        }
+    }
 
+    function getName() {
+        if (useridList !== null) {
+            return useridList.get(0).name
+        } else {
+            return ''
+        }
+    }
+
+    function getEmail() {
+        if (useridList !== null) {
+            return useridList.get(0).email
+        } else {
+            return ''
         }
     }
 }

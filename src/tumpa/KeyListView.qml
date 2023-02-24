@@ -5,7 +5,7 @@ import "includes/Buttons"
 import "includes/Utils"
 
 Rectangle {
-    property var keyList: null
+    property var keyListData: null
 
     id: root
     color: "white"
@@ -58,15 +58,16 @@ Rectangle {
 
             ListView {
                 width: root.width
-                height: keyList.count * 154
+                height: keyListData.count * 154
                 spacing: 10
-                model: keyList
+                model: keyListData
                 interactive: false
                 delegate: KeyItem {
                     width: 645
                     fingerprintTxt: fingerprint
-                    createdOnTxt: createdOn
-                    expiresOnTxt: expiresOn
+                    createdOnTxt: creationtime
+                    expiresOnTxt: expirationtime
+                    useridList: uids
                 }
             }
         }
