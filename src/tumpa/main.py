@@ -136,7 +136,8 @@ class TBackend(QObject):
             self.ks = ks
         else:
             self.ks = jce.KeyStore(get_keystore_directory())
-
+        # Create the keystore if not there
+        self.ks.upgrade_if_required()
         # This data we will pass to QML
         self.keylist = KeyList(self.ks.get_all_keys())
 
