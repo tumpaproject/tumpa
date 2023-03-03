@@ -214,6 +214,22 @@ class TBackend(QObject):
         # TODO: update the datamodel.
         self.updated.emit()
 
+    @Slot(str, str, result=bool)
+    def updateName(self, name, adminpin):
+        "Updates the name in the Yubikey"
+        print(f"{name=} and {adminpin=}")
+        name = name.strip()
+        words = name.split()
+        if len(words) > 1:
+            finalname = f"{words[1]}<<{words[0]}"
+        else:
+            finalname = f"{words[0]}<<"
+        try:
+            return rjce.set_name(finalname.encode("utf-8"), adminpin.encode("utf-8"))
+        except:
+            # TODO: Add debug log here
+            return False
+
     haveKeys = Property(bool, get_havekeys, None)
 
 

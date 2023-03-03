@@ -67,8 +67,7 @@ Rectangle {
         iconSrc: "../../images/tick_mark.svg"
 
         onClicked: {
-            console.log(adminPinTxt.text)
-            console.log(nameTxt.text)
+            root.next()
         }
     }
 }

@@ -16,6 +16,8 @@ ApplicationWindow {
 
     // This defines if we will allow saving private key
     property bool allowsecret: false
+    // For error message
+    property string errortext: "Error text"
 
     ListModel {
         id: ksKeys
@@ -62,7 +64,9 @@ ApplicationWindow {
                     onClicked: {
                         clearActive()
                         active = true
-                        console.log("leftIconBttn")
+                        // FIXME: Show only if we have keys
+                        stack.pop()
+                        gotoKeyList()
                     }
                 }
 
@@ -88,7 +92,9 @@ ApplicationWindow {
                     onClicked: {
                         clearActive()
                         active = true
-                        console.log("editNameBttn")
+                        // clear the stack first
+                        //stack.pop()
+                        stack.push(nameView)
                     }
                 }
 
@@ -247,13 +253,54 @@ ApplicationWindow {
         }
     }
 
+    Component {
+        id: nameView
+        NameView {
+            onNext: {
+                // Let us have the logic here
+                var result = tbackend.updateName(name, adminpin)
+                if (result === false) {
+                    errortext = qsTr("Could not set the name in Yubikey!")
+                    var win = showErrorBox(qsTr("Error"), errortext)
+                    return
+                }
+            }
+        }
+    }
+
+    function showErrorBox(heading, errortext) {
+        // Here we will show the modal dialog to show any error to the user
+        var component1 = Qt.createComponent("includes/Utils/InfoModal.qml")
+        var win = component1.createObject(root, {
+                                              "headingText": heading,
+                                              "contentText": errortext
+                                          })
+        win.okayed.connect(() => {
+                               //console.log("Modal okayed")
+                               win.destroy()
+                           })
+        win.show()
+        return win
+    }
+
     function refreshKeyList() {
         var localdata = tbackend.get_keys_json()
-        console.log(localdata)
+        //console.log(localdata)
         var data = JSON.parse(localdata)
         ksKeys.clear()
         for (var i in data) {
             ksKeys.append(data[i])
+        }
+    }
+
+    function gotoKeyList() {
+        if (tbackend.haveKeys === true) {
+            if (stack.depth === 1) {
+                stack.pop()
+            }
+            // Get the latest keys
+            refreshKeyList()
+            stack.push(keylistView)
         }
     }
 }
