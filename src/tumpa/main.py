@@ -217,7 +217,6 @@ class TBackend(QObject):
     @Slot(str, str, result=bool)
     def updateName(self, name, adminpin):
         "Updates the name in the Yubikey"
-        print(f"{name=} and {adminpin=}")
         name = name.strip()
         words = name.split()
         if len(words) > 1:
@@ -226,6 +225,16 @@ class TBackend(QObject):
             finalname = f"{words[0]}<<"
         try:
             return rjce.set_name(finalname.encode("utf-8"), adminpin.encode("utf-8"))
+        except:
+            # TODO: Add debug log here
+            return False
+
+    @Slot(str, str, result=bool)
+    def updateURL(self, url, adminpin):
+        "Updates the url in the Yubikey"
+        url = url.strip()
+        try:
+            return rjce.set_url(url.encode("utf-8"), adminpin.encode("utf-8"))
         except:
             # TODO: Add debug log here
             return False

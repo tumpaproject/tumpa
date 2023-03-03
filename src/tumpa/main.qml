@@ -104,7 +104,7 @@ ApplicationWindow {
                     onClicked: {
                         clearActive()
                         active = true
-                        console.log("editPublicURLBttn")
+                        stack.push(publicurlView)
                     }
                 }
 
@@ -261,6 +261,23 @@ ApplicationWindow {
                 var result = tbackend.updateName(name, adminpin)
                 if (result === false) {
                     errortext = qsTr("Could not set the name in Yubikey!")
+                    var win = showErrorBox(qsTr("Error"), errortext)
+                    return
+                }
+                // Else we go back
+                stack.pop()
+            }
+        }
+    }
+
+    Component {
+        id: publicurlView
+        PublicURL {
+            onNext: {
+                // Let us have the logic here
+                var result = tbackend.updateURL(url, adminpin)
+                if (result === false) {
+                    errortext = qsTr("Could not set the Public URL in Yubikey!")
                     var win = showErrorBox(qsTr("Error"), errortext)
                     return
                 }
