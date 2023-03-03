@@ -10,6 +10,8 @@ Rectangle {
     property bool hasExpired: false
     property var useridList: null
 
+    signal removeKey
+
     id: root
 
     width: parent.width
@@ -148,11 +150,20 @@ Rectangle {
             }
 
             TransparentButton {
-                labelString: "Revoke key"
+                labelString: "Revoke"
                 iconSrc: "../../images/delete_purple.svg"
 
                 onClicked: {
                     console.log("Revoke key clicked for: " + fingerprint.text)
+                }
+            }
+            TransparentButton {
+                labelString: "Remove key"
+                iconSrc: "../../images/delete_purple.svg"
+
+                onClicked: {
+                    // console.log("Remove key clicked for: " + fingerprint.text)
+                    root.removeKey()
                 }
             }
         }

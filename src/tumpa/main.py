@@ -258,6 +258,13 @@ class TBackend(QObject):
         # TODO: update the datamodel.
         self.updated.emit()
 
+    @Slot(str)
+    def removeKey(self, fingerprint):
+        "Removes the key from the store"
+        self.ks.delete_key(fingerprint)
+        # Now get the new list of keys
+        self.keylist = KeyList(self.ks.get_all_keys())
+
     @Slot(str, str, result=bool)
     def updateName(self, name, adminpin):
         "Updates the name in the Yubikey"

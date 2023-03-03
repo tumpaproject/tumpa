@@ -68,6 +68,26 @@ Rectangle {
                     createdOnTxt: creationtime
                     expiresOnTxt: expirationtime
                     useridList: uids
+
+                    onRemoveKey: function () {
+                        var win = getWarningBox(
+                                    qsTr("Remove key"),
+                                    qsTr("Are you sure to remove the key?"))
+                        win.accepted.connect(() => {
+                                                 // The user agreed.
+                                                 // Now remove the key.
+                                                 tbackend.removeKey(
+                                                     fingerprintTxt)
+                                                 // Now get the new list of key
+                                                 refreshKeyList()
+                                                 win.destroy()
+                                             })
+                        win.rejected.connect(() => {
+                                                 // The user canceled the operation
+                                                 win.destroy()
+                                             })
+                        win.show()
+                    }
                 }
             }
         }

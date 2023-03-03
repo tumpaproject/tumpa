@@ -377,6 +377,16 @@ ApplicationWindow {
         return win
     }
 
+    function getWarningBox(heading, msg) {
+        var component1 = Qt.createComponent("includes/Utils/WarningModal.qml")
+        var win = component1.createObject(root, {
+                                              "dangerBtnText": heading,
+                                              "headingText": "Warning",
+                                              "contentText": msg
+                                          })
+        return win
+    }
+
     function refreshKeyList() {
         var localdata = tbackend.get_keys_json()
         //console.log(localdata)
