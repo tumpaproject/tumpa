@@ -239,6 +239,16 @@ class TBackend(QObject):
             # TODO: Add debug log here
             return False
 
+    @Slot(str, str, result=bool)
+    def updateUserPin(self, pin, adminpin):
+        "Updates the user pin in the Yubikey"
+        pin = pin.strip()
+        try:
+            return rjce.change_user_pin(adminpin.encode("utf-8"), pin.encode("utf-8"))
+        except:
+            # TODO: Add debug log here
+            return False
+
     haveKeys = Property(bool, get_havekeys, None)
 
 

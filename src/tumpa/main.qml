@@ -114,7 +114,7 @@ ApplicationWindow {
                     onClicked: {
                         clearActive()
                         active = true
-                        console.log("editUserPinBttn")
+                        stack.push(userpinView)
                     }
                 }
 
@@ -260,7 +260,7 @@ ApplicationWindow {
                 // Let us have the logic here
                 var result = tbackend.updateName(name, adminpin)
                 if (result === false) {
-                    errortext = qsTr("Could not set the name in Yubikey!")
+                    errortext = qsTr("Could not set the name in the Yubikey!")
                     var win = showErrorBox(qsTr("Error"), errortext)
                     return
                 }
@@ -277,7 +277,26 @@ ApplicationWindow {
                 // Let us have the logic here
                 var result = tbackend.updateURL(url, adminpin)
                 if (result === false) {
-                    errortext = qsTr("Could not set the Public URL in Yubikey!")
+                    errortext = qsTr(
+                                "Could not set the Public URL in the Yubikey!")
+                    var win = showErrorBox(qsTr("Error"), errortext)
+                    return
+                }
+                // Else we go back
+                stack.pop()
+            }
+        }
+    }
+
+    Component {
+        id: userpinView
+        UserPin {
+            onNext: {
+                // Let us have the logic here
+                var result = tbackend.updateUserPin(userpin, adminpin)
+                if (result === false) {
+                    errortext = qsTr(
+                                "Could not set the User Pin in the Yubikey!")
                     var win = showErrorBox(qsTr("Error"), errortext)
                     return
                 }
