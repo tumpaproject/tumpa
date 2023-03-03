@@ -51,10 +51,11 @@ Rectangle {
             bottomMargin: 24
         }
 
-        labelString: "Format smartcard"
+        labelString: qsTr("Reset smartcard")
 
         onClicked: {
-            console.log("Format smartcard button clicked")
+            // TODO: reset the smartcard
+            console.log("Reset smartcard button clicked")
         }
     }
 }

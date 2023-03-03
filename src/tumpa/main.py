@@ -150,8 +150,52 @@ class TBackend(QObject):
         data = self.keylist.json()
         return data
 
+    @Slot(result=str)
+    def get_card_json(self) -> str:
+        "Get the card details as JSON"
+        try:
+            data = rjce.get_card_details()
+        except:
+            # For any error
+            data = {}
+        if "name" in data:
+            name = data["name"]
+            words = name.split("<<")
+            if len(words) > 1:
+                finalname = f"{words[1]} {words[0]}"
+            else:
+                finalname = f"{words[0]}"
+        else:
+            finalname = ""
+
+        results = []
+        # Now let us create list of items
+        results.append(
+            {"name": "Serial Number", "value": data.get("serial_number", "000")}
+        )
+        results.append({"name": "Name", "value": finalname})
+        results.append({"name": "Public URL", "value": data.get("url", "")})
+        results.append(
+            {"name": "User Pin retires left", "value": str(data.get("PW1", 0))}
+        )
+        results.append(
+            {"name": "Reset Pin retries left", "value": str(data.get("RC", 0))}
+        )
+        results.append(
+            {"name": "Admin Pin retires left", "value": str(data.get("PW3", 0))}
+        )
+        results.append(
+            {"name": "Signatures made", "value": str(data.get("signatures", 0))}
+        )
+
+        return json.dumps(results)
+
     def get_havekeys(self):
         return self.havekeys
+
+    def get_havecard(self):
+        "To verify if we have a card connected"
+        return rjce.is_smartcard_connected()
 
     @Slot(str, str, str, str, bool, bool, bool, str)
     def generateKey(
@@ -262,6 +306,7 @@ class TBackend(QObject):
             return False
 
     haveKeys = Property(bool, get_havekeys, None)
+    haveCard = Property(bool, get_havecard, None)
 
 
 def get_creationtime(x: jce.Key):

@@ -23,6 +23,10 @@ ApplicationWindow {
         id: ksKeys
     }
 
+    ListModel {
+        id: cardList
+    }
+
     SplitView {
         anchors.fill: parent
 
@@ -90,7 +94,7 @@ ApplicationWindow {
                             stack.pop()
                         }
                         keyviewsFlag = true
-                        console.log("leftKeyBttn")
+                        gotoCardView()
                     }
                 }
 
@@ -280,6 +284,14 @@ ApplicationWindow {
     }
 
     Component {
+        id: cardView
+
+        CardDetailsView {
+            cardDetailsList: cardList
+        }
+    }
+
+    Component {
         id: nameView
         NameView {
             onNext: {
@@ -375,6 +387,16 @@ ApplicationWindow {
         }
     }
 
+    function refreshCardList() {
+        var localdata = tbackend.get_card_json()
+        //console.log(localdata)
+        var data = JSON.parse(localdata)
+        cardList.clear()
+        for (var i in data) {
+            cardList.append(data[i])
+        }
+    }
+
     function gotoKeyList() {
         if (tbackend.haveKeys === true) {
             if (stack.depth === 1) {
@@ -383,6 +405,17 @@ ApplicationWindow {
             // Get the latest keys
             refreshKeyList()
             stack.push(keylistView)
+        }
+    }
+
+    function gotoCardView() {
+        if (tbackend.haveCard === true) {
+            if (stack.depth === 1) {
+                stack.pop()
+            }
+            // Get the latest keys
+            refreshCardList()
+            stack.push(cardView)
         }
     }
 }
