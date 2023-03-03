@@ -17,7 +17,7 @@ ApplicationWindow {
     // This defines if we will allow saving private key
     property bool allowsecret: false
     // For error message
-    property string errortext: "Error text"
+    property bool keyviewsFlag: false
 
     ListModel {
         id: ksKeys
@@ -64,6 +64,9 @@ ApplicationWindow {
                     onClicked: {
                         clearActive()
                         active = true
+                        // For any other normal views, also remember
+                        // to mark the keyviewsFlag as false.
+                        keyviewsFlag = false
                         // FIXME: Show only if we have keys
                         stack.pop()
                         gotoKeyList()
@@ -82,6 +85,11 @@ ApplicationWindow {
                     onClicked: {
                         clearActive()
                         active = true
+                        // If we are doing key views, pop the previous view
+                        if (keyviewsFlag === true) {
+                            stack.pop()
+                        }
+                        keyviewsFlag = true
                         console.log("leftKeyBttn")
                     }
                 }
@@ -92,8 +100,11 @@ ApplicationWindow {
                     onClicked: {
                         clearActive()
                         active = true
-                        // clear the stack first
-                        //stack.pop()
+                        // If we are doing key views, pop the previous view
+                        if (keyviewsFlag === true) {
+                            stack.pop()
+                        }
+                        keyviewsFlag = true
                         stack.push(nameView)
                     }
                 }
@@ -104,6 +115,11 @@ ApplicationWindow {
                     onClicked: {
                         clearActive()
                         active = true
+                        // If we are doing key views, pop the previous view
+                        if (keyviewsFlag === true) {
+                            stack.pop()
+                        }
+                        keyviewsFlag = true
                         stack.push(publicurlView)
                     }
                 }
@@ -114,6 +130,11 @@ ApplicationWindow {
                     onClicked: {
                         clearActive()
                         active = true
+                        // If we are doing key views, pop the previous view
+                        if (keyviewsFlag === true) {
+                            stack.pop()
+                        }
+                        keyviewsFlag = true
                         stack.push(userpinView)
                     }
                 }
@@ -124,6 +145,11 @@ ApplicationWindow {
                     onClicked: {
                         clearActive()
                         active = true
+                        // If we are doing key views, pop the previous view
+                        if (keyviewsFlag === true) {
+                            stack.pop()
+                        }
+                        keyviewsFlag = true
                         stack.push(adminpinView)
                     }
                 }
@@ -156,7 +182,7 @@ ApplicationWindow {
                         property: "opacity"
                         from: 0
                         to: 1
-                        duration: 100
+                        duration: 50
                     }
                 }
                 pushExit: Transition {
@@ -164,7 +190,7 @@ ApplicationWindow {
                         property: "opacity"
                         from: 1
                         to: 0
-                        duration: 100
+                        duration: 50
                     }
                 }
                 popEnter: Transition {
@@ -172,7 +198,7 @@ ApplicationWindow {
                         property: "opacity"
                         from: 0
                         to: 1
-                        duration: 100
+                        duration: 50
                     }
                 }
                 popExit: Transition {
@@ -180,7 +206,7 @@ ApplicationWindow {
                         property: "opacity"
                         from: 1
                         to: 0
-                        duration: 100
+                        duration: 50
                     }
                 }
             }
