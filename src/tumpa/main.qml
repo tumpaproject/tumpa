@@ -264,6 +264,8 @@ ApplicationWindow {
                     var win = showErrorBox(qsTr("Error"), errortext)
                     return
                 }
+                // Else we go back
+                stack.pop()
             }
         }
     }
