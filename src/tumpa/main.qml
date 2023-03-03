@@ -124,7 +124,7 @@ ApplicationWindow {
                     onClicked: {
                         clearActive()
                         active = true
-                        console.log("editAdminPinBttn")
+                        stack.push(adminpinView)
                     }
                 }
             }
@@ -297,6 +297,24 @@ ApplicationWindow {
                 if (result === false) {
                     errortext = qsTr(
                                 "Could not set the User Pin in the Yubikey!")
+                    var win = showErrorBox(qsTr("Error"), errortext)
+                    return
+                }
+                // Else we go back
+                stack.pop()
+            }
+        }
+    }
+
+    Component {
+        id: adminpinView
+        AdminPin {
+            onNext: {
+                // Let us have the logic here
+                var result = tbackend.updateAdminPin(newpin, adminpin)
+                if (result === false) {
+                    errortext = qsTr(
+                                "Could not set new Admin Pin in the Yubikey!")
                     var win = showErrorBox(qsTr("Error"), errortext)
                     return
                 }
