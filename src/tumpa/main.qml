@@ -178,7 +178,7 @@ ApplicationWindow {
 
             StackView {
                 id: stack
-                initialItem: keylistView
+                initialItem: selectInitialView()
                 anchors.fill: parent
 
                 pushEnter: Transition {
@@ -385,6 +385,14 @@ ApplicationWindow {
                                               "contentText": msg
                                           })
         return win
+    }
+
+    function selectInitialView() {
+        if (tbackend.haveKeys === true) {
+            return keylistView
+        } else {
+            return genkeyView
+        }
     }
 
     function refreshKeyList() {

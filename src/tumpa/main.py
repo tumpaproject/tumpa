@@ -95,6 +95,9 @@ class KeyList:
     def __init__(self, data) -> None:
         self.keys: List[jce.Key] = data
 
+    def __len__(self) -> int:
+        return len(self.keys)
+
     def json(self) -> str:
         "returns a JSON string to QML"
         result = []
@@ -191,7 +194,8 @@ class TBackend(QObject):
         return json.dumps(results)
 
     def get_havekeys(self):
-        return self.havekeys
+        result = len(self.keylist) > 0
+        return result
 
     def get_havecard(self):
         "To verify if we have a card connected"
@@ -312,8 +316,10 @@ class TBackend(QObject):
             # TODO: Add debug log here
             return False
 
-    haveKeys = Property(bool, get_havekeys, None)
-    haveCard = Property(bool, get_havecard, None)
+
+    haveKeys = Property(bool, get_havekeys, None, constant=True)
+    haveCard = Property(bool, get_havecard, None, constant=True)
+
 
 
 def get_creationtime(x: jce.Key):
