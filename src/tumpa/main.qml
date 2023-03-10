@@ -309,6 +309,17 @@ ApplicationWindow {
     }
 
     Component {
+        id: uploadView
+
+        UploadView {
+
+            onNext: {
+                console.log("Clicked Upload")
+            }
+        }
+    }
+
+    Component {
         id: publicurlView
         PublicURL {
             onNext: {
@@ -391,7 +402,7 @@ ApplicationWindow {
         if (tbackend.haveKeys === true) {
             return keylistView
         } else {
-            return genkeyView
+            return startView
         }
     }
 

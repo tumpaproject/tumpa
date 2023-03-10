@@ -1,8 +1,10 @@
 # This Python file uses the following encoding: utf-8
+from pprint import pprint
 import sys
 import os.path
+import copy
 from pathlib import Path
-from typing import List, Optional, final
+from typing import List, Optional, Tuple
 from pathlib import Path
 import datetime
 import json
@@ -14,7 +16,7 @@ if __name__ == "__main__":
     sys.path.insert(0, str(parent_path.parent.parent))
 
 from PySide6.QtGui import QGuiApplication, QFontDatabase, QFont
-from PySide6.QtQml import QQmlApplicationEngine
+from PySide6.QtQml import QQmlApplicationEngine, qmlRegisterType
 from PySide6.QtCore import QThread, Signal, Slot, QObject, Property
 
 from PySide6 import QtGui as qtg
@@ -26,6 +28,31 @@ import johnnycanencrypt.johnnycanencrypt as rjce
 import johnnycanencrypt as jce
 
 from tumpa.configuration import get_keystore_directory
+
+
+class SubkeyType(QObject):
+    def __init__(self, sign, enc, auth) -> None:
+        QObject.__init__(self)
+        self.s = sign
+        self.e = enc
+        self.a = auth
+
+    def read_s(self):
+        return self.s
+
+    def read_e(self):
+        return self.e
+
+    def read_a(self):
+        return self.a
+
+    sign = Property(bool, read_s, None, constant=True)
+    encryption = Property(bool, read_e, None, constant=True)
+    authentication = Property(bool, read_a, None, constant=True)
+
+
+# TODO: Fix this stupid hack
+subkeytypes = SubkeyType(False, False, False)
 
 
 class KeyThread(QThread):
@@ -101,7 +128,9 @@ class KeyList:
     def json(self) -> str:
         "returns a JSON string to QML"
         result = []
-        for entry in self.keys:
+        for entry_value in self.keys:
+            # To make sure that we have fresh data everytime
+            entry = copy.deepcopy(entry_value)
             data = {}
             data["fingerprint"] = entry.fingerprint
             data["creationtime"] = convert_date_to_text(entry.creationtime)
@@ -142,7 +171,10 @@ class TBackend(QObject):
         # Create the keystore if not there
         self.ks.upgrade_if_required()
         # This data we will pass to QML
-        self.keylist = KeyList(self.ks.get_all_keys())
+        try:
+            self.keylist = KeyList(self.ks.get_all_keys())
+        except jce.exceptions.KeyNotFoundError:
+            self.keylist = KeyList([])
 
         self.kt = KeyThread(self.ks)
         self.kt.updated.connect(self.key_generation_done)
@@ -246,7 +278,7 @@ class TBackend(QObject):
             whichsubkeys += 2
         if authentication:
             whichsubkeys += 4
-
+        print(f"{whichsubkeys=}")
         # Now feed in the data to the other thread
         self.kt.setup(uids, password, whichsubkeys, key_algo, expiry, canexpire)
         # Start the thread
@@ -255,8 +287,7 @@ class TBackend(QObject):
     @Slot()
     def key_generation_done(self):
         "Receives information that key generation is done"
-        allkeys = self.ks.get_all_keys()
-        allkeys.sort(key=lambda x: get_creationtime(x))
+        self.keylist = KeyList(self.ks.get_all_keys())
         self.havekeys = True
         print(f"{self.havekeys=}")
         # TODO: update the datamodel.
@@ -268,6 +299,37 @@ class TBackend(QObject):
         self.ks.delete_key(fingerprint)
         # Now get the new list of keys
         self.keylist = KeyList(self.ks.get_all_keys())
+
+    @Slot(str)
+    def get_subkey_types(self, fingerprint: str):
+        key = self.ks.get_key(fingerprint)
+        e, s, a = available_subkeys(key)
+        # TODO: the stupid hack to pass data to QML
+        subkeytypes.e = e
+        subkeytypes.s = s
+        subkeytypes.a = a
+
+    @Slot(str, str, bool, result=str)
+    def uploadKey(self, fingerprint: str, password: str, only_subkeys: bool):
+        print(f"Received {fingerprint=}  and {password=} {only_subkeys=}")
+        # First get the key
+        key = self.ks.get_key(fingerprint)
+        encryption, signing, authentication = available_subkeys(key)
+        whichsubkeys = 0
+        if encryption:
+            whichsubkeys += 1
+        if signing:
+            whichsubkeys += 2
+        if authentication:
+            whichsubkeys += 4
+        # reset the yubikey
+        result = rjce.reset_yubikey()
+        if not result:
+            return "Failed to reset Yubikey"
+        try:
+            rjce.upload_to_smartcard(key.keyvalue, b"12345678", password, whichsubkeys)
+        except:
+            return "Failed to upload to the Yubikey."
 
     @Slot(str, str, result=bool)
     def updateName(self, name, adminpin):
@@ -316,10 +378,46 @@ class TBackend(QObject):
             # TODO: Add debug log here
             return False
 
-
     haveKeys = Property(bool, get_havekeys, None, constant=True)
     haveCard = Property(bool, get_havecard, None, constant=True)
 
+
+def available_subkeys(key: Key) -> Tuple[bool, bool, bool]:
+    "Returns bool tuple (enc, signing, auth)"
+    subkeys_sorted = key.othervalues["subkeys_sorted"]
+    got_enc = False
+    got_sign = False
+    got_auth = False
+    # Loop over on the subkeys
+    for subkey in subkeys_sorted:
+        if subkey["revoked"]:
+            continue
+        if not subkey["expiration"]:
+            if subkey["keytype"] == "encryption":
+                got_enc = True
+                continue
+            if subkey["keytype"] == "signing":
+                got_sign = True
+                continue
+            if subkey["keytype"] == "authentication":
+                got_auth = True
+                continue
+
+        if (
+            subkey["expiration"] is not None
+            and subkey["expiration"].date() > datetime.datetime.now().date()
+        ):
+            if subkey["keytype"] == "encryption":
+                got_enc = True
+                continue
+            if subkey["keytype"] == "signing":
+                got_sign = True
+                continue
+            if subkey["keytype"] == "authentication":
+                got_auth = True
+                continue
+    # Now return the data
+    return (got_enc, got_sign, got_auth)
 
 
 def get_creationtime(x: jce.Key):
@@ -345,6 +443,8 @@ def main():
     p = TBackend()
     ctx = engine.rootContext()
     ctx.setContextProperty("tbackend", p)
+    # FIXME: Stupid hack to pass data to QML via this object
+    ctx.setContextProperty("SubKeyTypes", subkeytypes)
     qml_file = Path(__file__).resolve().parent / "main.qml"
     engine.load(qml_file)
     if not engine.rootObjects():

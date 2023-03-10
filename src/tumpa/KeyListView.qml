@@ -69,6 +69,7 @@ Rectangle {
                     expiresOnTxt: expirationtime
                     useridList: uids
 
+                    // To remove a key from the store
                     onRemoveKey: function () {
                         var win = getWarningBox(
                                     qsTr("Remove key"),
@@ -87,6 +88,11 @@ Rectangle {
                                                  win.destroy()
                                              })
                         win.show()
+                    }
+                    // To upload to smartcard
+                    onUploadtoCard: {
+                        tbackend.get_subkey_types(fingerprintTxt)
+                        stack.push(uploadView)
                     }
                 }
             }
