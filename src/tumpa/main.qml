@@ -87,6 +87,12 @@ ApplicationWindow {
                     imageSource: "../../images/usbkey.svg"
                     text: qsTr("Smart Card")
                     onClicked: {
+                        // First check if we have a card
+                        var result = check_if_card()
+                        if (result !== false) {
+                            // then return
+                            return
+                        }
                         clearActive()
                         active = true
                         // If we are doing key views, pop the previous view
@@ -442,9 +448,20 @@ ApplicationWindow {
             if (stack.depth === 1) {
                 stack.pop()
             }
-            // Get the latest keys
+            // Get the latest information from the card.
             refreshCardList()
             stack.push(cardView)
         }
+    }
+
+    function check_if_card() {
+        // Checks if we have an smartcard connected or not
+        if (tbackend.haveCard !== true) {
+            // show error then do nothing
+            var errortext = qsTr("Can not access any Yubikey!")
+            var win = showErrorBox(qsTr("Error"), errortext)
+            return false
+        }
+        return true
     }
 }
