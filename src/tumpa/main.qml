@@ -89,7 +89,7 @@ ApplicationWindow {
                     onClicked: {
                         // First check if we have a card
                         var result = check_if_card()
-                        if (result !== false) {
+                        if (result !== true) {
                             // then return
                             return
                         }
@@ -108,6 +108,12 @@ ApplicationWindow {
                     id: editNameBttn
                     text: qsTr("Edit Name")
                     onClicked: {
+                        // First check if we have a card
+                        var result = check_if_card()
+                        if (result !== true) {
+                            // then return
+                            return
+                        }
                         clearActive()
                         active = true
                         // If we are doing key views, pop the previous view
@@ -123,6 +129,12 @@ ApplicationWindow {
                     id: editPublicURLBttn
                     text: qsTr("Edit Public URL")
                     onClicked: {
+                        // First check if we have a card
+                        var result = check_if_card()
+                        if (result !== true) {
+                            // then return
+                            return
+                        }
                         clearActive()
                         active = true
                         // If we are doing key views, pop the previous view
@@ -138,6 +150,12 @@ ApplicationWindow {
                     id: editUserPinBttn
                     text: qsTr("Change User Pin")
                     onClicked: {
+                        // First check if we have a card
+                        var result = check_if_card()
+                        if (result !== true) {
+                            // then return
+                            return
+                        }
                         clearActive()
                         active = true
                         // If we are doing key views, pop the previous view
@@ -153,6 +171,12 @@ ApplicationWindow {
                     id: editAdminPinBttn
                     text: qsTr("Change Admin Pin")
                     onClicked: {
+                        // First check if we have a card
+                        var result = check_if_card()
+                        if (result !== true) {
+                            // then return
+                            return
+                        }
                         clearActive()
                         active = true
                         // If we are doing key views, pop the previous view
