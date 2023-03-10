@@ -11,6 +11,7 @@ Rectangle {
     property var useridList: null
 
     signal removeKey
+    signal uploadtoCard
 
     id: root
 
@@ -137,6 +138,7 @@ Rectangle {
 
                 onClicked: {
                     console.log("Send key to card clicked for: " + fingerprint.text)
+                    root.uploadtoCard()
                 }
             }
 

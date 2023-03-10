@@ -7,6 +7,10 @@ Rectangle {
     property alias signingChecked: signingCheckbox.checked
     property alias authenticationChecked: authenticationCheckbox.checked
 
+    // For enable/disable
+    property alias encryptionEnabled: encryptionCheckbox.enabled
+    property alias signingEnabled: signingCheckbox.enabled
+    property alias authenticationEnabled: authenticationCheckbox.enabled
 
     anchors.leftMargin: 20
     height: 31 + (17 + 14) * 3
