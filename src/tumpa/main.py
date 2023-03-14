@@ -310,7 +310,9 @@ class TBackend(QObject):
     @Slot(str)
     def get_subkey_types(self, fingerprint: str):
         key = self.ks.get_key(fingerprint)
-        e, s, a = available_subkeys(key)
+        data = available_subkeys(key)
+        print(f"{data=}")
+        e, s, a =  data
         # TODO: the stupid hack to pass data to QML
         subkeytypes.e = e
         subkeytypes.s = s
@@ -391,6 +393,7 @@ def available_subkeys(key: Key) -> Tuple[bool, bool, bool]:
     got_auth = False
     # Loop over on the subkeys
     for subkey in subkeys_sorted:
+        print(subkey)
         if subkey["revoked"]:
             continue
         if not subkey["expiration"]:
