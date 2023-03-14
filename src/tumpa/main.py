@@ -36,6 +36,7 @@ class SubkeyType(QObject):
         self.s = sign
         self.e = enc
         self.a = auth
+        self.fp = ""
 
     def read_s(self):
         return self.s
@@ -45,10 +46,13 @@ class SubkeyType(QObject):
 
     def read_a(self):
         return self.a
+    def read_fingerprint(self):
+        return self.fp
 
     sign = Property(bool, read_s, None, constant=True)
     encryption = Property(bool, read_e, None, constant=True)
     authentication = Property(bool, read_a, None, constant=True)
+    fingerprint = Property(str, read_fingerprint, None, constant=True)
 
 
 # TODO: Fix this stupid hack
@@ -170,14 +174,17 @@ class TBackend(QObject):
             self.ks = jce.KeyStore(get_keystore_directory())
         # Create the keystore if not there
         self.ks.upgrade_if_required()
+        self.kt = KeyThread(self.ks)
+        self.kt.updated.connect(self.key_generation_done)
+        self.safe_update_keylist()
+
+    def safe_update_keylist(self):
         # This data we will pass to QML
         try:
             self.keylist = KeyList(self.ks.get_all_keys())
         except jce.exceptions.KeyNotFoundError:
             self.keylist = KeyList([])
 
-        self.kt = KeyThread(self.ks)
-        self.kt.updated.connect(self.key_generation_done)
 
     @Slot(result=str)
     def get_keys_json(self) -> str:
@@ -298,7 +305,7 @@ class TBackend(QObject):
         "Removes the key from the store"
         self.ks.delete_key(fingerprint)
         # Now get the new list of keys
-        self.keylist = KeyList(self.ks.get_all_keys())
+        self.safe_update_keylist()
 
     @Slot(str)
     def get_subkey_types(self, fingerprint: str):
@@ -308,20 +315,21 @@ class TBackend(QObject):
         subkeytypes.e = e
         subkeytypes.s = s
         subkeytypes.a = a
+        subkeytypes.fp = fingerprint
 
     @Slot(str, str, bool, result=str)
-    def uploadKey(self, fingerprint: str, password: str, only_subkeys: bool):
+    def uploadKey(self, fingerprint: str, password: str, only_subkeys: bool, whichsubkeys: int):
         print(f"Received {fingerprint=}  and {password=} {only_subkeys=}")
         # First get the key
         key = self.ks.get_key(fingerprint)
-        encryption, signing, authentication = available_subkeys(key)
-        whichsubkeys = 0
-        if encryption:
-            whichsubkeys += 1
-        if signing:
-            whichsubkeys += 2
-        if authentication:
-            whichsubkeys += 4
+        # encryption, signing, authentication = available_subkeys(key)
+        # whichsubkeys = 0
+        # if encryption:
+            # whichsubkeys += 1
+        # if signing:
+            # whichsubkeys += 2
+        # if authentication:
+            # whichsubkeys += 4
         # reset the yubikey
         result = rjce.reset_yubikey()
         if not result:

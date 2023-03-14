@@ -82,6 +82,11 @@ Rectangle {
                                                  // Now get the new list of key
                                                  refreshKeyList()
                                                  win.destroy()
+                                                 // Now if no key left, then go to key genration view
+                                                 if (tbackend.havekey !== true) {
+                                                     stack.pop()
+                                                     stack.push(startView)
+                                                 }
                                              })
                         win.rejected.connect(() => {
                                                  // The user canceled the operation

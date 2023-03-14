@@ -9,8 +9,9 @@ import "includes/Utils"
 Rectangle {
     id: root
     color: "white"
-    property alias adminpin: passwordTxt.text
+    property alias password: passwordTxt.text
     property var subkeys: subkeyCheckbox
+    property string fingerprint: SubKeyTypes.fingerprint
 
     signal next
 

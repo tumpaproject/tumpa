@@ -344,6 +344,18 @@ ApplicationWindow {
         UploadView {
 
             onNext: {
+                // Use the fingerprint variable.
+                var whichsubkeys = 0
+                if (subkeys.encryptionChecked === true) {
+                    whichsubkeys += 1
+                }
+                if (subkeys.signingChecked === true) {
+                    whichsubkeys += 2
+                }
+                if (subkeys.authenticationChecked === true) {
+                    whichsubkeys += 4
+                }
+                console.log(whichsubkeys)
                 console.log("Clicked Upload")
             }
         }
