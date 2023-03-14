@@ -356,7 +356,16 @@ ApplicationWindow {
                     whichsubkeys += 4
                 }
                 console.log(whichsubkeys)
-                console.log("Clicked Upload")
+                // Let us try to format the card and upload
+                var result = tbackend.uploadKey(fingerprint, password, true,
+                                                whichsubkeys)
+                if (result !== "success") {
+                    var win = showErrorBox("Error in upload", result)
+                    return
+                } else {
+
+                    // TODO: We need a success modal box.
+                }
             }
         }
     }

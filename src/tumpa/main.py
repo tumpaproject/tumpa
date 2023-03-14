@@ -317,19 +317,11 @@ class TBackend(QObject):
         subkeytypes.a = a
         subkeytypes.fp = fingerprint
 
-    @Slot(str, str, bool, result=str)
+    @Slot(str, str, bool, int, result=str)
     def uploadKey(self, fingerprint: str, password: str, only_subkeys: bool, whichsubkeys: int):
-        print(f"Received {fingerprint=}  and {password=} {only_subkeys=}")
+        print(f"Received {fingerprint=}  and {password=} {only_subkeys=} {whichsubkeys=}")
         # First get the key
         key = self.ks.get_key(fingerprint)
-        # encryption, signing, authentication = available_subkeys(key)
-        # whichsubkeys = 0
-        # if encryption:
-            # whichsubkeys += 1
-        # if signing:
-            # whichsubkeys += 2
-        # if authentication:
-            # whichsubkeys += 4
         # reset the yubikey
         result = rjce.reset_yubikey()
         if not result:
@@ -338,6 +330,7 @@ class TBackend(QObject):
             rjce.upload_to_smartcard(key.keyvalue, b"12345678", password, whichsubkeys)
         except:
             return "Failed to upload to the Yubikey."
+        return "success"
 
     @Slot(str, str, result=bool)
     def updateName(self, name, adminpin):
