@@ -13,6 +13,7 @@ Rectangle {
     signal next
 
     Rectangle {
+        id: buttonsContainer
         width: root.width
         height: 50
 
@@ -37,10 +38,14 @@ Rectangle {
     }
 
     ScrollView {
-        topPadding: 50
-        anchors.fill: parent
         contentWidth: centerColumn.width
-        anchors.leftMargin: 14
+        anchors {
+            top: buttonsContainer.bottom
+            left: parent.left
+            right: parent.right
+            bottom: parent.bottom
+            leftMargin: 14
+        }
 
         Column {
             id: centerColumn
