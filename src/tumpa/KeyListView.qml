@@ -28,6 +28,12 @@ Rectangle {
                 labelString: "Generate New Key"
                 iconSrc: "../../images/tick_mark.svg"
                 isThin: true
+                onClicked: {
+                    // remove the keys keys list
+                    stack.pop()
+                    // Show the generate new key view
+                    stack.push(genkeyView)
+                }
             }
             SecondaryButton {
                 labelString: "Import Secret Key"
