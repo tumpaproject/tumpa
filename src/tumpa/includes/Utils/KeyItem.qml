@@ -16,7 +16,7 @@ Rectangle {
     id: root
 
     width: parent.width
-    height: 144
+    implicitHeight: 144 + ((useridList.count - 1) * 28)
 
     color: hasExpired ? "#FEF2F2" : "#F9FAFB"
     border.color: hasExpired ? "#FCA5A5" : "#E5E7EB"
@@ -92,30 +92,45 @@ Rectangle {
             }
         }
 
-        Rectangle {
-            color: "#E5E7EB"
-            radius: 16
-            width: userId.width + userIdEmail.width + 24
-            height: 25
+        ListView{
+            id: userIdListView
+            width: root.width
+            implicitHeight: useridList.count * 28
+            interactive: false
+            model: getStructuredUseridList()
+            spacing: 3
+            delegate: ListView {
+                width: root.width
+                height: 28
+                spacing: 4
+                orientation: ListView.Horizontal
+                model: arr
+                delegate : Rectangle {
+                    color: "#E5E7EB"
+                    radius: 16
+                    width: userId.width + userIdEmail.width + 24
+                    height: 25
 
-            Row {
-                spacing: 8
-                height: 17
-                leftPadding: 8
-                topPadding: 4
+                    Row {
+                        spacing: 8
+                        height: 17
+                        leftPadding: 8
+                        topPadding: 4
 
-                Text {
-                    id: userId
-                    text: getName()
-                    font.pixelSize: 14
-                    font.weight: 500
-                }
+                        Text {
+                            id: userId
+                            text: name
+                            font.pixelSize: 14
+                            font.weight: 500
+                        }
 
-                Text {
-                    id: userIdEmail
-                    text: getEmail()
-                    font.pixelSize: 14
-                    font.weight: 400
+                        Text {
+                            id: userIdEmail
+                            text: email
+                            font.pixelSize: 14
+                            font.weight: 400
+                        }
+                    }
                 }
             }
         }
@@ -171,19 +186,50 @@ Rectangle {
         }
     }
 
-    function getName() {
-        if (useridList !== null) {
-            return useridList.get(0).name
-        } else {
-            return ''
-        }
-    }
+    function getStructuredUseridList() {
+//        console.log(useridList.count)
+        let widthAvailable = root.width
+        let userIdListOuter = Qt.createQmlObject("import QtQuick; ListModel {}", root)
+        let userIdListInner = []
 
-    function getEmail() {
-        if (useridList !== null) {
-            return useridList.get(0).email
-        } else {
-            return ''
+        for (let i = 0; i < useridList.count; i++) {
+            const userid = useridList.get(i)
+            const useridShallow = Object.assign({}, userid) // shallow copying userid to avoid bindings
+//            console.log(useridShallow)
+            const useridContent = useridShallow.name + useridShallow.email
+
+            // create temp QML Text object to get the width
+            var tempText = Qt.createQmlObject(`
+                                          import QtQuick
+                                          Text {
+                                              text: "${useridContent}"
+                                          }
+                                          `,
+                                          root
+                                      );
+            const keyItemWidth = Math.ceil(tempText.width) + 24 + 4
+            tempText.destroy()
+
+//            console.log(keyItemWidth)
+//            console.log(useridContent)
+            if (widthAvailable > keyItemWidth) {
+                widthAvailable -= keyItemWidth
+                userIdListInner.push(userid)
+//                console.log(userIdListInner)
+            } else {
+                userIdListOuter.append({"arr": userIdListInner})
+                userIdListInner = [userid]
+                widthAvailable = root.width - keyItemWidth
+            }
+
+            if (i == useridList.count - 1) {
+                userIdListOuter.append({"arr": userIdListInner})
+            }
         }
+
+        userIdListView.height = userIdListOuter.count * 28
+        root.height = 144 + ((userIdListOuter.count - 1) * 28)
+
+        return userIdListOuter
     }
 }
