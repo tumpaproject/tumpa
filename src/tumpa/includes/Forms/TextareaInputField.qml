@@ -19,10 +19,7 @@ Item {
         }
     }
 
-    TextArea {
-        id: input
-        font.pixelSize: 14
-
+    ScrollView {
         height: 99
         width: parent.width
         anchors {
@@ -30,21 +27,26 @@ Item {
             top: label.bottom
             topMargin: 14
         }
-        leftPadding: 10
-        rightPadding: 10
-        topPadding: 6
-        bottomPadding: 6
 
-        background: Rectangle {
-            color: "transparent"
-            border.color: "#C4C4C4"
-            border.width: 1
-            radius: 5
+        TextArea {
+            id: input
+            font.pixelSize: 14
+            leftPadding: 10
+            rightPadding: 10
+            topPadding: 6
+            bottomPadding: 6
+
+            background: Rectangle {
+                color: "transparent"
+                border.color: "#C4C4C4"
+                border.width: 1
+                radius: 5
+            }
+
+            KeyNavigation.priority: KeyNavigation.BeforeItem
+            KeyNavigation.tab: nextItemInFocusChain()
+
+            Accessible.name: parent.labelString
         }
-
-        KeyNavigation.priority: KeyNavigation.BeforeItem
-        KeyNavigation.tab: nextItemInFocusChain()
-
-        Accessible.name: parent.labelString
     }
 }
