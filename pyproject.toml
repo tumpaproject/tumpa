@@ -1,7 +1,7 @@
 [tool.briefcase]
 project_name = "tumpa"
-bundle = "in.kushaldas"
-version = "0.1.3"
+bundle = "in.kushaldas.tumpa"
+version = "0.9a1"
 url = "https://tumpa.rocks"
 license = "GNU General Public License v3 or later (GPLv3+)"
 author = 'Kushal Das'
@@ -24,6 +24,15 @@ requires = []
 [tool.briefcase.app.tumpa.linux]
 requires = []
 system_requires = []
+
+[tool.briefcase.app.tumpa.linux.appimage]
+system_requires = ["gstreamer1.0-gl", "libasound2", "libegl1", "libfontconfig1", "libgl1", "libnss3", "libpulse0", "libwayland-cursor++0", "libxcb-icccm4", "libxcb-image0", "libxcb-keysyms1", "libxcb-randr0", "libxcb-render-util0", "libxcb-shape0", "libxcomposite1", "libxdamage1", "libxi6",  "libxkbfile1", "libxrandr2", "libxtst6", "libegl-mesa0", "curl"]
+dockerfile_extra_content = """
+ENV APP_PACKAGES_PATH="/app/appimage/{{ cookiecutter.formal_name }}/{{ cookiecutter.formal_name }}.AppDir/usr/app_packages"
+ENV LD_LIBRARY_PATH="$APP_PACKAGES_PATH/shiboken6:$APP_PACKAGES_PATH/PySide6:$APP_PACKAGES_PATH/PySide6/Qt/lib"
+"""
+linuxdeploy_plugins = []
+support_package="Python-3.10-linux-x86_64-support.custom.tar.gz"
 
 [tool.briefcase.app.tumpa.windows]
 requires = []
