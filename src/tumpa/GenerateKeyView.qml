@@ -122,7 +122,7 @@ Rectangle {
                     iconSrc: "../../images/backIcon.svg"
 
                     onClicked: {
-                        console.log("Back button clicked")
+                        root.back()
                     }
                 }
 

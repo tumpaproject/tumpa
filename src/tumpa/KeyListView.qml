@@ -29,8 +29,6 @@ Rectangle {
                 iconSrc: "../../images/tick_mark.svg"
                 isThin: true
                 onClicked: {
-                    // remove the keys keys list
-                    stack.pop()
                     // Show the generate new key view
                     stack.push(genkeyView)
                 }
@@ -117,7 +115,7 @@ Rectangle {
                 onCountChanged: {
                     const root = keyItemsListView.visibleChildren[0]
                     let listViewHeight = 0
-                    for (let i = 0; i < root.visibleChildren.length; i++) {
+                    for (var i = 0; i < root.visibleChildren.length; i++) {
                         listViewHeight += root.visibleChildren[i].height
                     }
                     keyItemsListView.height = listViewHeight

@@ -282,7 +282,7 @@ ApplicationWindow {
     Component {
         id: startView
         StartView {
-            //onClicked: stack.push(userView)
+            // Do not pop anything, just show proper view
             onGenkeyclicked: stack.push(genkeyView)
         }
     }
@@ -297,6 +297,11 @@ ApplicationWindow {
                 tbackend.generateKey(name, emails, passphrase, expirationDate,
                                      encryptionChecked, signingChecked,
                                      authenticationChecked, keyAlgo)
+            }
+
+            onBack: {
+                // go back to the last view
+                stack.pop()
             }
         }
     }
