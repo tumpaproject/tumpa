@@ -365,11 +365,14 @@ ApplicationWindow {
                 var result = tbackend.uploadKey(fingerprint, password, true,
                                                 whichsubkeys)
                 if (result !== "success") {
-                    var win = showErrorBox("Error in upload", result)
+                    var win = showErrorBox(qsTr("Error in upload"), result)
                     return
                 } else {
 
-                    // TODO: We need a success modal box.
+                    var win2 = getSuccessBox(
+                                qsTr("Upload sccessful."), qsTr(
+                                    "We successfully uploaded the key to the card."))
+                    return
                 }
             }
         }
@@ -451,6 +454,20 @@ ApplicationWindow {
                                               "headingText": "Warning",
                                               "contentText": msg
                                           })
+        return win
+    }
+
+    function getSuccessBox(heading, msg) {
+        // When we want to show success operation
+        var component1 = Qt.createComponent("includes/Utils/SuccessModal.qml")
+        var win = component1.createObject(root, {
+                                              "headingText": heading,
+                                              "contentText": msg
+                                          })
+        win.okayed.connect(() => {
+                               win.destroy()
+                           })
+        win.show()
         return win
     }
 
