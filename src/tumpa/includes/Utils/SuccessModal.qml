@@ -11,10 +11,8 @@ Window {
     height: 200
     modality: Qt.WindowModal
 
-    signal accepted
-    signal rejected
+    signal okayed
 
-    property alias dangerBtnText: dangerButton.labelString
     property alias headingText: modalHeading.text
     property alias contentText: modalText.text
 
