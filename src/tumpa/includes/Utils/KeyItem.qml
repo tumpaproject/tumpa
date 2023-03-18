@@ -187,49 +187,48 @@ Rectangle {
     }
 
     function getStructuredUseridList() {
-//        console.log(useridList.count)
-        let widthAvailable = root.width
-        let userIdListOuter = Qt.createQmlObject("import QtQuick; ListModel {}", root)
-        let userIdListInner = []
+        if (useridList !== null) {
+            let widthAvailable = root.width
+            let userIdListOuter = Qt.createQmlObject("import QtQuick; ListModel {}", root)
+            let userIdListInner = []
 
-        for (let i = 0; i < useridList.count; i++) {
-            const userid = useridList.get(i)
-            const useridShallow = Object.assign({}, userid) // shallow copying userid to avoid bindings
-//            console.log(useridShallow)
-            const useridContent = useridShallow.name + useridShallow.email
+            for (let i = 0; i < useridList.count; i++) {
+                const userid = useridList.get(i)
+                const useridShallow = Object.assign({}, userid) // shallow copying userid to avoid bindings
 
-            // create temp QML Text object to get the width
-            var tempText = Qt.createQmlObject(`
-                                          import QtQuick
-                                          Text {
-                                              text: "${useridContent}"
-                                          }
-                                          `,
-                                          root
-                                      );
-            const keyItemWidth = Math.ceil(tempText.width) + 24 + 4
-            tempText.destroy()
+                const useridContent = useridShallow.name + useridShallow.email
 
-//            console.log(keyItemWidth)
-//            console.log(useridContent)
-            if (widthAvailable > keyItemWidth) {
-                widthAvailable -= keyItemWidth
-                userIdListInner.push(userid)
-//                console.log(userIdListInner)
-            } else {
-                userIdListOuter.append({"arr": userIdListInner})
-                userIdListInner = [userid]
-                widthAvailable = root.width - keyItemWidth
+                // create temp QML Text object to get the width
+                var tempText = Qt.createQmlObject(`
+                                            import QtQuick
+                                            Text {
+                                                text: "${useridContent}"
+                                            }
+                                            `,
+                                            root
+                                        );
+                const keyItemWidth = Math.ceil(tempText.width) + 24 + 4
+                tempText.destroy()
+                if (widthAvailable > keyItemWidth) {
+                    widthAvailable -= keyItemWidth
+                    userIdListInner.push(userid)
+                } else {
+                    userIdListOuter.append({"arr": userIdListInner})
+                    userIdListInner = [userid]
+                    widthAvailable = root.width - keyItemWidth
+                }
+
+                if (i == useridList.count - 1) {
+                    userIdListOuter.append({"arr": userIdListInner})
+                }
             }
 
-            if (i == useridList.count - 1) {
-                userIdListOuter.append({"arr": userIdListInner})
-            }
+            userIdListView.height = userIdListOuter.count * 28
+            root.height = 144 + ((userIdListOuter.count - 1) * 28)
+
+            return userIdListOuter
+        } else {
+            return useridList
         }
-
-        userIdListView.height = userIdListOuter.count * 28
-        root.height = 144 + ((userIdListOuter.count - 1) * 28)
-
-        return userIdListOuter
     }
 }
