@@ -16,7 +16,7 @@ Rectangle {
     id: root
 
     width: parent.width
-    implicitHeight: 144 + ((useridList.count - 1) * 28)
+    implicitHeight: 144
 
     color: hasExpired ? "#FEF2F2" : "#F9FAFB"
     border.color: hasExpired ? "#FCA5A5" : "#E5E7EB"
@@ -95,7 +95,7 @@ Rectangle {
         ListView{
             id: userIdListView
             width: root.width
-            implicitHeight: useridList.count * 28
+            implicitHeight: 28
             interactive: false
             model: getStructuredUseridList()
             spacing: 3

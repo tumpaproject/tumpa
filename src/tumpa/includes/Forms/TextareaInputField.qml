@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Controls
 
 Item {
+    id: root
     property string labelString: ""
     property alias text: input.text
 
@@ -46,7 +47,7 @@ Item {
             KeyNavigation.priority: KeyNavigation.BeforeItem
             KeyNavigation.tab: nextItemInFocusChain()
 
-            Accessible.name: parent.labelString
+            Accessible.name: root.labelString
         }
     }
 }

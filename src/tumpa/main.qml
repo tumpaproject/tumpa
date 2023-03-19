@@ -481,7 +481,7 @@ ApplicationWindow {
 
     function refreshKeyList() {
         var localdata = tbackend.get_keys_json()
-        //console.log(localdata)
+        // console.log(localdata)
         var data = JSON.parse(localdata)
         ksKeys.clear()
         for (var i in data) {

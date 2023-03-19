@@ -68,7 +68,7 @@ Rectangle {
             ListView {
                 id: keyItemsListView
                 width: root.width
-                implicitHeight: keyListData.count * 154
+                implicitHeight: contentHeight + 20
                 spacing: 10
                 model: keyListData
                 interactive: false
@@ -109,16 +109,6 @@ Rectangle {
                         tbackend.get_subkey_types(fingerprintTxt)
                         stack.push(uploadView)
                     }
-                }
-
-                // To readjust the height based on the KeyItem heights
-                onCountChanged: {
-                    const root = keyItemsListView.visibleChildren[0]
-                    let listViewHeight = 0
-                    for (var i = 0; i < root.visibleChildren.length; i++) {
-                        listViewHeight += root.visibleChildren[i].height
-                    }
-                    keyItemsListView.height = listViewHeight
                 }
             }
         }
