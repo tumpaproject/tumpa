@@ -6,7 +6,7 @@ CheckBox {
     id: control
     height: 17
     anchors.topMargin: 14
-    
+    opacity: enabled ? 1 : 0.6
 
     indicator: Rectangle {
         id: indicatorRect
