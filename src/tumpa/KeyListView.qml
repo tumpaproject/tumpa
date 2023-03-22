@@ -109,6 +109,12 @@ Rectangle {
                         tbackend.get_subkey_types(fingerprintTxt)
                         stack.push(uploadView)
                     }
+
+                    // To export the public key
+                    onExportPublic: {
+                        tbackend.current_fingerprint(fingerprintTxt)
+                        fileDialog.open()
+                    }
                 }
             }
         }

@@ -12,6 +12,7 @@ Rectangle {
 
     signal removeKey
     signal uploadtoCard
+    signal exportPublic
 
     id: root
 
@@ -92,7 +93,7 @@ Rectangle {
             }
         }
 
-        ListView{
+        ListView {
             id: userIdListView
             width: root.width
             implicitHeight: 28
@@ -105,7 +106,7 @@ Rectangle {
                 spacing: 4
                 orientation: ListView.Horizontal
                 model: arr
-                delegate : Rectangle {
+                delegate: Rectangle {
                     color: "#E5E7EB"
                     radius: 16
                     width: userId.width + userIdEmail.width + 24
@@ -163,6 +164,7 @@ Rectangle {
 
                 onClicked: {
                     console.log("Export pub key clicked for: " + fingerprint.text)
+                    root.exportPublic()
                 }
             }
 
@@ -189,37 +191,42 @@ Rectangle {
     function getStructuredUseridList() {
         if (useridList !== null) {
             let widthAvailable = root.width
-            let userIdListOuter = Qt.createQmlObject("import QtQuick; ListModel {}", root)
+            let userIdListOuter = Qt.createQmlObject(
+                    "import QtQuick; ListModel {}", root)
             let userIdListInner = []
 
-            for (let i = 0; i < useridList.count; i++) {
+            for (var i = 0; i < useridList.count; i++) {
                 const userid = useridList.get(i)
-                const useridShallow = Object.assign({}, userid) // shallow copying userid to avoid bindings
+                const useridShallow = Object.assign(
+                                        {},
+                                        userid) // shallow copying userid to avoid bindings
 
                 const useridContent = useridShallow.name + useridShallow.email
 
                 // create temp QML Text object to get the width
                 var tempText = Qt.createQmlObject(`
-                                            import QtQuick
-                                            Text {
-                                                text: "${useridContent}"
-                                            }
-                                            `,
-                                            root
-                                        );
+                                                  import QtQuick
+                                                  Text {
+                                                  text: "${useridContent}"
+                                                  }
+                                                  `, root)
                 const keyItemWidth = Math.ceil(tempText.width) + 24 + 4
                 tempText.destroy()
                 if (widthAvailable > keyItemWidth) {
                     widthAvailable -= keyItemWidth
                     userIdListInner.push(userid)
                 } else {
-                    userIdListOuter.append({"arr": userIdListInner})
+                    userIdListOuter.append({
+                                               "arr": userIdListInner
+                                           })
                     userIdListInner = [userid]
                     widthAvailable = root.width - keyItemWidth
                 }
 
                 if (i == useridList.count - 1) {
-                    userIdListOuter.append({"arr": userIdListInner})
+                    userIdListOuter.append({
+                                               "arr": userIdListInner
+                                           })
                 }
             }
 

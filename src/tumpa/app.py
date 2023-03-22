@@ -167,6 +167,7 @@ class TBackend(QObject):
 
     def __init__(self, ks: Optional[jce.KeyStore] = None):
         super(TBackend, self).__init__(None)
+        self.fp = ""
         self.havekeys = False
         if ks:
             self.ks = ks
@@ -318,6 +319,29 @@ class TBackend(QObject):
         subkeytypes.s = s
         subkeytypes.a = a
         subkeytypes.fp = fingerprint
+
+    @Slot(str)
+    def current_fingerprint(self, fingerprint: str):
+        "Sets the current fingerprint for any future work."
+        self.fp = fingerprint
+
+    @Slot(str, result=str)
+    def save_public_key(self, filepath: str):
+        "Saves the current key as publick key"
+        try:
+            key = self.ks.get_key(self.fp)
+        except:
+            # FIXME: handle error here
+            return f"Error while finding the key for {self.fp}"
+        if filepath.startswith("file://"):
+            filepath = filepath[7:]
+        public_key = key.get_pub_key()
+        try:
+            with open(filepath, "w") as fobj:
+                fobj.write(public_key)
+        except:
+            return f"Error while saving the file at {filepath}."
+        return "success"
 
     @Slot(str, str, bool, int, result=str)
     def uploadKey(self, fingerprint: str, password: str, only_subkeys: bool, whichsubkeys: int):

@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Window
 import QtQuick.Controls
+import Qt.labs.platform
 
 import "includes/Forms"
 import "includes/Buttons"
@@ -276,6 +277,15 @@ ApplicationWindow {
         function onRefreshKeys() {
             // Get the latest keys
             refreshKeyList()
+        }
+    }
+    FileDialog {
+        id: fileDialog
+        fileMode: FileDialog.SaveFile
+        folder: StandardPaths.standardLocations(StandardPaths.HomeLocation)[0]
+
+        onAccepted: {
+            tbackend.save_public_key(file)
         }
     }
 
