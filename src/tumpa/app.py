@@ -46,6 +46,7 @@ class SubkeyType(QObject):
 
     def read_a(self):
         return self.a
+
     def read_fingerprint(self):
         return self.fp
 
@@ -186,7 +187,6 @@ class TBackend(QObject):
         except jce.exceptions.KeyNotFoundError:
             self.keylist = KeyList([])
 
-
     @Slot(result=str)
     def get_keys_json(self) -> str:
         "To get the JSON from inside"
@@ -313,7 +313,7 @@ class TBackend(QObject):
         key = self.ks.get_key(fingerprint)
         data = available_subkeys(key)
         print(f"{data=}")
-        e, s, a =  data
+        e, s, a = data
         # TODO: the stupid hack to pass data to QML
         subkeytypes.e = e
         subkeytypes.s = s
@@ -344,12 +344,16 @@ class TBackend(QObject):
         return "success"
 
     @Slot(str, str, bool, int, result=str)
-    def uploadKey(self, fingerprint: str, password: str, only_subkeys: bool, whichsubkeys: int):
-        print(f"Received {fingerprint=}  and {password=} {only_subkeys=} {whichsubkeys=}")
+    def uploadKey(
+        self, fingerprint: str, password: str, only_subkeys: bool, whichsubkeys: int
+    ):
         # First get the key
         key = self.ks.get_key(fingerprint)
-        # reset the yubikey
-        result = rjce.reset_yubikey()
+        try:
+            # reset the yubikey
+            result = rjce.reset_yubikey()
+        except:
+            return "Failed to find the Yubikey for reset."
         if not result:
             return "Failed to reset Yubikey"
         try:
