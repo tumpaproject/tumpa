@@ -112,7 +112,7 @@ class KeyThread(QThread):
 def convert_date_to_text(d: datetime = None) -> str:
     "Converts the datetime for UI"
     if not d:
-        return ""
+        return "Never"
     return d.strftime("%d %B %Y")
 
 
