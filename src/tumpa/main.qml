@@ -11,6 +11,8 @@ ApplicationWindow {
     title: qsTr("Tumpa")
     width: 900
     height: 551
+    minimumWidth: 900
+    minimumHeight: 551
     visible: true
 
     id: root
