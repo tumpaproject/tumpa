@@ -191,16 +191,16 @@ ApplicationWindow {
                     }
                 }
             }
-            StatusInfo {
-                anchors {
-                    bottom: parent.bottom
-                    bottomMargin: 24
-                    left: parent.left
-                    leftMargin: 14
-                }
+            // StatusInfo {
+            //     anchors {
+            //         bottom: parent.bottom
+            //         bottomMargin: 24
+            //         left: parent.left
+            //         leftMargin: 14
+            //     }
 
-                statusText: qsTr("Card detected")
-            }
+            //     statusText: qsTr("Card detected")
+            // }
         }
 
         Rectangle {
