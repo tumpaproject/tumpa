@@ -37,6 +37,12 @@ Rectangle {
                 labelString: "Import Secret Key"
                 iconSrc: "../../images/backIcon.svg"
                 isThin: true
+
+                onClicked: {
+
+                    // Show import secret key dialog
+                    importDialog.open()
+                }
             }
         }
     }

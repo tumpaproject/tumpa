@@ -281,6 +281,7 @@ ApplicationWindow {
             refreshKeyList()
         }
     }
+
     FileDialog {
         id: fileDialog
         fileMode: FileDialog.SaveFile
@@ -288,6 +289,28 @@ ApplicationWindow {
 
         onAccepted: {
             tbackend.save_public_key(file)
+        }
+    }
+
+    FileDialog {
+        id: importDialog
+        fileMode: FileDialog.OpenFile
+        folder: StandardPaths.standardLocations(StandardPaths.HomeLocation)[0]
+
+        onAccepted: {
+            var result = tbackend.import_secret_key(file)
+            if (result === "error") {
+                var errortext = qsTr("Could not import the file.")
+                var win = showErrorBox(qsTr("Error"), errortext)
+                return
+            }
+            if (result === "publickey") {
+                var errortext2 = qsTr("Please select a private key file.")
+                var win2 = showErrorBox(qsTr("Error"), errortext2)
+                return
+            }
+            // Else we go back
+            stack.pop()
         }
     }
 

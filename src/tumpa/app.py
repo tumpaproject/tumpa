@@ -297,7 +297,6 @@ class TBackend(QObject):
         "Receives information that key generation is done"
         self.keylist = KeyList(self.ks.get_all_keys())
         self.havekeys = True
-        print(f"{self.havekeys=}")
         # TODO: update the datamodel.
         self.updated.emit()
 
@@ -341,6 +340,35 @@ class TBackend(QObject):
                 fobj.write(public_key)
         except:
             return f"Error while saving the file at {filepath}."
+        return "success"
+
+    @Slot(str, result=str)
+    def import_secret_key(self, filepath: str):
+        "To import an existing key"
+        if filepath.startswith("file://"):
+            filepath = filepath[7:]
+        try:
+            (
+                _,
+                _,
+                keytype,
+                _,
+                _,
+                _,
+            ) = rjce.parse_cert_file(filepath)
+        except Exception as e:
+            # Print the error e here for debugging
+            return "error"
+
+        if not keytype:
+            return "publickey"
+        try:
+            self.ks.import_key(filepath)
+        except Exception as e:
+            # Print the error e here for debugging
+            return "error"
+        # Now to update the UI
+        self.key_generation_done()
         return "success"
 
     @Slot(str, str, bool, int, result=str)
