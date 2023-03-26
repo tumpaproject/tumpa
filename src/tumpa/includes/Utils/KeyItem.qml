@@ -139,14 +139,14 @@ Rectangle {
         Row {
             spacing: 20
 
-            TransparentButton {
-                labelString: "Details"
-                iconSrc: "../../images/details_purple.svg"
+            // TransparentButton {
+            //     labelString: "Details"
+            //     iconSrc: "../../images/details_purple.svg"
 
-                onClicked: {
-                    console.log("Details clicked for: " + fingerprint.text)
-                }
-            }
+            //     onClicked: {
+            //         console.log("Details clicked for: " + fingerprint.text)
+            //     }
+            // }
 
             TransparentButton {
                 labelString: "Send key to card"
@@ -168,14 +168,14 @@ Rectangle {
                 }
             }
 
-            TransparentButton {
-                labelString: "Revoke"
-                iconSrc: "../../images/delete_purple.svg"
+            // TransparentButton {
+            //     labelString: "Revoke"
+            //     iconSrc: "../../images/delete_purple.svg"
 
-                onClicked: {
-                    console.log("Revoke key clicked for: " + fingerprint.text)
-                }
-            }
+            //     onClicked: {
+            //         console.log("Revoke key clicked for: " + fingerprint.text)
+            //     }
+            // }
             TransparentButton {
                 labelString: "Remove key"
                 iconSrc: "../../images/delete_purple.svg"
