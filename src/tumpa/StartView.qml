@@ -55,7 +55,7 @@ Rectangle {
             iconSrc: "../../images/plus.svg"
 
             onClicked: {
-                console.log("generate clicked")
+                // console.log("generate clicked")
                 root.genkeyclicked()
             }
         }

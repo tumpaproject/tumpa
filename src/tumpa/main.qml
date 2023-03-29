@@ -395,7 +395,7 @@ ApplicationWindow {
                 if (subkeys.authenticationChecked === true) {
                     whichsubkeys += 4
                 }
-                console.log(whichsubkeys)
+                // console.log(whichsubkeys)
                 // Let us try to format the card and upload
                 var result = tbackend.uploadKey(fingerprint, password, true,
                                                 whichsubkeys)

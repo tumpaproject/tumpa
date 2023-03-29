@@ -153,7 +153,7 @@ Rectangle {
                 iconSrc: "../../images/card_purple.svg"
 
                 onClicked: {
-                    console.log("Send key to card clicked for: " + fingerprint.text)
+                    // console.log("Send key to card clicked for: " + fingerprint.text)
                     root.uploadtoCard()
                 }
             }
@@ -163,7 +163,7 @@ Rectangle {
                 iconSrc: "../../images/export_purple.svg"
 
                 onClicked: {
-                    console.log("Export pub key clicked for: " + fingerprint.text)
+                    // console.log("Export pub key clicked for: " + fingerprint.text)
                     root.exportPublic()
                 }
             }
