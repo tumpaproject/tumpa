@@ -67,7 +67,10 @@ Rectangle {
             labelString: "Import Secret Key"
             iconSrc: "../../images/import.svg"
 
-            onClicked: console.log("import clicked")
+            onClicked: {
+                // Show import secret key dialog
+                importDialog.open()
+            }
         }
     }
 }

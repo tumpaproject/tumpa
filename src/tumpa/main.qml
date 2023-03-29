@@ -309,6 +309,7 @@ ApplicationWindow {
                 var win2 = showErrorBox(qsTr("Error"), errortext2)
                 return
             }
+            // FIXME: figure out which item to go back to.
             // Else we go back
             stack.pop()
         }
