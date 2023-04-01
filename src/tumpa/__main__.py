@@ -1,5 +1,5 @@
-#!/usr/bin/env python3
-import tumpa
+from tumpa.app import main
 
-if __name__ == "__main__":
-    tumpa.main()
+if __name__ == '__main__':
+    main()
+
