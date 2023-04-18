@@ -36,6 +36,7 @@ Item {
         leftPadding: 10
         rightPadding: 10
         verticalAlignment: TextInput.AlignVCenter
+        color: "#111827"
 
         background: Rectangle {
             color: "transparent"
