@@ -12,19 +12,15 @@ You have a new OpenPGP key, with proper subkeys within seconds!
 
 Few more clicks, and you have your OpenPGP key in your smartcard (Yubikey, etc.).
 
-Please visit the [wiki](https://github.com/kushaldas/tumpa/wiki) for more details and features.
-You can also see working [demos](https://github.com/kushaldas/tumpa/wiki/Current-UI-demo).
+Please visit the [wiki](https://github.com/tumpaproject/tumpa/wiki) for more details and features.
+You can also see working [demos](https://github.com/tumpaproject/tumpa/wiki/Current-UI-demo).
 
 We earnestly hope this tool makes your life much, much simpler when it comes to OpenPGP keys.
-
-## Installation of the older version
-
-We have [Mac dmg](https://kushaldas.in/posts/releasing-tumpa-for-mac.html) and [Debian 11 package](https://github.com/kushaldas/tumpa/releases/tag/v0.1.2) (should work on Tails too) available.
 
 ## Development setup
 
 Please go through the
-[development steps](https://github.com/kushaldas/tumpa/wiki#development-setup) if you are interested
+[development steps](https://github.com/tumpaproject/tumpa/wiki#development-setup) if you are interested
 in trying out Tumpa.
 
 Please come to the #tumpa channel on https://libera.chat IRC server to talk to the developers.
@@ -33,11 +29,9 @@ Please come to the #tumpa channel on https://libera.chat IRC server to talk to t
 
 This project is still at a very early stage. We are working on improvements over time. But if
 you find any issues in the working of the application, feel free to 
-[file an issue](https://github.com/kushaldas/tumpa/issues/new).
+[file an issue](https://github.com/tumpaproject/tumpa/issues/new).
 
 ## GPLv3 or later.
-
-- the eye_*.svg icons are under AGPL license.
 
 ## Maintainers
 

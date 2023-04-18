@@ -1,7 +1,7 @@
 [tool.briefcase]
 project_name = "tumpa"
 bundle = "in.kushaldas"
-version = "0.9a2"
+version = "0.9.0"
 url = "https://tumpa.rocks"
 license = "GNU General Public License v3 or later (GPLv3+)"
 author = 'Kushal Das'
@@ -19,7 +19,9 @@ requires = [
 
 
 [tool.briefcase.app.tumpa.macOS]
-requires = []
+requires = [
+    'std-nslog~=1.0.0'
+]
 
 [tool.briefcase.app.tumpa.linux]
 requires = []
