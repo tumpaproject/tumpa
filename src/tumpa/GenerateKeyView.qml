@@ -24,12 +24,12 @@ Rectangle {
     ListModel {
         id: keyAlgoOptions
         ListElement {
-            text: "RSA 4096"
-            value: "rsa4096"
-        }
-        ListElement {
             text: "Curve 25519"
             value: "curve25519"
+        }
+        ListElement {
+            text: "RSA 4096"
+            value: "rsa4096"
         }
     }
 

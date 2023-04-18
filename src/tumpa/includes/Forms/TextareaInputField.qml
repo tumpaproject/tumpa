@@ -36,6 +36,7 @@ Item {
             rightPadding: 10
             topPadding: 6
             bottomPadding: 6
+            color: "#111827"
 
             background: Rectangle {
                 color: "transparent"

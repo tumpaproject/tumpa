@@ -33,8 +33,18 @@ Item {
             top: label.bottom
             topMargin: 14
         }
-        leftPadding: 10
-        rightPadding: 10
+        font.pixelSize: 14
+
+        contentItem: Text {
+            leftPadding: 10
+            rightPadding: 10
+
+            text: control.displayText
+            font: control.font
+            color: "#111827"
+            verticalAlignment: Text.AlignVCenter
+            elide: Text.ElideRight
+        }
 
         background: Rectangle {
             id: backgroundRect
