@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## [0.9.0] - 2023-04-18
+
+- Fixes key generation window color.
+- Cv25519 is the default key type.
 
 
 ## [0.9.0-alpha] - 2023-03-18
