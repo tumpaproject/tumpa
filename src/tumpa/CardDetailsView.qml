@@ -42,20 +42,20 @@ Rectangle {
         }
     }
 
-    ModalDangerButton {
-        id: formatKeyBtn
-        anchors {
-            bottom: root.bottom
-            right: root.right
-            rightMargin: 24
-            bottomMargin: 24
-        }
+    //    ModalDangerButton {
+    //        id: formatKeyBtn
+    //        anchors {
+    //            bottom: root.bottom
+    //            right: root.right
+    //            rightMargin: 24
+    //            bottomMargin: 24
+    //        }
 
-        labelString: qsTr("Reset smartcard")
+    //        labelString: qsTr("Reset smartcard")
 
-        onClicked: {
-            // TODO: reset the smartcard
-            console.log("Reset smartcard button clicked")
-        }
-    }
+    //        onClicked: {
+    //            // TODO: reset the smartcard
+    //            console.log("Reset smartcard button clicked")
+    //        }
+    //    }
 }

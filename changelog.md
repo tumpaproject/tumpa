@@ -2,7 +2,16 @@
 
 ## Unreleased
 
+## [0.10.0] - 2023-04-19
+
+### Fixed
+
+- Fixed #74 detect key and Yubikey type before upload.
+- Removes extra print statements.
+
 ## [0.9.0] - 2023-04-18
+
+### Fixed
 
 - Fixes key generation window color.
 - Cv25519 is the default key type.
