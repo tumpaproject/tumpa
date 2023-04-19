@@ -286,7 +286,6 @@ class TBackend(QObject):
             whichsubkeys += 2
         if authentication:
             whichsubkeys += 4
-        print(f"{whichsubkeys=}")
         # Now feed in the data to the other thread
         self.kt.setup(uids, password, whichsubkeys, key_algo, expiry, canexpire)
         # Start the thread
@@ -311,7 +310,6 @@ class TBackend(QObject):
     def get_subkey_types(self, fingerprint: str):
         key = self.ks.get_key(fingerprint)
         data = available_subkeys(key)
-        print(f"{data=}")
         e, s, a = data
         # TODO: the stupid hack to pass data to QML
         subkeytypes.e = e
@@ -377,6 +375,20 @@ class TBackend(QObject):
     ):
         # First get the key
         key = self.ks.get_key(fingerprint)
+
+        # First check for the card to be accessable
+        if not rjce.is_smartcard_connected():
+            return "Failed to find/access Yubikey. Plug it again if possible."
+        # Now check the version
+        version = rjce.get_card_version()
+        key_algos = rjce.get_key_cipher_details(key.keyvalue)
+        keytype = "RSA"
+        for key_details in key_algos:
+            if key_details[1] in ["EdDSA", "ECDH"]:
+                keytype = "Cv25519"
+        # Yubikey4 does not support Cv25519 keys
+        if keytype == "Cv25519" and version[0] < 5:
+           return "Please use Yubikey5 or above for Cv25519 Keys."
         try:
             # reset the yubikey
             result = rjce.reset_yubikey()
@@ -449,7 +461,6 @@ def available_subkeys(key: Key) -> Tuple[bool, bool, bool]:
     got_auth = False
     # Loop over on the subkeys
     for subkey in subkeys_sorted:
-        print(subkey)
         if subkey["revoked"]:
             continue
         if not subkey["expiration"]:
