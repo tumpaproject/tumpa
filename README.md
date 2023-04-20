@@ -1,6 +1,6 @@
 # Tumpa - The Usability Minded PGP Application
 
-Tumpa is a desktop application that makes OpenPGP key creation and smart card access
+[Tumpa](https://tumpa.rocks) is a desktop application that makes OpenPGP key creation and smart card access
 easier. No more terminals, no more typing and entering options multiple times.
 All you need to do is fill up a few fields, and click a few times.
 
@@ -13,9 +13,11 @@ You have a new OpenPGP key, with proper subkeys within seconds!
 Few more clicks, and you have your OpenPGP key in your smartcard (Yubikey, etc.).
 
 Please visit the [wiki](https://github.com/tumpaproject/tumpa/wiki) for more details and features.
-You can also see working [demos](https://github.com/tumpaproject/tumpa/wiki/Current-UI-demo).
 
 We earnestly hope this tool makes your life much, much simpler when it comes to OpenPGP keys.
+
+
+![Showing all avaialble keys](https://kushaldas.in/images/tumpascr0100.1/keysview.png)
 
 ## Development setup
 
