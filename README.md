@@ -39,3 +39,5 @@ you find any issues in the working of the application, feel free to
 
 - Saptak Sengupta
 - Kushal Das
+
+Design by [Ura Design](https://ura.design/)
