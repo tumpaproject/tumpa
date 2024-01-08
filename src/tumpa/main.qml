@@ -493,6 +493,17 @@ ApplicationWindow {
         return win
     }
 
+    function getConfirmBox(heading, msg) {
+        var component1 = Qt.createComponent("includes/Utils/WarningModal.qml")
+        var win = component1.createObject(root, {
+                                              "dangerBtnText": heading,
+                                              "headingText": "Warning",
+                                              "contentText": msg
+                                          })
+
+        return win
+    }
+
     function getSuccessBox(heading, msg) {
         // When we want to show success operation
         var component1 = Qt.createComponent("includes/Utils/SuccessModal.qml")
