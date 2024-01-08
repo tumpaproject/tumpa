@@ -70,8 +70,22 @@ Rectangle {
         labelString: qsTr("Upload")
         iconSrc: "../../images/tick_mark.svg"
 
-        onClicked: {
-            root.next()
+        onClicked: function () {
+            var win = getConfirmBox(
+                        qsTr("Upload the new key?"), qsTr(
+                            "This will delete current key (if any) on the Yubikey"))
+            win.accepted.connect(() => {
+
+                                     // The user agreed.
+                                     // Now remove the key.
+                                     win.destroy()
+                                     root.next()
+                                 })
+            win.rejected.connect(() => {
+                                     // The user canceled the operation
+                                     win.destroy()
+                                 })
+            win.show()
         }
     }
 }
