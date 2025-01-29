@@ -3,13 +3,14 @@ project_name = "tumpa"
 bundle = "in.kushaldas"
 version = "0.10.0"
 url = "https://tumpa.rocks"
-license = "GNU General Public License v3 or later (GPLv3+)"
+license.file = "LICENSE"
 author = 'Kushal Das'
 author_email = "mail@kushaldas.in"
 
 [tool.briefcase.app.tumpa]
 formal_name = "tumpa"
 description = "The Usability Minded PGP Application"
+long_description = "The Usability Minded PGP Application"
 icon = "files/in.kushaldas.Tumpa"
 sources = ['src/tumpa']
 requires = [
@@ -17,15 +18,6 @@ requires = [
     'pyside6>=6.2.4',
     'setuptools']
 
-
-[tool.briefcase.app.tumpa.macOS]
-requires = [
-    'std-nslog~=1.0.0'
-]
-
-[tool.briefcase.app.tumpa.linux]
-requires = []
-system_requires = []
 
 [tool.briefcase.app.tumpa.linux.appimage]
 system_requires = ["gstreamer1.0-gl", "libasound2", "libegl1", "libfontconfig1", "libgl1", "libnss3", "libpulse0", "libwayland-cursor++0", "libxcb-icccm4", "libxcb-image0", "libxcb-keysyms1", "libxcb-randr0", "libxcb-render-util0", "libxcb-shape0", "libxcomposite1", "libxdamage1", "libxi6",  "libxkbfile1", "libxrandr2", "libxtst6", "libegl-mesa0", "curl"]
@@ -39,9 +31,38 @@ support_package="Python-3.10-linux-x86_64-support.custom.tar.gz"
 [tool.briefcase.app.tumpa.windows]
 requires = []
 
-# Mobile deployments
-[tool.briefcase.app.tumpa.iOS]
-requires = []
+[tool.briefcase.app.tumpa.macOS]
+universal_build = false
+requires = [
+    "toga-cocoa~=0.4.7",
+    "std-nslog~=1.0.3",
+]
 
-[tool.briefcase.app.tumpa.android]
-requires = []
+[tool.briefcase.app.tumpa.linux]
+requires = [
+    "johnnycanencrypt",
+    'pyside6>=6.2.4',
+    'setuptools',
+]
+
+[tool.briefcase.app.tumpa.linux.system.debian]
+system_requires = [
+    # Needed to compile pycairo wheel
+    "libcairo2-dev",
+    # Needed to compile PyGObject wheel
+    "libgirepository1.0-dev",
+]
+
+system_runtime_requires = [
+    # Needed to provide GTK and its GI bindings
+    "gir1.2-gtk-3.0",
+    "libgirepository-1.0-1",
+    # Dependencies that GTK looks for at runtime
+    "libcanberra-gtk3-module",
+    # Needed to provide WebKit2 at runtime
+    # Note: Debian 11 and Ubuntu 20.04 require gir1.2-webkit2-4.0 instead
+    # "gir1.2-webkit2-4.1",
+    "libxcb-cursor0",
+]
+
+style_framework = "Shoelace v2.3"
