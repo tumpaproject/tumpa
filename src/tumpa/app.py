@@ -31,29 +31,28 @@ from tumpa.configuration import get_keystore_directory
 
 
 class SubkeyType(QObject):
-    def __init__(self, sign, enc, auth) -> None:
-        QObject.__init__(self)
-        self.s = sign
-        self.e = enc
-        self.a = auth
-        self.fp = ""
+    def __init__(self, sign: bool = False, enc: bool = False, auth: bool = False) -> None:
+        super().__init__()
+        self._sign = sign
+        self._encryption = enc
+        self._authentication = auth
+        self._fingerprint = ""
 
-    def read_s(self):
-        return self.s
+    @Property(bool, constant=True)
+    def sign(self) -> bool:
+        return self._sign
 
-    def read_e(self):
-        return self.e
+    @Property(bool, constant=True)
+    def encryption(self) -> bool:
+        return self._encryption
 
-    def read_a(self):
-        return self.a
+    @Property(bool, constant=True)
+    def authentication(self) -> bool:
+        return self._authentication
 
-    def read_fingerprint(self):
-        return self.fp
-
-    sign = Property(bool, read_s, None, constant=True)
-    encryption = Property(bool, read_e, None, constant=True)
-    authentication = Property(bool, read_a, None, constant=True)
-    fingerprint = Property(str, read_fingerprint, None, constant=True)
+    @Property(str, constant=True)
+    def fingerprint(self) -> str:
+        return self._fingerprint
 
 
 # TODO: Fix this stupid hack
@@ -312,10 +311,10 @@ class TBackend(QObject):
         data = available_subkeys(key)
         e, s, a = data
         # TODO: the stupid hack to pass data to QML
-        subkeytypes.e = e
-        subkeytypes.s = s
-        subkeytypes.a = a
-        subkeytypes.fp = fingerprint
+        subkeytypes._encryption = e
+        subkeytypes._sign = s
+        subkeytypes._authentication = a
+        subkeytypes._fingerprint = fingerprint
 
     @Slot(str)
     def current_fingerprint(self, fingerprint: str):
