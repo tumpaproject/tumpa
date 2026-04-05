@@ -1,4 +1,0 @@
-pyside6
-johnnycanencrypt
-briefcase[all]
-
