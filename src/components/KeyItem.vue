@@ -3,13 +3,14 @@ import TButton from './TButton.vue'
 import keyIconSvg from '@/assets/icons/keyIcon.svg'
 import cardPurpleSvg from '@/assets/icons/card_purple.svg'
 import exportPurpleSvg from '@/assets/icons/export_purple.svg'
+import detailsPurpleSvg from '@/assets/icons/details_purple.svg'
 import deletePurpleSvg from '@/assets/icons/delete_purple.svg'
 
 const props = defineProps({
   keyData: { type: Object, required: true },
 })
 
-defineEmits(['upload', 'export', 'delete'])
+defineEmits(['details', 'upload', 'export', 'delete'])
 
 const isExpired = (() => {
   if (props.keyData.expiration_time === 'Never') return false
@@ -44,6 +45,7 @@ const isExpired = (() => {
     </div>
 
     <div class="key-actions">
+      <TButton variant="transparent" :icon="detailsPurpleSvg" @click="$emit('details')">Details</TButton>
       <TButton variant="transparent" :icon="cardPurpleSvg" @click="$emit('upload')">Send Key to Card</TButton>
       <TButton variant="transparent" :icon="exportPurpleSvg" @click="$emit('export')">Export Public key</TButton>
       <TButton variant="transparent" :icon="deletePurpleSvg" @click="$emit('delete')">Delete</TButton>

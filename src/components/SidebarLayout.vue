@@ -34,8 +34,8 @@ async function goToCard(subItem = '') {
     alert('Can not access any Yubikey!')
     return
   }
-  store.setActiveSection('card', subItem)
-  if (!subItem) {
+  store.setActiveSection('card', subItem || 'card-details')
+  if (!subItem || subItem === 'card-details') {
     await store.fetchCardDetails()
     router.push('/card')
   } else {

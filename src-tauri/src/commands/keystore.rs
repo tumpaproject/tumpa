@@ -2,6 +2,8 @@ use serde::Serialize;
 use tauri::State;
 use wecanencrypt::{
     create_key, parse_cert_bytes,
+    add_uid, revoke_uid,
+    update_primary_expiry, update_subkeys_expiry,
     CipherSuite, SubkeyFlags, KeyType,
 };
 use chrono::{Utc, NaiveDate, TimeZone};
@@ -150,7 +152,7 @@ pub fn generate_key(
         expiry, // subkey expiry
         subkey_flags,
         true, // can primary sign
-        true, // include authentication subkey based on flag
+        true, // can primary expire
     ).map_err(|e| format!("Key generation failed: {}", e))?;
 
     // Import into keystore
@@ -253,4 +255,103 @@ pub fn get_available_subkeys(
     }
 
     Ok(availability)
+}
+
+#[tauri::command]
+pub fn get_key_details(
+    state: State<'_, AppState>,
+    fingerprint: String,
+) -> Result<KeyInfo, String> {
+    let store = state.keystore.lock().map_err(|e| e.to_string())?;
+    let info = store.get_cert_info(&fingerprint)
+        .map_err(|e| format!("Key not found: {}", e))?;
+    Ok(cert_info_to_key_info(&info))
+}
+
+#[tauri::command]
+pub fn add_user_id(
+    state: State<'_, AppState>,
+    fingerprint: String,
+    name: String,
+    email: String,
+    password: String,
+) -> Result<KeyInfo, String> {
+    let uid_str = format!("{} <{}>", name, email);
+
+    let store = state.keystore.lock().map_err(|e| e.to_string())?;
+    let (cert_data, _) = store.get_cert(&fingerprint)
+        .map_err(|e| format!("Key not found: {}", e))?;
+
+    let updated = add_uid(&cert_data, &uid_str, &password)
+        .map_err(|e| format!("Failed to add user ID: {}", e))?;
+
+    store.update_cert(&fingerprint, &updated)
+        .map_err(|e| format!("Failed to update key: {}", e))?;
+
+    let info = store.get_cert_info(&fingerprint)
+        .map_err(|e| format!("Failed to read key info: {}", e))?;
+    Ok(cert_info_to_key_info(&info))
+}
+
+#[tauri::command]
+pub fn revoke_user_id(
+    state: State<'_, AppState>,
+    fingerprint: String,
+    uid: String,
+    password: String,
+) -> Result<KeyInfo, String> {
+    let store = state.keystore.lock().map_err(|e| e.to_string())?;
+    let (cert_data, _) = store.get_cert(&fingerprint)
+        .map_err(|e| format!("Key not found: {}", e))?;
+
+    let updated = revoke_uid(&cert_data, &uid, &password)
+        .map_err(|e| format!("Failed to revoke user ID: {}", e))?;
+
+    store.update_cert(&fingerprint, &updated)
+        .map_err(|e| format!("Failed to update key: {}", e))?;
+
+    let info = store.get_cert_info(&fingerprint)
+        .map_err(|e| format!("Failed to read key info: {}", e))?;
+    Ok(cert_info_to_key_info(&info))
+}
+
+#[tauri::command]
+pub fn update_key_expiry(
+    state: State<'_, AppState>,
+    fingerprint: String,
+    new_date: String,
+    password: String,
+) -> Result<KeyInfo, String> {
+    let expiry = NaiveDate::parse_from_str(&new_date, "%Y-%m-%d")
+        .map_err(|e| format!("Invalid date: {}", e))?;
+    let expiry_dt = Utc.from_utc_datetime(&expiry.and_hms_opt(0, 0, 0).unwrap());
+
+    let store = state.keystore.lock().map_err(|e| e.to_string())?;
+    let (cert_data, info) = store.get_cert(&fingerprint)
+        .map_err(|e| format!("Key not found: {}", e))?;
+
+    // Update primary key expiry
+    let updated = update_primary_expiry(&cert_data, expiry_dt, &password)
+        .map_err(|e| format!("Failed to update primary expiry: {}", e))?;
+
+    // Update all subkey expiries
+    let subkey_fps: Vec<String> = info.subkeys.iter()
+        .filter(|sk| sk.key_type != KeyType::Certification)
+        .map(|sk| sk.fingerprint.clone())
+        .collect();
+
+    let final_cert = if !subkey_fps.is_empty() {
+        let fp_refs: Vec<&str> = subkey_fps.iter().map(|s| s.as_str()).collect();
+        update_subkeys_expiry(&updated, &fp_refs, expiry_dt, &password)
+            .map_err(|e| format!("Failed to update subkey expiry: {}", e))?
+    } else {
+        updated
+    };
+
+    store.update_cert(&fingerprint, &final_cert)
+        .map_err(|e| format!("Failed to update key: {}", e))?;
+
+    let new_info = store.get_cert_info(&fingerprint)
+        .map_err(|e| format!("Failed to read key info: {}", e))?;
+    Ok(cert_info_to_key_info(&new_info))
 }

@@ -13,8 +13,8 @@ const passphrase = ref('')
 const expiryDate = ref('')
 const showAdvanced = ref(false)
 const encryption = ref(true)
-const signing = ref(true)
-const authentication = ref(false)
+const signing = ref(false)
+const authentication = ref(true)
 const keyAlgo = ref('curve25519')
 
 function goBack() {
@@ -72,7 +72,7 @@ function submit() {
       <span class="field-hint">Recommended: 10+ chars in length</span>
 
       <label class="field-label">Expiration date:</label>
-      <input type="date" v-model="expiryDate" />
+      <input type="date" v-model="expiryDate" @change="(e) => e.target.blur()" />
 
       <button class="advanced-toggle" @click="showAdvanced = !showAdvanced">
         Advanced {{ showAdvanced ? '\u2303' : '\u2304' }}

@@ -62,10 +62,13 @@ async function deleteKey(fingerprint) {
   }
 }
 
-function uploadToCard(fingerprint) {
-  store.setCurrentFingerprint(fingerprint)
-  // TODO: navigate to upload view in Phase 2
-  alert('Upload to card - coming in Phase 2')
+async function uploadToCard(fingerprint) {
+  const connected = await store.checkCard()
+  if (!connected) {
+    alert('No smartcard connected.')
+    return
+  }
+  router.push({ name: 'upload-to-card', query: { fingerprint } })
 }
 </script>
 
@@ -87,6 +90,7 @@ function uploadToCard(fingerprint) {
           v-for="key in store.keys"
           :key="key.fingerprint"
           :key-data="key"
+          @details="router.push(`/keys/${key.fingerprint}`)"
           @upload="uploadToCard(key.fingerprint)"
           @export="exportKey(key.fingerprint)"
           @delete="deleteKey(key.fingerprint)"
