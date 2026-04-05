@@ -105,7 +105,7 @@ pub fn list_keys(state: State<'_, AppState>) -> Result<Vec<KeyInfo>, String> {
 }
 
 #[tauri::command]
-pub fn generate_key(
+pub async fn generate_key(
     state: State<'_, AppState>,
     name: String,
     emails: Vec<String>,
@@ -120,7 +120,6 @@ pub fn generate_key(
     let uids: Vec<String> = emails.iter()
         .map(|email| format!("{} <{}>", name, email))
         .collect();
-    let uid_refs: Vec<&str> = uids.iter().map(|s| s.as_str()).collect();
 
     // Parse cipher suite
     let cipher = match cipher_suite.to_lowercase().as_str() {
@@ -145,20 +144,26 @@ pub fn generate_key(
         authentication,
     };
 
-    // Generate the key
-    let generated = create_key(
-        &password,
-        &uid_refs,
-        cipher,
-        None, // creation time
-        expiry, // primary expiry
-        expiry, // subkey expiry
-        subkey_flags,
-        true, // can primary sign
-        true, // can primary expire
-    ).map_err(|e| format!("Key generation failed: {}", e))?;
+    // Run key generation on a background thread to avoid blocking the UI
+    let generated = tokio::task::spawn_blocking(move || {
+        let uid_refs: Vec<&str> = uids.iter().map(|s| s.as_str()).collect();
+        create_key(
+            &password,
+            &uid_refs,
+            cipher,
+            None, // creation time
+            expiry, // primary expiry
+            expiry, // subkey expiry
+            subkey_flags,
+            true, // can primary sign
+            true, // can primary expire
+        )
+    })
+    .await
+    .map_err(|e| format!("Key generation task failed: {}", e))?
+    .map_err(|e| format!("Key generation failed: {}", e))?;
 
-    // Import into keystore
+    // Import into keystore (fast, no need for background thread)
     let store = state.keystore.lock().map_err(|e| e.to_string())?;
     let fp = store.import_cert(&generated.secret_key)
         .map_err(|e| format!("Failed to store key: {}", e))?;

@@ -70,7 +70,7 @@ pub fn get_card_details() -> Result<CardDetails, String> {
 ///
 /// The card is reset to factory defaults before upload.
 #[tauri::command]
-pub fn upload_key_to_card(
+pub async fn upload_key_to_card(
     state: State<'_, AppState>,
     fingerprint: String,
     password: String,
