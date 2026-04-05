@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import TButton from '@/components/TButton.vue'
+import DatePicker from '@/components/DatePicker.vue'
 import backIconSvg from '@/assets/icons/backIcon.svg'
 import tickSvg from '@/assets/icons/tick_mark.svg'
 
@@ -72,7 +73,7 @@ function submit() {
       <span class="field-hint">Recommended: 10+ chars in length</span>
 
       <label class="field-label">Expiration date:</label>
-      <input type="date" v-model="expiryDate" @change="(e) => e.target.blur()" />
+      <DatePicker v-model="expiryDate" :min-date="new Date().toISOString().split('T')[0]" />
 
       <button class="advanced-toggle" @click="showAdvanced = !showAdvanced">
         Advanced {{ showAdvanced ? '\u2303' : '\u2304' }}

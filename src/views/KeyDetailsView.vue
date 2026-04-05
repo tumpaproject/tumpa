@@ -5,6 +5,7 @@ import { invoke } from '@tauri-apps/api/core'
 import { save } from '@tauri-apps/plugin-dialog'
 import { useAppStore } from '@/stores/appStore'
 import TButton from '@/components/TButton.vue'
+import DatePicker from '@/components/DatePicker.vue'
 import backIconSvg from '@/assets/icons/backIcon.svg'
 import tickSvg from '@/assets/icons/tick_mark.svg'
 import cardPurpleSvg from '@/assets/icons/card_purple.svg'
@@ -163,7 +164,7 @@ const nonPrimarySubkeys = () => {
                 <button class="expiry-change-btn" @click="showExpiryEdit = true">Change</button>
               </div>
               <div class="expiry-edit" v-else>
-                <input type="date" v-model="newExpiryDate" @change="(e) => e.target.blur()" />
+                <DatePicker v-model="newExpiryDate" :min-date="new Date().toISOString().split('T')[0]" />
                 <input type="password" v-model="expiryPassword" placeholder="Key password" />
                 <TButton variant="green" thin @click="updateExpiry">Save</TButton>
                 <TButton variant="default" thin @click="showExpiryEdit = false">Cancel</TButton>
