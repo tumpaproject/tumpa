@@ -39,8 +39,11 @@ pub struct SubkeyData {
 
 #[derive(Serialize)]
 pub struct SubkeyAvailability {
+    /// Primary key can sign (certification key with signing capability)
+    pub primary_can_sign: bool,
+    /// Separate signing subkey exists
+    pub signing_subkey: bool,
     pub encryption: bool,
-    pub signing: bool,
     pub authentication: bool,
 }
 
@@ -231,8 +234,9 @@ pub fn get_available_subkeys(
 
     let now = Utc::now();
     let mut availability = SubkeyAvailability {
+        primary_can_sign: info.can_primary_sign,
+        signing_subkey: false,
         encryption: false,
-        signing: false,
         authentication: false,
     };
 
@@ -248,7 +252,7 @@ pub fn get_available_subkeys(
         }
         match sk.key_type {
             KeyType::Encryption => availability.encryption = true,
-            KeyType::Signing => availability.signing = true,
+            KeyType::Signing => availability.signing_subkey = true,
             KeyType::Authentication => availability.authentication = true,
             _ => {}
         }

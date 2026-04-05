@@ -83,22 +83,34 @@ fn test_set_public_key_url_with_card() {
 }
 
 /// Test the upload bitmask logic (no card needed, pure logic test)
+/// Bitmask: 1=encryption, 2=primary to signing slot, 4=authentication, 8=signing subkey to signing slot
 #[test]
 fn test_upload_bitmask_logic() {
     let which: u8 = 0;
     assert_eq!(which & 1, 0, "encryption bit not set");
-    assert_eq!(which & 2, 0, "signing bit not set");
+    assert_eq!(which & 2, 0, "primary bit not set");
     assert_eq!(which & 4, 0, "authentication bit not set");
+    assert_eq!(which & 8, 0, "signing subkey bit not set");
 
-    let which: u8 = 7; // all bits set
-    assert_ne!(which & 1, 0, "encryption bit should be set");
-    assert_ne!(which & 2, 0, "signing bit should be set");
-    assert_ne!(which & 4, 0, "authentication bit should be set");
+    // Primary + enc + auth (no signing subkey)
+    let which: u8 = 7; // 1 + 2 + 4
+    assert_ne!(which & 1, 0, "encryption");
+    assert_ne!(which & 2, 0, "primary");
+    assert_ne!(which & 4, 0, "authentication");
+    assert_eq!(which & 8, 0, "signing subkey not set");
 
-    let which: u8 = 3; // enc + sign
-    assert_ne!(which & 1, 0);
+    // Signing subkey + enc + auth (no primary)
+    let which: u8 = 13; // 1 + 4 + 8
+    assert_ne!(which & 1, 0, "encryption");
+    assert_eq!(which & 2, 0, "primary not set");
+    assert_ne!(which & 4, 0, "authentication");
+    assert_ne!(which & 8, 0, "signing subkey");
+
+    // Primary and signing subkey are mutually exclusive
+    let which: u8 = 10; // 2 + 8 — invalid
     assert_ne!(which & 2, 0);
-    assert_eq!(which & 4, 0);
+    assert_ne!(which & 8, 0);
+    // Backend should reject this combination
 }
 
 /// Full upload workflow: generate key, reset card, upload subkeys

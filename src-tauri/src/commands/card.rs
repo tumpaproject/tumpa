@@ -62,7 +62,12 @@ pub fn get_card_details() -> Result<CardDetails, String> {
 
 /// Upload key to smartcard.
 ///
-/// `which_subkeys` is a bitmask: 1=encryption, 2=signing, 4=authentication
+/// `which_subkeys` is a bitmask:
+///   1 = encryption subkey
+///   2 = primary key to signing slot
+///   4 = authentication subkey
+///   8 = signing subkey to signing slot (mutually exclusive with 2)
+///
 /// The card is reset to factory defaults before upload.
 #[tauri::command]
 pub fn upload_key_to_card(
@@ -73,6 +78,11 @@ pub fn upload_key_to_card(
 ) -> Result<(), String> {
     if !card_connected() {
         return Err("No smartcard connected.".to_string());
+    }
+
+    // Validate: cannot upload both primary and signing subkey to signing slot
+    if which_subkeys & 2 != 0 && which_subkeys & 8 != 0 {
+        return Err("Cannot upload both primary key and signing subkey to the signing slot.".to_string());
     }
 
     // Get key from keystore
@@ -89,7 +99,7 @@ pub fn upload_key_to_card(
     reset_card()
         .map_err(|e| format!("Failed to reset card: {}", e))?;
 
-    // Upload primary key to Signing slot if signing requested
+    // Upload primary key to Signing slot
     if which_subkeys & 2 != 0 {
         upload_primary_key_to_card(
             &cert_data,
@@ -97,6 +107,21 @@ pub fn upload_key_to_card(
             CardKeySlot::Signing,
             DEFAULT_ADMIN_PIN,
         ).map_err(|e| format!("Failed to upload primary key: {}", e))?;
+    }
+
+    // Upload signing subkey to Signing slot
+    if which_subkeys & 8 != 0 {
+        let sign_sk = cert_info.subkeys.iter()
+            .find(|sk| matches!(sk.key_type, KeyType::Signing))
+            .ok_or("No signing subkey found")?;
+
+        upload_subkey_by_fingerprint(
+            &cert_data,
+            password.as_bytes(),
+            &sign_sk.fingerprint,
+            CardKeySlot::Signing,
+            DEFAULT_ADMIN_PIN,
+        ).map_err(|e| format!("Failed to upload signing subkey: {}", e))?;
     }
 
     // Upload encryption subkey
