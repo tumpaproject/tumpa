@@ -1,11 +1,13 @@
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { invoke } from '@tauri-apps/api/core'
 import { useAppStore } from '@/stores/appStore'
 import TButton from '@/components/TButton.vue'
 import PasswordInput from '@/components/PasswordInput.vue'
 import tickSvg from '@/assets/icons/tick_mark.svg'
 
+const router = useRouter()
 const store = useAppStore()
 const adminPin = ref('')
 const newPin = ref('')
@@ -21,7 +23,8 @@ async function save() {
   }
   try {
     await invoke('change_user_pin', { adminPin: adminPin.value, newPin: newPin.value })
-    alert('User PIN changed successfully.')
+    await store.fetchCardDetails()
+    router.push('/card')
   } catch (e) {
     alert(String(e))
   }
