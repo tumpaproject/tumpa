@@ -3,7 +3,7 @@ mod commands;
 use commands::{
     list_keys, generate_key, import_key, delete_key,
     export_public_key, get_available_subkeys,
-    get_key_details, add_user_id, revoke_user_id, update_key_expiry,
+    get_key_details, add_user_id, revoke_user_id, update_key_expiry, change_key_password,
     is_card_connected, list_cards, get_card_details,
     upload_key_to_card, update_card_name, update_card_url,
     change_user_pin, change_admin_pin,
@@ -40,6 +40,7 @@ pub fn run() {
             add_user_id,
             revoke_user_id,
             update_key_expiry,
+            change_key_password,
             is_card_connected,
             list_cards,
             get_card_details,

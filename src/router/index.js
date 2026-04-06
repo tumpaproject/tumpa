@@ -12,6 +12,7 @@ import ChangeAdminPinView from '@/views/ChangeAdminPinView.vue'
 import KeyDetailsView from '@/views/KeyDetailsView.vue'
 import AddUserIdView from '@/views/AddUserIdView.vue'
 import UserDetailsView from '@/views/UserDetailsView.vue'
+import ChangeKeyPasswordView from '@/views/ChangeKeyPasswordView.vue'
 import UploadToCardView from '@/views/UploadToCardView.vue'
 import UploadingView from '@/views/UploadingView.vue'
 import ErrorView from '@/views/ErrorView.vue'
@@ -24,6 +25,7 @@ const routes = [
   { path: '/keys/:fingerprint', name: 'key-details', component: KeyDetailsView, props: true },
   { path: '/keys/:fingerprint/add-uid', name: 'add-uid', component: AddUserIdView, props: true },
   { path: '/keys/:fingerprint/uid/:uidIndex', name: 'user-details', component: UserDetailsView, props: true },
+  { path: '/keys/:fingerprint/change-password', name: 'change-key-password', component: ChangeKeyPasswordView, props: true },
   { path: '/card/upload', name: 'upload-to-card', component: UploadToCardView },
   { path: '/card/uploading', name: 'uploading', component: UploadingView },
   { path: '/card', name: 'card-details', component: CardDetailsView },

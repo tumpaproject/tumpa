@@ -5,8 +5,9 @@
 /// don't touch the user's ~/.tumpa directory.
 use wecanencrypt::{
     create_key, parse_cert_bytes, add_uid, revoke_uid,
-    update_primary_expiry, update_subkeys_expiry,
+    update_primary_expiry, update_subkeys_expiry, update_password,
     CipherSuite, SubkeyFlags, KeyType, KeyStore,
+    encrypt_bytes, decrypt_bytes,
 };
 use chrono::{Utc, Duration};
 
@@ -272,4 +273,34 @@ fn test_uid_parsing() {
     };
     assert_eq!(name2, "Just a Name");
     assert_eq!(email2, "");
+}
+
+#[test]
+fn test_change_key_password() {
+    let store = KeyStore::open_in_memory().unwrap();
+    let key = generate_test_key("oldpass");
+    let fp = store.import_cert(&key.secret_key).unwrap();
+
+    // Change password
+    let (cert_data, _) = store.get_cert(&fp).unwrap();
+    let updated = update_password(&cert_data, "oldpass", "newpass").unwrap();
+    store.update_cert(&fp, &updated).unwrap();
+
+    // Verify new password works: encrypt with public key, decrypt with new password
+    let info = store.get_cert_info(&fp).unwrap();
+    assert!(info.is_secret);
+
+    let armored = store.export_cert_armored(&fp).unwrap();
+    let ciphertext = encrypt_bytes(armored.as_bytes(), b"secret message", true).unwrap();
+
+    let (updated_cert, _) = store.get_cert(&fp).unwrap();
+    let plaintext = decrypt_bytes(&updated_cert, &ciphertext, "newpass").unwrap();
+    assert_eq!(plaintext, b"secret message");
+}
+
+#[test]
+fn test_change_key_password_wrong_old_password() {
+    let key = generate_test_key("correctpass");
+    let result = update_password(&key.secret_key, "wrongpass", "newpass");
+    assert!(result.is_err(), "Should fail with wrong old password");
 }

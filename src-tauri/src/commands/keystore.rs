@@ -4,6 +4,7 @@ use wecanencrypt::{
     create_key, parse_cert_bytes,
     add_uid, revoke_uid,
     update_primary_expiry, update_subkeys_expiry,
+    update_password,
     CipherSuite, SubkeyFlags, KeyType,
 };
 use chrono::{Utc, NaiveDate, TimeZone};
@@ -363,4 +364,24 @@ pub fn update_key_expiry(
     let new_info = store.get_cert_info(&fingerprint)
         .map_err(|e| format!("Failed to read key info: {}", e))?;
     Ok(cert_info_to_key_info(&new_info))
+}
+
+#[tauri::command]
+pub fn change_key_password(
+    state: State<'_, AppState>,
+    fingerprint: String,
+    old_password: String,
+    new_password: String,
+) -> Result<(), String> {
+    let store = state.keystore.lock().map_err(|e| e.to_string())?;
+    let (cert_data, _) = store.get_cert(&fingerprint)
+        .map_err(|e| format!("Key not found: {}", e))?;
+
+    let updated = update_password(&cert_data, &old_password, &new_password)
+        .map_err(|e| format!("Failed to change password: {}", e))?;
+
+    store.update_cert(&fingerprint, &updated)
+        .map_err(|e| format!("Failed to update key: {}", e))?;
+
+    Ok(())
 }

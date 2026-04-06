@@ -110,6 +110,7 @@ const nonPrimarySubkeys = () => {
     <div class="toolbar">
       <TButton variant="green" :icon="cardPurpleSvg" thin @click="uploadToCard">Send Key to Card</TButton>
       <TButton variant="white" :icon="exportSvg" thin @click="exportKey">Export Public Key</TButton>
+      <TButton variant="white" thin @click="router.push(`/keys/${fingerprint}/change-password`)">Change Password</TButton>
       <TButton variant="white" :icon="deleteSvg" thin @click="deleteKey">Remove</TButton>
     </div>
 
