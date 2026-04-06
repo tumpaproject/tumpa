@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { invoke } from '@tauri-apps/api/core'
 import { useAppStore } from '@/stores/appStore'
 import TButton from '@/components/TButton.vue'
+import PasswordInput from '@/components/PasswordInput.vue'
 import backIconSvg from '@/assets/icons/backIcon.svg'
 import tickSvg from '@/assets/icons/tick_mark.svg'
 
@@ -52,7 +53,7 @@ async function create() {
       <input type="text" v-model="email" />
 
       <label class="field-label">Key Password:</label>
-      <input type="password" v-model="password" />
+      <PasswordInput v-model="password" />
     </div>
 
     <div class="form-footer">

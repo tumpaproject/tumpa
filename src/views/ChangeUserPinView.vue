@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 import { useAppStore } from '@/stores/appStore'
 import TButton from '@/components/TButton.vue'
+import PasswordInput from '@/components/PasswordInput.vue'
 import tickSvg from '@/assets/icons/tick_mark.svg'
 
 const store = useAppStore()
@@ -32,9 +33,9 @@ async function save() {
     <div class="form-content">
       <h2>Change User Pin</h2>
       <label class="field-label">Current Admin Pin</label>
-      <input type="password" v-model="adminPin" />
+      <PasswordInput v-model="adminPin" />
       <label class="field-label">New User Pin</label>
-      <input type="password" v-model="newPin" />
+      <PasswordInput v-model="newPin" />
     </div>
     <div class="form-footer">
       <div></div>

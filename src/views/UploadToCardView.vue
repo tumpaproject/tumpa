@@ -3,6 +3,7 @@ import { ref, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { invoke } from '@tauri-apps/api/core'
 import TButton from '@/components/TButton.vue'
+import PasswordInput from '@/components/PasswordInput.vue'
 import backIconSvg from '@/assets/icons/backIcon.svg'
 import tickSvg from '@/assets/icons/tick_mark.svg'
 
@@ -105,7 +106,7 @@ async function upload() {
       <p class="fp-display">{{ fingerprint }}</p>
 
       <label class="field-label">Key Password:</label>
-      <input type="password" v-model="password" />
+      <PasswordInput v-model="password" />
 
       <label class="field-label">Signing slot:</label>
       <div class="checkbox-group">

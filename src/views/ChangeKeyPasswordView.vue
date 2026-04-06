@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { invoke } from '@tauri-apps/api/core'
 import TButton from '@/components/TButton.vue'
+import PasswordInput from '@/components/PasswordInput.vue'
 import backIconSvg from '@/assets/icons/backIcon.svg'
 import tickSvg from '@/assets/icons/tick_mark.svg'
 
@@ -48,14 +49,14 @@ async function save() {
       <p class="fp-display">{{ fingerprint }}</p>
 
       <label class="field-label">Current Password:</label>
-      <input type="password" v-model="oldPassword" />
+      <PasswordInput v-model="oldPassword" />
 
       <label class="field-label">New Password:</label>
-      <input type="password" v-model="newPassword" />
+      <PasswordInput v-model="newPassword" />
       <span class="field-hint">Recommended: 10+ chars in length</span>
 
       <label class="field-label">Confirm New Password:</label>
-      <input type="password" v-model="confirmPassword" />
+      <PasswordInput v-model="confirmPassword" />
     </div>
 
     <div class="form-footer">

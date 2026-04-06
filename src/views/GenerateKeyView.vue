@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import TButton from '@/components/TButton.vue'
+import PasswordInput from '@/components/PasswordInput.vue'
 import DatePicker from '@/components/DatePicker.vue'
 import backIconSvg from '@/assets/icons/backIcon.svg'
 import tickSvg from '@/assets/icons/tick_mark.svg'
@@ -69,7 +70,7 @@ function submit() {
       <textarea v-model="emails" placeholder="One email per line" rows="3"></textarea>
 
       <label class="field-label">Key Passphrase:</label>
-      <input type="password" v-model="passphrase" />
+      <PasswordInput v-model="passphrase" />
       <span class="field-hint">Recommended: 10+ chars in length</span>
 
       <label class="field-label">Expiration date:</label>

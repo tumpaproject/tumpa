@@ -5,6 +5,7 @@ import { invoke } from '@tauri-apps/api/core'
 import { save } from '@tauri-apps/plugin-dialog'
 import { useAppStore } from '@/stores/appStore'
 import TButton from '@/components/TButton.vue'
+import PasswordInput from '@/components/PasswordInput.vue'
 import DatePicker from '@/components/DatePicker.vue'
 import backIconSvg from '@/assets/icons/backIcon.svg'
 import tickSvg from '@/assets/icons/tick_mark.svg'
@@ -204,7 +205,7 @@ const nonPrimarySubkeys = () => {
               </div>
               <div class="expiry-edit" v-else>
                 <DatePicker v-model="newExpiryDate" :min-date="new Date().toISOString().split('T')[0]" />
-                <input type="password" v-model="expiryPassword" placeholder="Key password" />
+                <PasswordInput v-model="expiryPassword" placeholder="Key password" />
                 <TButton variant="green" thin @click="updateExpiry">Save</TButton>
                 <TButton variant="default" thin @click="showExpiryEdit = false">Cancel</TButton>
               </div>
@@ -229,7 +230,7 @@ const nonPrimarySubkeys = () => {
           <label class="field-label">New expiry date for selected subkeys:</label>
           <div class="subkey-expiry-row">
             <DatePicker v-model="subkeyExpiryDate" :min-date="new Date().toISOString().split('T')[0]" />
-            <input type="password" v-model="subkeyExpiryPassword" placeholder="Key password" />
+            <PasswordInput v-model="subkeyExpiryPassword" placeholder="Key password" />
             <TButton variant="green" thin @click="updateSubkeysExpiry">Update</TButton>
             <TButton variant="default" thin @click="showSubkeyExpiryEdit = false">Cancel</TButton>
           </div>
@@ -311,7 +312,7 @@ h3 { font-size: 18px; font-weight: 700; margin-bottom: 12px; }
 .subkey-expiry-edit { margin-bottom: 16px; display: flex; flex-direction: column; gap: 8px; }
 .subkey-expiry-edit .field-label { font-size: 13px; color: var(--color-text-muted); }
 .subkey-expiry-row { display: flex; align-items: center; gap: 8px; }
-.subkey-expiry-row input[type="password"] { width: auto; max-width: 180px; }
+.subkey-expiry-row .password-input { width: auto; max-width: 180px; }
 
 .accordion { border: 1px solid var(--color-border); border-radius: 6px; margin-bottom: 8px; overflow: hidden; }
 .accordion-header { display: flex; align-items: center; gap: 8px; background: var(--color-bg-light); padding: 0 12px; }
