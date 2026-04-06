@@ -24,6 +24,7 @@ const isExpired = (() => {
     <div class="key-row">
       <img :src="keyIconSvg" alt="" class="key-icon" />
       <span class="key-fingerprint">{{ keyData.fingerprint }}</span>
+      <span class="key-type-tag">{{ keyData.key_type }}</span>
       <span v-if="keyData.is_revoked" class="revoked-tag">REVOKED</span>
     </div>
 
@@ -72,6 +73,15 @@ const isExpired = (() => {
   background: var(--color-expired-bg);
   border-color: var(--color-expired-border);
   opacity: 0.7;
+}
+
+.key-type-tag {
+  background: var(--color-border);
+  color: var(--color-text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 3px;
 }
 
 .revoked-tag {

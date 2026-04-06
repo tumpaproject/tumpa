@@ -17,6 +17,7 @@ pub struct KeyInfo {
     pub key_id: String,
     pub creation_time: String,
     pub expiration_time: String,
+    pub key_type: String,
     pub user_ids: Vec<UserIdData>,
     pub is_secret: bool,
     pub is_revoked: bool,
@@ -90,6 +91,23 @@ fn cert_info_to_key_info(info: &wecanencrypt::CertificateInfo) -> KeyInfo {
         }
     }).collect();
 
+    // Determine cipher suite from any subkey's algorithm + bit_length
+    let key_type = info.subkeys.iter()
+        .find(|sk| sk.key_type != KeyType::Unknown)
+        .map(|sk| {
+            match (sk.algorithm.as_str(), sk.bit_length) {
+                ("RSA", n) if n >= 4096 => "RSA4096".to_string(),
+                ("RSA", n) if n >= 2048 => "RSA2048".to_string(),
+                ("RSA", n) => format!("RSA{}", n),
+                ("EdDSA", _) | ("Ed25519", _) | ("ECDH", _) => "Cv25519".to_string(),
+                ("ECDSA", 256) | ("ECDH P-256", _) => "NistP256".to_string(),
+                ("ECDSA", 384) | ("ECDH P-384", _) => "NistP384".to_string(),
+                ("ECDSA", 521) | ("ECDH P-521", _) => "NistP521".to_string(),
+                (other, _) => other.to_string(),
+            }
+        })
+        .unwrap_or_else(|| "Unknown".to_string());
+
     KeyInfo {
         fingerprint: info.fingerprint.clone(),
         key_id: info.key_id.clone(),
@@ -97,6 +115,7 @@ fn cert_info_to_key_info(info: &wecanencrypt::CertificateInfo) -> KeyInfo {
         expiration_time: info.expiration_time
             .map(|t| t.format("%d %b %Y").to_string())
             .unwrap_or_else(|| "Never".to_string()),
+        key_type,
         user_ids,
         is_secret: info.is_secret,
         is_revoked: info.is_revoked,
