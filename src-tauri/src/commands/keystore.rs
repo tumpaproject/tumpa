@@ -4,7 +4,7 @@ use wecanencrypt::{
     create_key, parse_cert_bytes,
     add_uid, revoke_uid,
     update_primary_expiry, update_subkeys_expiry,
-    update_password,
+    update_password, revoke_key,
     CipherSuite, SubkeyFlags, KeyType,
 };
 use chrono::{Utc, NaiveDate, TimeZone};
@@ -19,6 +19,8 @@ pub struct KeyInfo {
     pub expiration_time: String,
     pub user_ids: Vec<UserIdData>,
     pub is_secret: bool,
+    pub is_revoked: bool,
+    pub revocation_time: Option<String>,
     pub subkeys: Vec<SubkeyData>,
 }
 
@@ -97,6 +99,9 @@ fn cert_info_to_key_info(info: &wecanencrypt::CertificateInfo) -> KeyInfo {
             .unwrap_or_else(|| "Never".to_string()),
         user_ids,
         is_secret: info.is_secret,
+        is_revoked: info.is_revoked,
+        revocation_time: info.revocation_time
+            .map(|t| t.format("%d %b %Y %H:%M").to_string()),
         subkeys,
     }
 }
@@ -415,4 +420,25 @@ pub fn change_key_password(
         .map_err(|e| format!("Failed to update key: {}", e))?;
 
     Ok(())
+}
+
+#[tauri::command]
+pub fn revoke_key_cmd(
+    state: State<'_, AppState>,
+    fingerprint: String,
+    password: String,
+) -> Result<KeyInfo, String> {
+    let store = state.keystore.lock().map_err(|e| e.to_string())?;
+    let (cert_data, _) = store.get_cert(&fingerprint)
+        .map_err(|e| format!("Key not found: {}", e))?;
+
+    let revoked = revoke_key(&cert_data, &password)
+        .map_err(|e| format!("Failed to revoke key: {}", e))?;
+
+    store.update_cert(&fingerprint, &revoked)
+        .map_err(|e| format!("Failed to update key: {}", e))?;
+
+    let info = store.get_cert_info(&fingerprint)
+        .map_err(|e| format!("Failed to read key info: {}", e))?;
+    Ok(cert_info_to_key_info(&info))
 }

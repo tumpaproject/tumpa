@@ -20,15 +20,19 @@ const isExpired = (() => {
 </script>
 
 <template>
-  <div class="key-item" :class="{ 'key-item--expired': isExpired }">
+  <div class="key-item" :class="{ 'key-item--expired': isExpired, 'key-item--revoked': keyData.is_revoked }">
     <div class="key-row">
       <img :src="keyIconSvg" alt="" class="key-icon" />
       <span class="key-fingerprint">{{ keyData.fingerprint }}</span>
+      <span v-if="keyData.is_revoked" class="revoked-tag">REVOKED</span>
     </div>
 
     <div class="key-dates">
       <span>Created on: <strong>{{ keyData.creation_time }}</strong></span>
-      <span v-if="isExpired" class="expired-text">
+      <span v-if="keyData.is_revoked && keyData.revocation_time" class="expired-text">
+        Revoked on: <strong>{{ keyData.revocation_time }}</strong>
+      </span>
+      <span v-else-if="isExpired" class="expired-text">
         Expired on: <strong>{{ keyData.expiration_time }}</strong>
       </span>
       <span v-else>Expires on: <strong>{{ keyData.expiration_time }}</strong></span>
@@ -46,7 +50,7 @@ const isExpired = (() => {
 
     <div class="key-actions">
       <TButton variant="transparent" :icon="detailsPurpleSvg" @click="$emit('details')">Details</TButton>
-      <TButton variant="transparent" :icon="cardPurpleSvg" @click="$emit('upload')">Send Key to Card</TButton>
+      <TButton variant="transparent" :icon="cardPurpleSvg" @click="$emit('upload')" :disabled="keyData.is_revoked">Send Key to Card</TButton>
       <TButton variant="transparent" :icon="exportPurpleSvg" @click="$emit('export')">Export Public key</TButton>
       <TButton variant="transparent" :icon="deletePurpleSvg" @click="$emit('delete')">Delete</TButton>
     </div>
@@ -62,6 +66,22 @@ const isExpired = (() => {
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+.key-item--revoked {
+  background: var(--color-expired-bg);
+  border-color: var(--color-expired-border);
+  opacity: 0.7;
+}
+
+.revoked-tag {
+  background: var(--color-red);
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 3px;
+  margin-left: auto;
 }
 
 .key-item--expired {

@@ -12,6 +12,7 @@ import tickSvg from '@/assets/icons/tick_mark.svg'
 import cardPurpleSvg from '@/assets/icons/card_purple.svg'
 import exportSvg from '@/assets/icons/export_purple.svg'
 import deleteSvg from '@/assets/icons/delete_purple.svg'
+import revokeSvg from '@/assets/icons/revoke.svg'
 import keyIconSvg from '@/assets/icons/keyIcon.svg'
 import downIconSvg from '@/assets/icons/down_icon.svg'
 
@@ -29,6 +30,8 @@ const selectedSubkeys = ref({})
 const showSubkeyExpiryEdit = ref(false)
 const subkeyExpiryDate = ref('')
 const subkeyExpiryPassword = ref('')
+const showRevokeKey = ref(false)
+const revokeKeyPassword = ref('')
 
 const anySubkeySelected = computed(() => {
   return Object.values(selectedSubkeys.value).some(v => v)
@@ -131,6 +134,24 @@ async function updateSubkeysExpiry() {
   }
 }
 
+async function revokeKey() {
+  if (!revokeKeyPassword.value) {
+    alert('Please enter the key password.')
+    return
+  }
+  try {
+    keyData.value = await invoke('revoke_key_cmd', {
+      fingerprint: props.fingerprint,
+      password: revokeKeyPassword.value,
+    })
+    showRevokeKey.value = false
+    revokeKeyPassword.value = ''
+    await store.refreshKeys()
+  } catch (e) {
+    alert(String(e))
+  }
+}
+
 const primaryKey = () => {
   if (!keyData.value) return null
   return keyData.value.subkeys.find(s => s.key_type === 'certification') || null
@@ -145,18 +166,34 @@ const nonPrimarySubkeys = () => {
 <template>
   <div class="details-view" v-if="keyData">
     <div class="toolbar">
-      <TButton variant="green" :icon="cardPurpleSvg" thin @click="uploadToCard">Send Key to Card</TButton>
+      <TButton variant="green" :icon="cardPurpleSvg" thin @click="uploadToCard" :disabled="keyData.is_revoked">Send Key to Card</TButton>
       <TButton variant="white" :icon="exportSvg" thin @click="exportKey">Export Public Key</TButton>
-      <TButton variant="white" thin @click="router.push(`/keys/${fingerprint}/change-password`)">Change Password</TButton>
+      <TButton variant="white" thin @click="router.push(`/keys/${fingerprint}/change-password`)" :disabled="keyData.is_revoked">Change Password</TButton>
+      <TButton variant="red-alt" :icon="revokeSvg" thin @click="showRevokeKey = true" :disabled="keyData.is_revoked">Revoke Key</TButton>
       <TButton variant="white" :icon="deleteSvg" thin @click="deleteKey">Remove</TButton>
     </div>
 
     <div class="details-content">
+      <!-- Revoke Key -->
+      <div v-if="showRevokeKey && !keyData.is_revoked" class="revoke-key-form">
+        <p class="revoke-warning">This will permanently revoke this key. This action cannot be undone.</p>
+        <label class="field-label">Enter key password to confirm revocation:</label>
+        <div class="revoke-key-row">
+          <PasswordInput v-model="revokeKeyPassword" placeholder="Key password" />
+          <TButton variant="red" thin @click="revokeKey">Revoke Key</TButton>
+          <TButton variant="default" thin @click="showRevokeKey = false">Cancel</TButton>
+        </div>
+      </div>
+
+      <div v-if="keyData.is_revoked" class="revoked-banner">
+        <span>This key has been revoked{{ keyData.revocation_time ? ` on ${keyData.revocation_time}` : '' }}.</span>
+      </div>
+
       <!-- User IDs -->
       <div class="section">
         <div class="section-header">
           <h3>User ID</h3>
-          <TButton variant="white" thin @click="router.push(`/keys/${fingerprint}/add-uid`)">Add new user</TButton>
+          <TButton variant="white" thin @click="router.push(`/keys/${fingerprint}/add-uid`)" :disabled="keyData.is_revoked">Add new user</TButton>
         </div>
         <table class="uid-table">
           <thead>
@@ -203,7 +240,7 @@ const nonPrimarySubkeys = () => {
               <span class="detail-label">Expiration date</span>
               <div class="expiry-widget" v-if="!showExpiryEdit">
                 <span class="expiry-value">{{ keyData.expiration_time }}</span>
-                <button class="expiry-change-btn" @click="showExpiryEdit = true">Change</button>
+                <button class="expiry-change-btn" @click="showExpiryEdit = true" :disabled="keyData.is_revoked">Change</button>
               </div>
               <div class="expiry-edit" v-else>
                 <DatePicker v-model="newExpiryDate" :min-date="new Date().toISOString().split('T')[0]" />
@@ -223,7 +260,7 @@ const nonPrimarySubkeys = () => {
           <TButton
             variant="white"
             thin
-            :disabled="!anySubkeySelected"
+            :disabled="!anySubkeySelected || keyData.is_revoked"
             @click="showSubkeyExpiryEdit = true"
           >Change expiry</TButton>
         </div>
@@ -298,6 +335,14 @@ const nonPrimarySubkeys = () => {
 }
 
 .details-content { flex: 1; padding: 24px; overflow-y: auto; }
+
+.revoke-key-form { margin-bottom: 20px; padding: 16px; border: 1px solid var(--color-expired-border); border-radius: 6px; background: var(--color-expired-bg); display: flex; flex-direction: column; gap: 8px; }
+.revoke-warning { font-size: 14px; font-weight: 500; color: var(--color-red); }
+.revoke-key-form .field-label { font-size: 13px; color: var(--color-text-muted); }
+.revoke-key-row { display: flex; align-items: center; gap: 8px; }
+.revoke-key-row .password-input { max-width: 300px; }
+
+.revoked-banner { margin-bottom: 20px; padding: 12px 16px; border: 1px solid var(--color-expired-border); border-radius: 6px; background: var(--color-expired-bg); color: var(--color-red); font-size: 14px; font-weight: 500; }
 
 .section { margin-bottom: 24px; }
 .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }

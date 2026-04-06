@@ -69,7 +69,7 @@ async function confirmRevoke() {
 <template>
   <div class="details-view" v-if="uid">
     <div class="toolbar">
-      <TButton variant="red-alt" :icon="revokeSvg" thin @click="startRevoke" :disabled="uid.revoked">Revoke User ID</TButton>
+      <TButton variant="red-alt" :icon="revokeSvg" thin @click="startRevoke" :disabled="uid.revoked || keyData.is_revoked">Revoke User ID</TButton>
     </div>
 
     <div class="details-content">
