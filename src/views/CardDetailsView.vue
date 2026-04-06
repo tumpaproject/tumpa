@@ -31,12 +31,28 @@ onMounted(async () => {
         <span class="info-value">{{ store.cardDetails.manufacturer || '[unknown]' }}</span>
       </div>
       <div class="info-row">
-        <span class="info-label">User PIN retries:</span>
+        <span class="info-label">User PIN retries left:</span>
         <span class="info-value">{{ store.cardDetails.pin_retry_counter }}</span>
       </div>
       <div class="info-row">
-        <span class="info-label">Admin PIN retries:</span>
+        <span class="info-label">Reset PIN retries left:</span>
+        <span class="info-value">{{ store.cardDetails.reset_code_retry_counter }}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Admin PIN retries left:</span>
         <span class="info-value">{{ store.cardDetails.admin_pin_retry_counter }}</span>
+      </div>
+      <div class="info-row" v-if="store.cardDetails.signature_fingerprint">
+        <span class="info-label">Signing key:</span>
+        <span class="info-value fingerprint">{{ store.cardDetails.signature_fingerprint.toUpperCase() }}</span>
+      </div>
+      <div class="info-row" v-if="store.cardDetails.encryption_fingerprint">
+        <span class="info-label">Encryption key:</span>
+        <span class="info-value fingerprint">{{ store.cardDetails.encryption_fingerprint.toUpperCase() }}</span>
+      </div>
+      <div class="info-row" v-if="store.cardDetails.authentication_fingerprint">
+        <span class="info-label">Authentication key:</span>
+        <span class="info-value fingerprint">{{ store.cardDetails.authentication_fingerprint.toUpperCase() }}</span>
       </div>
     </div>
     <p v-else class="loading">Loading card details...</p>
@@ -76,6 +92,12 @@ h2 {
 .info-value {
   font-size: 14px;
   font-weight: 500;
+}
+
+.fingerprint {
+  font-family: monospace;
+  font-size: 12px;
+  word-break: break-all;
 }
 
 .loading {

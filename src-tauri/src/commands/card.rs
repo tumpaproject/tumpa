@@ -4,6 +4,7 @@ use wecanencrypt::{
     parse_cert_bytes, KeyType,
     card::{
         is_card_connected as card_connected,
+        list_all_cards as card_list_all,
         get_card_details as card_details,
         reset_card,
         upload_primary_key_to_card,
@@ -23,7 +24,16 @@ use super::AppState;
 const DEFAULT_ADMIN_PIN: &[u8] = b"12345678";
 
 #[derive(Serialize)]
+pub struct CardSummaryInfo {
+    pub ident: String,
+    pub manufacturer_name: String,
+    pub serial_number: String,
+    pub cardholder_name: Option<String>,
+}
+
+#[derive(Serialize)]
 pub struct CardDetails {
+    pub ident: String,
     pub serial_number: String,
     pub cardholder_name: String,
     pub public_key_url: String,
@@ -34,6 +44,7 @@ pub struct CardDetails {
     pub encryption_fingerprint: Option<String>,
     pub authentication_fingerprint: Option<String>,
     pub manufacturer: Option<String>,
+    pub manufacturer_name: Option<String>,
 }
 
 #[tauri::command]
@@ -42,11 +53,25 @@ pub fn is_card_connected() -> bool {
 }
 
 #[tauri::command]
-pub fn get_card_details() -> Result<CardDetails, String> {
-    let info = card_details()
+pub fn list_cards() -> Result<Vec<CardSummaryInfo>, String> {
+    let cards = card_list_all()
+        .map_err(|e| format!("Failed to list cards: {}", e))?;
+
+    Ok(cards.into_iter().map(|c| CardSummaryInfo {
+        ident: c.ident,
+        manufacturer_name: c.manufacturer_name,
+        serial_number: c.serial_number,
+        cardholder_name: c.cardholder_name,
+    }).collect())
+}
+
+#[tauri::command]
+pub fn get_card_details(ident: Option<String>) -> Result<CardDetails, String> {
+    let info = card_details(ident.as_deref())
         .map_err(|e| format!("Failed to read card: {}", e))?;
 
     Ok(CardDetails {
+        ident: info.ident,
         serial_number: info.serial_number,
         cardholder_name: info.cardholder_name.unwrap_or_default(),
         public_key_url: info.public_key_url.unwrap_or_default(),
@@ -57,6 +82,7 @@ pub fn get_card_details() -> Result<CardDetails, String> {
         encryption_fingerprint: info.encryption_fingerprint,
         authentication_fingerprint: info.authentication_fingerprint,
         manufacturer: info.manufacturer,
+        manufacturer_name: info.manufacturer_name,
     })
 }
 
@@ -80,26 +106,21 @@ pub async fn upload_key_to_card(
         return Err("No smartcard connected.".to_string());
     }
 
-    // Validate: cannot upload both primary and signing subkey to signing slot
     if which_subkeys & 2 != 0 && which_subkeys & 8 != 0 {
         return Err("Cannot upload both primary key and signing subkey to the signing slot.".to_string());
     }
 
-    // Get key from keystore
     let store = state.keystore.lock().map_err(|e| e.to_string())?;
     let (cert_data, _) = store.get_cert(&fingerprint)
         .map_err(|e| format!("Key not found: {}", e))?;
-    drop(store); // Release lock before card I/O
+    drop(store);
 
-    // Parse cert to find subkeys
     let cert_info = parse_cert_bytes(&cert_data, true)
         .map_err(|e| format!("Failed to parse certificate: {}", e))?;
 
-    // Reset card to factory defaults
-    reset_card()
+    reset_card(None)
         .map_err(|e| format!("Failed to reset card: {}", e))?;
 
-    // Upload primary key to Signing slot
     if which_subkeys & 2 != 0 {
         upload_primary_key_to_card(
             &cert_data,
@@ -109,7 +130,6 @@ pub async fn upload_key_to_card(
         ).map_err(|e| format!("Failed to upload primary key: {}", e))?;
     }
 
-    // Upload signing subkey to Signing slot
     if which_subkeys & 8 != 0 {
         let sign_sk = cert_info.subkeys.iter()
             .find(|sk| matches!(sk.key_type, KeyType::Signing))
@@ -124,7 +144,6 @@ pub async fn upload_key_to_card(
         ).map_err(|e| format!("Failed to upload signing subkey: {}", e))?;
     }
 
-    // Upload encryption subkey
     if which_subkeys & 1 != 0 {
         let _enc = cert_info.subkeys.iter()
             .find(|sk| matches!(sk.key_type, KeyType::Encryption))
@@ -138,7 +157,6 @@ pub async fn upload_key_to_card(
         ).map_err(|e| format!("Failed to upload encryption subkey: {}", e))?;
     }
 
-    // Upload authentication subkey
     if which_subkeys & 4 != 0 {
         let auth = cert_info.subkeys.iter()
             .find(|sk| matches!(sk.key_type, KeyType::Authentication))
@@ -161,7 +179,7 @@ pub fn update_card_name(name: String, admin_pin: String) -> Result<(), String> {
     if !card_connected() {
         return Err("No smartcard connected.".to_string());
     }
-    card_set_name(&name, admin_pin.as_bytes())
+    card_set_name(&name, admin_pin.as_bytes(), None)
         .map_err(|e| format!("Failed to set name: {}", e))?;
     Ok(())
 }
@@ -171,7 +189,7 @@ pub fn update_card_url(url: String, admin_pin: String) -> Result<(), String> {
     if !card_connected() {
         return Err("No smartcard connected.".to_string());
     }
-    card_set_url(&url, admin_pin.as_bytes())
+    card_set_url(&url, admin_pin.as_bytes(), None)
         .map_err(|e| format!("Failed to set URL: {}", e))?;
     Ok(())
 }
@@ -184,7 +202,7 @@ pub fn change_user_pin(admin_pin: String, new_pin: String) -> Result<(), String>
     if new_pin.len() < 6 {
         return Err("User PIN must be at least 6 characters.".to_string());
     }
-    card_change_user_pin(admin_pin.as_bytes(), new_pin.as_bytes())
+    card_change_user_pin(admin_pin.as_bytes(), new_pin.as_bytes(), None)
         .map_err(|e| format!("Failed to change user PIN: {}", e))?;
     Ok(())
 }
@@ -197,7 +215,7 @@ pub fn change_admin_pin(current_pin: String, new_pin: String) -> Result<(), Stri
     if new_pin.len() < 8 {
         return Err("Admin PIN must be at least 8 characters.".to_string());
     }
-    card_change_admin_pin(current_pin.as_bytes(), new_pin.as_bytes())
+    card_change_admin_pin(current_pin.as_bytes(), new_pin.as_bytes(), None)
         .map_err(|e| format!("Failed to change admin PIN: {}", e))?;
     Ok(())
 }
