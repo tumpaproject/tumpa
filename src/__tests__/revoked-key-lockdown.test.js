@@ -105,8 +105,12 @@ describe('KeyDetailsView with revoked key', () => {
     expect(btn.attributes('disabled')).toBeDefined()
   })
 
-  it('disables Change Password button', async () => {
+  it('disables Change Password button in Advanced section', async () => {
     const wrapper = await mountKeyDetails()
+    // Open Advanced dropdown
+    const advBtn = wrapper.findAll('button').find(b => b.text().includes('Advanced'))
+    await advBtn.trigger('click')
+    await wrapper.vm.$nextTick()
     const btn = wrapper.findAll('button').find(b => b.text().includes('Change Password'))
     expect(btn.attributes('disabled')).toBeDefined()
   })
@@ -179,16 +183,21 @@ describe('KeyDetailsView with valid key', () => {
       global: { plugins: [router] },
       props: { fingerprint: 'ABCD1234ABCD1234ABCD1234ABCD1234ABCD1234' },
     })
-    // Wait for onMounted invoke to resolve
     await vi.dynamicImportSettled()
     await wrapper.vm.$nextTick()
     await wrapper.vm.$nextTick()
 
-    // For a valid key, Change Password and Add new user should be enabled
+    // Open Advanced dropdown
+    const advBtn = wrapper.findAll('button').find(b => b.text().includes('Advanced'))
+    await advBtn.trigger('click')
+    await wrapper.vm.$nextTick()
+
+    // Change Password in Advanced should be enabled
     const changePwBtn = wrapper.findAll('button').find(b => b.text().includes('Change Password'))
     expect(changePwBtn).toBeDefined()
     expect(changePwBtn.attributes('disabled')).toBeUndefined()
 
+    // Add new user should be enabled
     const addUserBtn = wrapper.findAll('button').find(b => b.text().includes('Add new user'))
     expect(addUserBtn).toBeDefined()
     expect(addUserBtn.attributes('disabled')).toBeUndefined()

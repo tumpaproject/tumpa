@@ -23,3 +23,4 @@ wecanencrypt = { path = "/home/kdas/code/learning/wecanencrypt", features = ["ke
 chrono = { version = "0.4", features = ["serde"] }
 tokio = { version = "1", features = ["rt"] }
 dirs = "6"
+reqwest = { version = "0.12", features = ["json"] }

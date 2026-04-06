@@ -32,6 +32,10 @@ const subkeyExpiryDate = ref('')
 const subkeyExpiryPassword = ref('')
 const showRevokeKey = ref(false)
 const revokeKeyPassword = ref('')
+const showAdvanced = ref(false)
+const keyserverUploading = ref(false)
+const keyserverResult = ref(null)
+const keyserverError = ref('')
 
 const anySubkeySelected = computed(() => {
   return Object.values(selectedSubkeys.value).some(v => v)
@@ -152,6 +156,34 @@ async function revokeKey() {
   }
 }
 
+async function syncToKeyserver() {
+  keyserverUploading.value = true
+  keyserverError.value = ''
+  keyserverResult.value = null
+  try {
+    keyserverResult.value = await invoke('upload_to_keyserver', {
+      fingerprint: props.fingerprint,
+    })
+  } catch (e) {
+    keyserverError.value = String(e)
+  }
+  keyserverUploading.value = false
+}
+
+async function requestVerification(email) {
+  try {
+    await invoke('request_keyserver_verification', {
+      token: keyserverResult.value.token,
+      email,
+    })
+    // Update the status in the result
+    const entry = keyserverResult.value.email_status.find(e => e.email === email)
+    if (entry) entry.status = 'pending'
+  } catch (e) {
+    keyserverError.value = String(e)
+  }
+}
+
 const primaryKey = () => {
   if (!keyData.value) return null
   return keyData.value.subkeys.find(s => s.key_type === 'certification') || null
@@ -168,7 +200,6 @@ const nonPrimarySubkeys = () => {
     <div class="toolbar">
       <TButton variant="green" :icon="cardPurpleSvg" thin @click="uploadToCard" :disabled="keyData.is_revoked">Send Key to Card</TButton>
       <TButton variant="white" :icon="exportSvg" thin @click="exportKey">Export Public Key</TButton>
-      <TButton variant="white" thin @click="router.push(`/keys/${fingerprint}/change-password`)" :disabled="keyData.is_revoked">Change Password</TButton>
       <TButton variant="red-alt" :icon="revokeSvg" thin @click="showRevokeKey = true" :disabled="keyData.is_revoked">Revoke Key</TButton>
       <TButton variant="white" :icon="deleteSvg" thin @click="deleteKey">Remove</TButton>
     </div>
@@ -187,6 +218,28 @@ const nonPrimarySubkeys = () => {
 
       <div v-if="keyData.is_revoked" class="revoked-banner">
         <span>This key has been revoked{{ keyData.revocation_time ? ` on ${keyData.revocation_time}` : '' }}.</span>
+      </div>
+
+      <!-- Keyserver sync result -->
+      <div v-if="keyserverUploading" class="keyserver-status">
+        Uploading to keys.openpgp.org...
+      </div>
+      <div v-if="keyserverError" class="keyserver-status keyserver-error">
+        {{ keyserverError }}
+      </div>
+      <div v-if="keyserverResult" class="keyserver-status keyserver-success">
+        <p>Key uploaded to keys.openpgp.org</p>
+        <div v-for="es in keyserverResult.email_status" :key="es.email" class="email-verify-row">
+          <span class="email-addr">{{ es.email }}</span>
+          <span class="email-status" :class="es.status">{{ es.status }}</span>
+          <TButton
+            v-if="es.status === 'unpublished'"
+            variant="green"
+            thin
+            @click="requestVerification(es.email)"
+          >Verify</TButton>
+          <span v-if="es.status === 'pending'" class="email-hint">Check your inbox</span>
+        </div>
       </div>
 
       <!-- User IDs -->
@@ -248,6 +301,15 @@ const nonPrimarySubkeys = () => {
                 <TButton variant="green" thin @click="updateExpiry">Save</TButton>
                 <TButton variant="default" thin @click="showExpiryEdit = false">Cancel</TButton>
               </div>
+            </div>
+
+            <button class="advanced-toggle" @click="showAdvanced = !showAdvanced">
+              Advanced {{ showAdvanced ? '\u2303' : '\u2304' }}
+            </button>
+
+            <div v-if="showAdvanced" class="advanced-section">
+              <TButton variant="white" thin @click="syncToKeyserver" :disabled="keyserverUploading">Sync to Keyserver</TButton>
+              <TButton variant="white" thin @click="router.push(`/keys/${fingerprint}/change-password`)" :disabled="keyData.is_revoked">Change Password</TButton>
             </div>
           </div>
         </div>
@@ -342,6 +404,19 @@ const nonPrimarySubkeys = () => {
 .revoke-key-row { display: flex; align-items: center; gap: 8px; }
 .revoke-key-row .password-input { max-width: 300px; }
 
+.keyserver-status { margin-bottom: 16px; padding: 12px 16px; border-radius: 6px; font-size: 14px; }
+.keyserver-error { background: var(--color-expired-bg); border: 1px solid var(--color-expired-border); color: var(--color-red); }
+.keyserver-success { background: #f0fdf4; border: 1px solid #86efac; }
+.keyserver-success p { font-weight: 500; margin-bottom: 8px; }
+.email-verify-row { display: flex; align-items: center; gap: 12px; padding: 4px 0; }
+.email-addr { font-size: 13px; min-width: 200px; }
+.email-status { font-size: 12px; font-weight: 500; padding: 2px 8px; border-radius: 3px; }
+.email-status.published { background: #dcfce7; color: #16a34a; }
+.email-status.unpublished { background: var(--color-border); color: var(--color-text-muted); }
+.email-status.pending { background: #fef9c3; color: #a16207; }
+.email-status.revoked { background: var(--color-expired-bg); color: var(--color-red); }
+.email-hint { font-size: 12px; color: var(--color-text-muted); font-style: italic; }
+
 .revoked-banner { margin-bottom: 20px; padding: 12px 16px; border: 1px solid var(--color-expired-border); border-radius: 6px; background: var(--color-expired-bg); color: var(--color-red); font-size: 14px; font-weight: 500; }
 
 .section { margin-bottom: 24px; }
@@ -386,6 +461,10 @@ h3 { font-size: 18px; font-weight: 700; margin-bottom: 12px; }
 
 .expiry-edit { display: flex; align-items: center; gap: 8px; flex: 1; }
 .expiry-edit input { width: auto; max-width: 180px; }
+
+.advanced-toggle { align-self: flex-start; margin-top: 8px; padding: 6px 12px; background: var(--color-border); border: none; border-radius: 4px; font-size: 14px; font-weight: 500; cursor: pointer; font-family: var(--font-family); }
+.advanced-toggle:hover { background: #DADDE2; }
+.advanced-section { display: flex; gap: 12px; margin-top: 12px; }
 
 .form-footer { display: flex; justify-content: space-between; padding: 16px 24px; border-top: 1px solid var(--color-border); }
 </style>

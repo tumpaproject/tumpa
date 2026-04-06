@@ -1,8 +1,10 @@
 pub mod keystore;
 pub mod card;
+pub mod keyserver;
 
 pub use keystore::*;
 pub use card::*;
+pub use keyserver::*;
 
 use std::sync::Mutex;
 use wecanencrypt::KeyStore;
