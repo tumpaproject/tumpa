@@ -27,10 +27,9 @@ const selectedDate = computed(() => {
 
 const displayDate = computed(() => {
   if (props.modelValue) {
-    const parts = props.modelValue.split('-')
-    return `${parts[2]} / ${parts[1]} / ${parts[0]}`
+    return props.modelValue.replace(/-/g, '/')
   }
-  return 'DD / MM / YYYY'
+  return 'YYYY / MM / DD'
 })
 
 const minDateObj = computed(() => {
