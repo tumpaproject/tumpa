@@ -58,7 +58,7 @@ async function create() {
 
     <div class="form-footer">
       <TButton variant="default" :icon="backIconSvg" @click="router.back()">Back</TButton>
-      <TButton variant="green" :icon="tickSvg" @click="create">Create</TButton>
+      <TButton variant="green" :icon="tickSvg" @click="create">Add</TButton>
     </div>
   </div>
 </template>
