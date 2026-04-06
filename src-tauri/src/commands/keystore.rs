@@ -367,6 +367,34 @@ pub fn update_key_expiry(
 }
 
 #[tauri::command]
+pub fn update_selected_subkeys_expiry(
+    state: State<'_, AppState>,
+    fingerprint: String,
+    subkey_fingerprints: Vec<String>,
+    new_date: String,
+    password: String,
+) -> Result<KeyInfo, String> {
+    let expiry = NaiveDate::parse_from_str(&new_date, "%Y-%m-%d")
+        .map_err(|e| format!("Invalid date: {}", e))?;
+    let expiry_dt = Utc.from_utc_datetime(&expiry.and_hms_opt(0, 0, 0).unwrap());
+
+    let store = state.keystore.lock().map_err(|e| e.to_string())?;
+    let (cert_data, _) = store.get_cert(&fingerprint)
+        .map_err(|e| format!("Key not found: {}", e))?;
+
+    let fp_refs: Vec<&str> = subkey_fingerprints.iter().map(|s| s.as_str()).collect();
+    let updated = update_subkeys_expiry(&cert_data, &fp_refs, expiry_dt, &password)
+        .map_err(|e| format!("Failed to update subkey expiry: {}", e))?;
+
+    store.update_cert(&fingerprint, &updated)
+        .map_err(|e| format!("Failed to update key: {}", e))?;
+
+    let new_info = store.get_cert_info(&fingerprint)
+        .map_err(|e| format!("Failed to read key info: {}", e))?;
+    Ok(cert_info_to_key_info(&new_info))
+}
+
+#[tauri::command]
 pub fn change_key_password(
     state: State<'_, AppState>,
     fingerprint: String,

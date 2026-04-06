@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { invoke } from '@tauri-apps/api/core'
 import { save } from '@tauri-apps/plugin-dialog'
@@ -24,6 +24,20 @@ const expandedSubkeys = ref({})
 const newExpiryDate = ref('')
 const expiryPassword = ref('')
 const showExpiryEdit = ref(false)
+const selectedSubkeys = ref({})
+const showSubkeyExpiryEdit = ref(false)
+const subkeyExpiryDate = ref('')
+const subkeyExpiryPassword = ref('')
+
+const anySubkeySelected = computed(() => {
+  return Object.values(selectedSubkeys.value).some(v => v)
+})
+
+const selectedSubkeyFingerprints = computed(() => {
+  return Object.entries(selectedSubkeys.value)
+    .filter(([_, v]) => v)
+    .map(([fp]) => fp)
+})
 
 onMounted(async () => {
   await loadKey()
@@ -94,6 +108,28 @@ async function updateExpiry() {
   }
 }
 
+async function updateSubkeysExpiry() {
+  if (!subkeyExpiryDate.value || !subkeyExpiryPassword.value) {
+    alert('Please enter both date and password.')
+    return
+  }
+  try {
+    keyData.value = await invoke('update_selected_subkeys_expiry', {
+      fingerprint: props.fingerprint,
+      subkeyFingerprints: selectedSubkeyFingerprints.value,
+      newDate: subkeyExpiryDate.value,
+      password: subkeyExpiryPassword.value,
+    })
+    showSubkeyExpiryEdit.value = false
+    subkeyExpiryPassword.value = ''
+    subkeyExpiryDate.value = ''
+    selectedSubkeys.value = {}
+    await store.refreshKeys()
+  } catch (e) {
+    alert(String(e))
+  }
+}
+
 const primaryKey = () => {
   if (!keyData.value) return null
   return keyData.value.subkeys.find(s => s.key_type === 'certification') || null
@@ -144,11 +180,13 @@ const nonPrimarySubkeys = () => {
       <div class="section">
         <h3>Primary key</h3>
         <div class="accordion" :class="{ expanded: primaryExpanded }">
-          <button class="accordion-header" @click="primaryExpanded = !primaryExpanded">
-            <img :src="keyIconSvg" alt="" class="acc-icon" />
-            <span class="acc-fp">{{ keyData.fingerprint }}</span>
-            <img :src="downIconSvg" alt="" class="acc-chevron" :class="{ rotated: primaryExpanded }" />
-          </button>
+          <div class="accordion-header">
+            <button class="accordion-header-btn" @click="primaryExpanded = !primaryExpanded">
+              <img :src="keyIconSvg" alt="" class="acc-icon" />
+              <span class="acc-fp">{{ keyData.fingerprint }}</span>
+              <img :src="downIconSvg" alt="" class="acc-chevron" :class="{ rotated: primaryExpanded }" />
+            </button>
+          </div>
           <div class="accordion-body" v-if="primaryExpanded">
             <div class="detail-row">
               <span class="detail-label">Status:</span>
@@ -177,17 +215,45 @@ const nonPrimarySubkeys = () => {
 
       <!-- Subkeys -->
       <div class="section">
-        <h3>Subkeys</h3>
+        <div class="section-header">
+          <h3>Subkeys</h3>
+          <TButton
+            variant="white"
+            thin
+            :disabled="!anySubkeySelected"
+            @click="showSubkeyExpiryEdit = true"
+          >Change expiry</TButton>
+        </div>
+
+        <div v-if="showSubkeyExpiryEdit && anySubkeySelected" class="subkey-expiry-edit">
+          <label class="field-label">New expiry date for selected subkeys:</label>
+          <div class="subkey-expiry-row">
+            <DatePicker v-model="subkeyExpiryDate" :min-date="new Date().toISOString().split('T')[0]" />
+            <input type="password" v-model="subkeyExpiryPassword" placeholder="Key password" />
+            <TButton variant="green" thin @click="updateSubkeysExpiry">Update</TButton>
+            <TButton variant="default" thin @click="showSubkeyExpiryEdit = false">Cancel</TButton>
+          </div>
+        </div>
+
         <div
           v-for="sk in nonPrimarySubkeys()"
           :key="sk.fingerprint"
           class="accordion"
         >
-          <button class="accordion-header" @click="toggleSubkey(sk.fingerprint)">
-            <img :src="keyIconSvg" alt="" class="acc-icon" />
-            <span class="acc-fp">{{ sk.fingerprint }}</span>
-            <img :src="downIconSvg" alt="" class="acc-chevron" :class="{ rotated: expandedSubkeys[sk.fingerprint] }" />
-          </button>
+          <div class="accordion-header">
+            <input
+              type="checkbox"
+              :checked="selectedSubkeys[sk.fingerprint]"
+              @change="selectedSubkeys[sk.fingerprint] = $event.target.checked"
+              @click.stop
+              class="subkey-checkbox"
+            />
+            <button class="accordion-header-btn" @click="toggleSubkey(sk.fingerprint)">
+              <img :src="keyIconSvg" alt="" class="acc-icon" />
+              <span class="acc-fp">{{ sk.fingerprint }}</span>
+              <img :src="downIconSvg" alt="" class="acc-chevron" :class="{ rotated: expandedSubkeys[sk.fingerprint] }" />
+            </button>
+          </div>
           <div class="accordion-body" v-if="expandedSubkeys[sk.fingerprint]">
             <div class="detail-row">
               <span class="detail-label">Type:</span>
@@ -242,8 +308,15 @@ h3 { font-size: 18px; font-weight: 700; margin-bottom: 12px; }
 .uid-row:hover { background: var(--color-bg-light); }
 .uid-arrow { text-align: right; font-size: 20px; color: var(--color-text-muted); }
 
+.subkey-expiry-edit { margin-bottom: 16px; display: flex; flex-direction: column; gap: 8px; }
+.subkey-expiry-edit .field-label { font-size: 13px; color: var(--color-text-muted); }
+.subkey-expiry-row { display: flex; align-items: center; gap: 8px; }
+.subkey-expiry-row input[type="password"] { width: auto; max-width: 180px; }
+
 .accordion { border: 1px solid var(--color-border); border-radius: 6px; margin-bottom: 8px; overflow: hidden; }
-.accordion-header { display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px; background: var(--color-bg-light); border: none; cursor: pointer; font-family: var(--font-family); font-size: 14px; text-align: left; }
+.accordion-header { display: flex; align-items: center; gap: 8px; background: var(--color-bg-light); padding: 0 12px; }
+.subkey-checkbox { width: 16px; height: 16px; cursor: pointer; flex-shrink: 0; }
+.accordion-header-btn { display: flex; align-items: center; gap: 12px; flex: 1; padding: 12px 0; background: none; border: none; cursor: pointer; font-family: var(--font-family); font-size: 14px; text-align: left; }
 .acc-icon { width: 18px; height: 18px; }
 .acc-fp { flex: 1; font-weight: 600; }
 .acc-chevron { width: 16px; height: 16px; transition: transform 0.2s; }
