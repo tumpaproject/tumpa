@@ -4,9 +4,9 @@ import { useRouter } from 'vue-router'
 import { invoke } from '@tauri-apps/api/core'
 import { useAppStore } from '@/stores/appStore'
 import TButton from '@/components/TButton.vue'
+import PasswordInput from '@/components/PasswordInput.vue'
 import backIconSvg from '@/assets/icons/backIcon.svg'
 import revokeSvg from '@/assets/icons/revoke.svg'
-import deleteSvg from '@/assets/icons/delete_purple.svg'
 
 const props = defineProps({
   fingerprint: String,
@@ -16,7 +16,8 @@ const router = useRouter()
 const store = useAppStore()
 
 const keyData = ref(null)
-const password = ref('')
+const showRevokeForm = ref(false)
+const revokePassword = ref('')
 
 const uid = computed(() => {
   if (!keyData.value) return null
@@ -40,17 +41,25 @@ onMounted(async () => {
   }
 })
 
-async function revokeUid() {
-  const pw = prompt('Enter key password to revoke this User ID:')
-  if (!pw) return
+function startRevoke() {
+  showRevokeForm.value = true
+  revokePassword.value = ''
+}
+
+async function confirmRevoke() {
+  if (!revokePassword.value) {
+    alert('Please enter the key password.')
+    return
+  }
   try {
-    await invoke('revoke_user_id', {
+    keyData.value = await invoke('revoke_user_id', {
       fingerprint: props.fingerprint,
       uid: uidString.value,
-      password: pw,
+      password: revokePassword.value,
     })
+    showRevokeForm.value = false
+    revokePassword.value = ''
     await store.refreshKeys()
-    router.back()
   } catch (e) {
     alert(String(e))
   }
@@ -60,16 +69,29 @@ async function revokeUid() {
 <template>
   <div class="details-view" v-if="uid">
     <div class="toolbar">
-      <TButton variant="red-alt" :icon="revokeSvg" thin @click="revokeUid">Revoke User ID</TButton>
+      <TButton variant="red-alt" :icon="revokeSvg" thin @click="startRevoke" :disabled="uid.revoked">Revoke User ID</TButton>
     </div>
 
     <div class="details-content">
       <h2>User details</h2>
 
+      <div v-if="showRevokeForm && !uid.revoked" class="revoke-form">
+        <label class="field-label">Enter key password to revoke this User ID:</label>
+        <div class="revoke-row">
+          <PasswordInput v-model="revokePassword" placeholder="Key password" />
+          <TButton variant="red" thin @click="confirmRevoke">Revoke</TButton>
+          <TButton variant="default" thin @click="showRevokeForm = false">Cancel</TButton>
+        </div>
+      </div>
+
       <div class="info-table">
         <div class="info-row">
           <span class="info-label">Status</span>
           <span class="info-value" :class="{ revoked: uid.revoked }">{{ uid.revoked ? 'Revoked' : 'Valid' }}</span>
+        </div>
+        <div class="info-row" v-if="uid.revoked && uid.revocation_time">
+          <span class="info-label">Revoked on</span>
+          <span class="info-value revoked">{{ uid.revocation_time }}</span>
         </div>
         <div class="info-row">
           <span class="info-label">Name</span>
@@ -111,6 +133,11 @@ async function revokeUid() {
 .details-content { flex: 1; padding: 24px 32px; overflow-y: auto; }
 
 h2 { font-size: 24px; font-weight: 700; margin-bottom: 24px; }
+
+.revoke-form { margin-bottom: 24px; display: flex; flex-direction: column; gap: 8px; }
+.revoke-form .field-label { font-size: 13px; color: var(--color-text-muted); }
+.revoke-row { display: flex; align-items: center; gap: 8px; }
+.revoke-row .password-input { max-width: 300px; }
 
 .info-table { display: flex; flex-direction: column; gap: 16px; max-width: 500px; }
 

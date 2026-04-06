@@ -27,6 +27,7 @@ pub struct UserIdData {
     pub name: String,
     pub email: String,
     pub revoked: bool,
+    pub revocation_time: Option<String>,
 }
 
 #[derive(Serialize, Clone)]
@@ -63,6 +64,8 @@ fn cert_info_to_key_info(info: &wecanencrypt::CertificateInfo) -> KeyInfo {
             name,
             email,
             revoked: uid.revoked,
+            revocation_time: uid.revocation_time
+                .map(|t| t.format("%d %b %Y %H:%M").to_string()),
         }
     }).collect();
 

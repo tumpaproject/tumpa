@@ -19,7 +19,7 @@ tauri-plugin-dialog = "2"
 tauri-plugin-fs = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-wecanencrypt = { version = "0.5.1", features = ["keystore", "card", "network"] }
+wecanencrypt = { path = "/home/kdas/code/learning/wecanencrypt", features = ["keystore", "card", "network"] }
 chrono = { version = "0.4", features = ["serde"] }
 tokio = { version = "1", features = ["rt"] }
 dirs = "6"

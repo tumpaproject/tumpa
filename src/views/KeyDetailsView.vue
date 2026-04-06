@@ -160,17 +160,19 @@ const nonPrimarySubkeys = () => {
         </div>
         <table class="uid-table">
           <thead>
-            <tr><th>Name</th><th>Email</th><th></th></tr>
+            <tr><th>Name</th><th>Email</th><th>Status</th><th></th></tr>
           </thead>
           <tbody>
             <tr
               v-for="(uid, i) in keyData.user_ids"
               :key="i"
               class="uid-row"
+              :class="{ 'uid-revoked': uid.revoked }"
               @click="router.push(`/keys/${fingerprint}/uid/${i}`)"
             >
               <td>{{ uid.name }}</td>
               <td>{{ uid.email }}</td>
+              <td><span v-if="uid.revoked" class="revoked-badge">Revoked</span><span v-else class="valid-badge">Valid</span></td>
               <td class="uid-arrow">&rsaquo;</td>
             </tr>
           </tbody>
@@ -307,7 +309,10 @@ h3 { font-size: 18px; font-weight: 700; margin-bottom: 12px; }
 .uid-table td { padding: 10px 12px; font-size: 14px; border-bottom: 1px solid var(--color-border); }
 .uid-row { cursor: pointer; }
 .uid-row:hover { background: var(--color-bg-light); }
+.uid-revoked { opacity: 0.6; }
 .uid-arrow { text-align: right; font-size: 20px; color: var(--color-text-muted); }
+.revoked-badge { color: var(--color-red); font-size: 12px; font-weight: 500; }
+.valid-badge { color: #16a34a; font-size: 12px; font-weight: 500; }
 
 .subkey-expiry-edit { margin-bottom: 16px; display: flex; flex-direction: column; gap: 8px; }
 .subkey-expiry-edit .field-label { font-size: 13px; color: var(--color-text-muted); }
