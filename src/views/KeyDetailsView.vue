@@ -312,7 +312,8 @@ h3 { font-size: 18px; font-weight: 700; margin-bottom: 12px; }
 .subkey-expiry-edit { margin-bottom: 16px; display: flex; flex-direction: column; gap: 8px; }
 .subkey-expiry-edit .field-label { font-size: 13px; color: var(--color-text-muted); }
 .subkey-expiry-row { display: flex; align-items: center; gap: 8px; }
-.subkey-expiry-row .password-input { width: auto; max-width: 180px; }
+.subkey-expiry-row .date-picker { width: 160px; flex-shrink: 0; }
+.subkey-expiry-row .password-input { width: auto; min-width: 220px; flex: 1; }
 
 .accordion { border: 1px solid var(--color-border); border-radius: 6px; margin-bottom: 8px; overflow: hidden; }
 .accordion-header { display: flex; align-items: center; gap: 8px; background: var(--color-bg-light); padding: 0 12px; }
