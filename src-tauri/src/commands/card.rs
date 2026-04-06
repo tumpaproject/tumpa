@@ -1,7 +1,7 @@
 use serde::Serialize;
 use tauri::State;
 use wecanencrypt::{
-    parse_cert_bytes, KeyType,
+    parse_cert_bytes, update_password, KeyType,
     card::{
         is_card_connected as card_connected,
         list_all_cards as card_list_all,
@@ -117,6 +117,11 @@ pub async fn upload_key_to_card(
 
     let cert_info = parse_cert_bytes(&cert_data, true)
         .map_err(|e| format!("Failed to parse certificate: {}", e))?;
+
+    // Verify password before touching the card — update_password with
+    // same old/new password validates decryption without changing anything
+    update_password(&cert_data, &password, &password)
+        .map_err(|_| "Incorrect key password.".to_string())?;
 
     reset_card(None)
         .map_err(|e| format!("Failed to reset card: {}", e))?;

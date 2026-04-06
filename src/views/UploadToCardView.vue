@@ -4,6 +4,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { invoke } from '@tauri-apps/api/core'
 import TButton from '@/components/TButton.vue'
 import PasswordInput from '@/components/PasswordInput.vue'
+import WaitSpinner from '@/components/WaitSpinner.vue'
 import backIconSvg from '@/assets/icons/backIcon.svg'
 import tickSvg from '@/assets/icons/tick_mark.svg'
 
@@ -13,6 +14,8 @@ const route = useRoute()
 const fingerprint = ref('')
 const password = ref('')
 const loading = ref(true)
+const uploading = ref(false)
+const errorMessage = ref('')
 
 // Availability from backend
 const primaryCanSign = ref(false)
@@ -29,9 +32,13 @@ const uploadAuthentication = ref(false)
 onMounted(async () => {
   fingerprint.value = route.query.fingerprint || ''
   if (!fingerprint.value) {
-    alert('No key selected.')
     router.back()
     return
+  }
+  // Restore error from a failed upload attempt
+  if (route.query.error) {
+    errorMessage.value = route.query.error
+    password.value = route.query.savedPassword || ''
   }
   try {
     const avail = await invoke('get_available_subkeys', { fingerprint: fingerprint.value })
@@ -40,11 +47,9 @@ onMounted(async () => {
     encryptionAvailable.value = avail.encryption
     authenticationAvailable.value = avail.authentication
 
-    // Default selections
     uploadEncryption.value = avail.encryption
     uploadAuthentication.value = avail.authentication
 
-    // If signing subkey exists, preselect it and deselect primary
     if (avail.signing_subkey) {
       uploadSigningSubkey.value = true
       uploadPrimary.value = false
@@ -53,7 +58,7 @@ onMounted(async () => {
       uploadSigningSubkey.value = false
     }
   } catch (e) {
-    alert(String(e))
+    errorMessage.value = String(e)
   }
   loading.value = false
 })
@@ -66,9 +71,14 @@ watch(uploadSigningSubkey, (val) => {
   if (val) uploadPrimary.value = false
 })
 
+// Clear error when password changes
+watch(password, () => {
+  errorMessage.value = ''
+})
+
 async function upload() {
   if (!password.value) {
-    alert('Please enter the key password.')
+    errorMessage.value = 'Please enter the key password.'
     return
   }
 
@@ -79,7 +89,7 @@ async function upload() {
   if (uploadSigningSubkey.value) whichSubkeys += 8
 
   if (whichSubkeys === 0) {
-    alert('Please select at least one key to upload.')
+    errorMessage.value = 'Please select at least one key to upload.'
     return
   }
 
@@ -87,25 +97,39 @@ async function upload() {
     return
   }
 
-  router.push({
-    name: 'uploading',
-    query: {
+  errorMessage.value = ''
+  uploading.value = true
+
+  try {
+    await invoke('upload_key_to_card', {
       fingerprint: fingerprint.value,
       password: password.value,
-      whichSubkeys: String(whichSubkeys),
-    },
-  })
+      whichSubkeys,
+    })
+    router.replace('/keys')
+  } catch (e) {
+    uploading.value = false
+    errorMessage.value = String(e)
+  }
 }
 </script>
 
 <template>
-  <div class="form-view">
+  <WaitSpinner
+    v-if="uploading"
+    message="Uploading to smartcard, please wait!"
+    hint="Do not remove the card during this operation."
+  />
+  <div v-else class="form-view">
     <div class="form-content" v-if="!loading">
       <h2>Upload key to card</h2>
 
       <p class="fp-display">{{ fingerprint }}</p>
 
-      <label class="field-label">Key Password:</label>
+      <div class="password-row">
+        <label class="field-label">Key Password:</label>
+        <span v-if="errorMessage" class="error-text">{{ errorMessage }}</span>
+      </div>
       <PasswordInput v-model="password" />
 
       <label class="field-label">Signing slot:</label>
@@ -162,6 +186,9 @@ async function upload() {
 h2 { font-size: 24px; font-weight: 700; margin-bottom: 8px; }
 .fp-display { font-size: 13px; font-weight: 600; color: var(--color-text-muted); font-family: monospace; margin-bottom: 8px; }
 .field-label { font-size: 14px; font-weight: 500; margin-top: 12px; }
+.password-row { display: flex; align-items: baseline; gap: 12px; margin-top: 12px; }
+.password-row .field-label { margin-top: 0; }
+.error-text { color: var(--color-red); font-size: 13px; font-weight: 500; }
 .checkbox-group { display: flex; flex-direction: column; gap: 8px; }
 .checkbox-group label { display: flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer; }
 .checkbox-group label.disabled { opacity: 0.4; cursor: not-allowed; }
