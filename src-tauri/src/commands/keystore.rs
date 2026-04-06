@@ -109,7 +109,9 @@ fn cert_info_to_key_info(info: &wecanencrypt::CertificateInfo) -> KeyInfo {
 #[tauri::command]
 pub fn list_keys(state: State<'_, AppState>) -> Result<Vec<KeyInfo>, String> {
     let store = state.keystore.lock().map_err(|e| e.to_string())?;
-    let certs = store.list_certs().map_err(|e| e.to_string())?;
+    let mut certs = store.list_certs().map_err(|e| e.to_string())?;
+    // Sort by creation time, latest first
+    certs.sort_by(|a, b| b.creation_time.cmp(&a.creation_time));
     Ok(certs.iter().map(cert_info_to_key_info).collect())
 }
 
