@@ -1,0 +1,41 @@
+# RPM build environment for Tumpa
+# Usage: docker build --build-arg BASE_IMAGE=fedora:43 -f Dockerfile.rpm -t tumpa-rpm .
+ARG BASE_IMAGE=fedora:43
+FROM ${BASE_IMAGE}
+
+ARG PKG_VERSION=""
+
+RUN dnf install -y \
+    rust cargo \
+    nodejs npm \
+    webkit2gtk4.1-devel \
+    openssl-devel \
+    curl wget file \
+    libappindicator-gtk3-devel \
+    librsvg2-devel \
+    gtk3-devel \
+    pango-devel \
+    gdk-pixbuf2-devel \
+    pcsc-lite-devel \
+    rpm-build \
+    gcc gcc-c++ make \
+    pkgconf-pkg-config \
+    jq \
+    && dnf clean all
+
+RUN npm install -g pnpm
+
+ENV CI=true
+WORKDIR /app
+COPY . .
+
+ARG PKG_VERSION
+RUN if [ -n "$PKG_VERSION" ]; then \
+        jq --arg v "$PKG_VERSION" '.version = $v' src-tauri/tauri.conf.json > tmp.json && \
+        mv tmp.json src-tauri/tauri.conf.json; \
+    fi
+
+RUN pnpm install
+RUN pnpm tauri build --bundles rpm
+
+CMD ["ls", "-la", "src-tauri/target/release/bundle/rpm/"]
