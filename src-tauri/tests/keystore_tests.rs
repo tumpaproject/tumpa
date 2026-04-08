@@ -79,6 +79,57 @@ fn test_keystore_import_rejects_public_only() {
 }
 
 #[test]
+fn test_keystore_import_public_key() {
+    let store = KeyStore::open_in_memory().unwrap();
+    let key = generate_test_key("pass");
+
+    // Import the public key (not secret)
+    let fp = store.import_cert(key.public_key.as_bytes()).unwrap();
+
+    let info = store.get_cert_info(&fp).unwrap();
+    assert!(!info.is_secret, "Public key should not be secret");
+    assert_eq!(info.user_ids.len(), 1);
+
+    // Should coexist with a secret key import
+    let fp2 = store.import_cert(&key.secret_key).unwrap();
+    assert_eq!(fp, fp2, "Same fingerprint for public and secret key");
+
+    // After importing secret, it should now be secret
+    let info2 = store.get_cert_info(&fp).unwrap();
+    assert!(info2.is_secret, "Should be secret after importing secret key");
+}
+
+#[test]
+fn test_keystore_list_public_and_secret_keys() {
+    let store = KeyStore::open_in_memory().unwrap();
+
+    // Create two keys: import one as secret, one as public-only
+    let key1 = generate_test_key("pass1");
+    let key2 = create_key(
+        "pass2",
+        &["Public User <pub@example.com>"],
+        CipherSuite::Cv25519,
+        None, None, None,
+        SubkeyFlags { encryption: true, signing: false, authentication: false },
+        true, true,
+    ).unwrap();
+
+    store.import_cert(&key1.secret_key).unwrap();
+    store.import_cert(key2.public_key.as_bytes()).unwrap();
+
+    let all = store.list_certs().unwrap();
+    assert_eq!(all.len(), 2);
+
+    let secret_keys = store.list_secret_keys().unwrap();
+    assert_eq!(secret_keys.len(), 1);
+    assert!(secret_keys[0].is_secret);
+
+    let public_keys = store.list_public_keys().unwrap();
+    assert_eq!(public_keys.len(), 1);
+    assert!(!public_keys[0].is_secret);
+}
+
+#[test]
 fn test_keystore_delete() {
     let store = KeyStore::open_in_memory().unwrap();
     let key = generate_test_key("pass");

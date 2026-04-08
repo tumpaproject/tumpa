@@ -20,11 +20,18 @@ const isExpired = (() => {
 </script>
 
 <template>
-  <div class="key-item" :class="{ 'key-item--expired': isExpired, 'key-item--revoked': keyData.is_revoked }">
+  <div class="key-item" :class="{
+    'key-item--expired': isExpired,
+    'key-item--revoked': keyData.is_revoked,
+    'key-item--public': !keyData.is_secret,
+  }">
     <div class="key-row">
       <img :src="keyIconSvg" alt="" class="key-icon" />
       <span class="key-fingerprint">{{ keyData.fingerprint }}</span>
       <span class="key-type-tag">{{ keyData.key_type }}</span>
+      <span v-if="!keyData.is_secret" class="public-tag">PUBLIC</span>
+      <span v-else class="private-tag">PRIVATE</span>
+      <span v-if="keyData.card_idents && keyData.card_idents.length" class="card-tag" :title="keyData.card_idents.join(', ')">ON CARD</span>
       <span v-if="keyData.is_revoked" class="revoked-tag">REVOKED</span>
     </div>
 
@@ -51,7 +58,7 @@ const isExpired = (() => {
 
     <div class="key-actions">
       <TButton variant="transparent" :icon="detailsPurpleSvg" @click="$emit('details')">Details</TButton>
-      <TButton variant="transparent" :icon="cardPurpleSvg" @click="$emit('upload')" :disabled="keyData.is_revoked">Send Key to Card</TButton>
+      <TButton v-if="keyData.is_secret" variant="transparent" :icon="cardPurpleSvg" @click="$emit('upload')" :disabled="keyData.is_revoked">Send Key to Card</TButton>
       <TButton variant="transparent" :icon="exportPurpleSvg" @click="$emit('export')">Export Public key</TButton>
       <TButton variant="transparent" :icon="deletePurpleSvg" @click="$emit('delete')">Delete</TButton>
     </div>
@@ -69,6 +76,11 @@ const isExpired = (() => {
   gap: 12px;
 }
 
+.key-item--public {
+  background: #EFF6FF;
+  border-color: #BFDBFE;
+}
+
 .key-item--revoked {
   background: var(--color-expired-bg);
   border-color: var(--color-expired-border);
@@ -78,6 +90,33 @@ const isExpired = (() => {
 .key-type-tag {
   background: var(--color-border);
   color: var(--color-text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 3px;
+}
+
+.public-tag {
+  background: #DBEAFE;
+  color: #1D4ED8;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 3px;
+}
+
+.private-tag {
+  background: #F3E8FF;
+  color: #7C3AED;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 3px;
+}
+
+.card-tag {
+  background: #D1FAE5;
+  color: #065F46;
   font-size: 11px;
   font-weight: 600;
   padding: 2px 8px;

@@ -33,6 +33,12 @@ const subkeyExpiryPassword = ref('')
 const showRevokeKey = ref(false)
 const revokeKeyPassword = ref('')
 const showAdvanced = ref(false)
+const cardDetecting = ref(false)
+
+const hasLinkedCard = computed(() => {
+  return keyData.value && keyData.value.card_idents && keyData.value.card_idents.length > 0
+})
+
 const keyserverUploading = ref(false)
 const keyserverResult = ref(null)
 const keyserverError = ref('')
@@ -99,15 +105,15 @@ async function deleteKey() {
 
 async function updateExpiry() {
   if (!newExpiryDate.value || !expiryPassword.value) {
-    alert('Please enter both date and password.')
+    alert(`Please enter both date and ${hasLinkedCard.value ? 'PIN' : 'password'}.`)
     return
   }
   try {
-    keyData.value = await invoke('update_key_expiry', {
-      fingerprint: props.fingerprint,
-      newDate: newExpiryDate.value,
-      password: expiryPassword.value,
-    })
+    const cmd = hasLinkedCard.value ? 'update_key_expiry_on_card' : 'update_key_expiry'
+    const params = hasLinkedCard.value
+      ? { fingerprint: props.fingerprint, newDate: newExpiryDate.value, pin: expiryPassword.value }
+      : { fingerprint: props.fingerprint, newDate: newExpiryDate.value, password: expiryPassword.value }
+    keyData.value = await invoke(cmd, params)
     showExpiryEdit.value = false
     expiryPassword.value = ''
     await store.refreshKeys()
@@ -118,16 +124,15 @@ async function updateExpiry() {
 
 async function updateSubkeysExpiry() {
   if (!subkeyExpiryDate.value || !subkeyExpiryPassword.value) {
-    alert('Please enter both date and password.')
+    alert(`Please enter both date and ${hasLinkedCard.value ? 'PIN' : 'password'}.`)
     return
   }
   try {
-    keyData.value = await invoke('update_selected_subkeys_expiry', {
-      fingerprint: props.fingerprint,
-      subkeyFingerprints: selectedSubkeyFingerprints.value,
-      newDate: subkeyExpiryDate.value,
-      password: subkeyExpiryPassword.value,
-    })
+    const cmd = hasLinkedCard.value ? 'update_selected_subkeys_expiry_on_card' : 'update_selected_subkeys_expiry'
+    const params = hasLinkedCard.value
+      ? { fingerprint: props.fingerprint, subkeyFingerprints: selectedSubkeyFingerprints.value, newDate: subkeyExpiryDate.value, pin: subkeyExpiryPassword.value }
+      : { fingerprint: props.fingerprint, subkeyFingerprints: selectedSubkeyFingerprints.value, newDate: subkeyExpiryDate.value, password: subkeyExpiryPassword.value }
+    keyData.value = await invoke(cmd, params)
     showSubkeyExpiryEdit.value = false
     subkeyExpiryPassword.value = ''
     subkeyExpiryDate.value = ''
@@ -151,6 +156,40 @@ async function revokeKey() {
     showRevokeKey.value = false
     revokeKeyPassword.value = ''
     await store.refreshKeys()
+  } catch (e) {
+    alert(String(e))
+  }
+}
+
+async function detectAndLinkCard() {
+  cardDetecting.value = true
+  try {
+    const matches = await invoke('auto_detect_card_links')
+    const myMatches = matches.filter(m => m.key_fingerprint.toLowerCase() === props.fingerprint.toLowerCase())
+    if (myMatches.length === 0) {
+      alert('No matching card found for this key.')
+    } else {
+      for (const match of myMatches) {
+        await invoke('link_card_to_key', {
+          fingerprint: props.fingerprint,
+          cardIdent: match.card_ident,
+        })
+      }
+      await loadKey()
+    }
+  } catch (e) {
+    alert(String(e))
+  }
+  cardDetecting.value = false
+}
+
+async function unlinkCard(cardIdent) {
+  try {
+    await invoke('unlink_card_from_key', {
+      fingerprint: props.fingerprint,
+      cardIdent,
+    })
+    await loadKey()
   } catch (e) {
     alert(String(e))
   }
@@ -198,9 +237,9 @@ const nonPrimarySubkeys = () => {
 <template>
   <div class="details-view" v-if="keyData">
     <div class="toolbar">
-      <TButton variant="green" :icon="cardPurpleSvg" thin @click="uploadToCard" :disabled="keyData.is_revoked">Send Key to Card</TButton>
+      <TButton v-if="keyData.is_secret" variant="green" :icon="cardPurpleSvg" thin @click="uploadToCard" :disabled="keyData.is_revoked">Send Key to Card</TButton>
       <TButton variant="white" :icon="exportSvg" thin @click="exportKey">Export Public Key</TButton>
-      <TButton variant="red-alt" :icon="revokeSvg" thin @click="showRevokeKey = true" :disabled="keyData.is_revoked">Revoke Key</TButton>
+      <TButton v-if="keyData.is_secret" variant="red-alt" :icon="revokeSvg" thin @click="showRevokeKey = true" :disabled="keyData.is_revoked">Revoke Key</TButton>
       <TButton variant="white" :icon="deleteSvg" thin @click="deleteKey">Remove</TButton>
     </div>
 
@@ -214,6 +253,30 @@ const nonPrimarySubkeys = () => {
           <TButton variant="red" thin @click="revokeKey">Revoke Key</TButton>
           <TButton variant="default" thin @click="showRevokeKey = false">Cancel</TButton>
         </div>
+      </div>
+
+      <div v-if="!keyData.is_secret && !hasLinkedCard" class="public-banner">
+        <span>This is a public key. The private key is not in this keystore.</span>
+      </div>
+
+      <div v-if="!keyData.is_secret && hasLinkedCard" class="card-linked-banner">
+        <span>This is a public key. The private key is on a linked smartcard.</span>
+      </div>
+
+      <!-- Linked cards -->
+      <div v-if="keyData.card_idents && keyData.card_idents.length" class="linked-cards">
+        <div class="linked-cards-header">
+          <strong>Linked cards:</strong>
+        </div>
+        <div v-for="ident in keyData.card_idents" :key="ident" class="linked-card-row">
+          <span class="card-ident">{{ ident }}</span>
+          <TButton variant="transparent" thin @click="unlinkCard(ident)">Unlink</TButton>
+        </div>
+      </div>
+      <div v-if="!keyData.is_secret" class="link-card-action">
+        <TButton variant="white" thin @click="detectAndLinkCard" :disabled="cardDetecting">
+          {{ cardDetecting ? 'Detecting...' : 'Detect & Link Card' }}
+        </TButton>
       </div>
 
       <div v-if="keyData.is_revoked" class="revoked-banner">
@@ -246,7 +309,7 @@ const nonPrimarySubkeys = () => {
       <div class="section">
         <div class="section-header">
           <h3>User ID</h3>
-          <TButton variant="white" thin @click="router.push(`/keys/${fingerprint}/add-uid`)" :disabled="keyData.is_revoked">Add new user</TButton>
+          <TButton variant="white" thin @click="router.push(`/keys/${fingerprint}/add-uid`)" :disabled="keyData.is_revoked || !keyData.is_secret">Add new user</TButton>
         </div>
         <table class="uid-table">
           <thead>
@@ -293,11 +356,11 @@ const nonPrimarySubkeys = () => {
               <span class="detail-label">Expiration date</span>
               <div class="expiry-widget" v-if="!showExpiryEdit">
                 <span class="expiry-value">{{ keyData.expiration_time }}</span>
-                <button class="expiry-change-btn" @click="showExpiryEdit = true" :disabled="keyData.is_revoked">Change</button>
+                <button class="expiry-change-btn" @click="showExpiryEdit = true" :disabled="keyData.is_revoked || (!keyData.is_secret && !hasLinkedCard)">Change</button>
               </div>
               <div class="expiry-edit" v-else>
                 <DatePicker v-model="newExpiryDate" :min-date="new Date().toISOString().split('T')[0]" />
-                <PasswordInput v-model="expiryPassword" placeholder="Key password" />
+                <PasswordInput v-model="expiryPassword" :placeholder="hasLinkedCard ? 'Card PIN' : 'Key password'" />
                 <TButton variant="green" thin @click="updateExpiry">Save</TButton>
                 <TButton variant="default" thin @click="showExpiryEdit = false">Cancel</TButton>
               </div>
@@ -309,7 +372,7 @@ const nonPrimarySubkeys = () => {
 
             <div v-if="showAdvanced" class="advanced-section">
               <TButton variant="white" thin @click="syncToKeyserver" :disabled="keyserverUploading">Sync to Keyserver</TButton>
-              <TButton variant="white" thin @click="router.push(`/keys/${fingerprint}/change-password`)" :disabled="keyData.is_revoked">Change Password</TButton>
+              <TButton v-if="keyData.is_secret" variant="white" thin @click="router.push(`/keys/${fingerprint}/change-password`)" :disabled="keyData.is_revoked">Change Password</TButton>
             </div>
           </div>
         </div>
@@ -322,7 +385,7 @@ const nonPrimarySubkeys = () => {
           <TButton
             variant="white"
             thin
-            :disabled="!anySubkeySelected || keyData.is_revoked"
+            :disabled="!anySubkeySelected || keyData.is_revoked || (!keyData.is_secret && !hasLinkedCard)"
             @click="showSubkeyExpiryEdit = true"
           >Change expiry</TButton>
         </div>
@@ -331,7 +394,7 @@ const nonPrimarySubkeys = () => {
           <label class="field-label">New expiry date for selected subkeys:</label>
           <div class="subkey-expiry-row">
             <DatePicker v-model="subkeyExpiryDate" :min-date="new Date().toISOString().split('T')[0]" />
-            <PasswordInput v-model="subkeyExpiryPassword" placeholder="Key password" />
+            <PasswordInput v-model="subkeyExpiryPassword" :placeholder="hasLinkedCard ? 'Card PIN' : 'Key password'" />
             <TButton variant="green" thin @click="updateSubkeysExpiry">Update</TButton>
             <TButton variant="default" thin @click="showSubkeyExpiryEdit = false">Cancel</TButton>
           </div>
@@ -416,6 +479,16 @@ const nonPrimarySubkeys = () => {
 .email-status.pending { background: #fef9c3; color: #a16207; }
 .email-status.revoked { background: var(--color-expired-bg); color: var(--color-red); }
 .email-hint { font-size: 12px; color: var(--color-text-muted); font-style: italic; }
+
+.linked-cards { margin-bottom: 12px; }
+.linked-cards-header { font-size: 14px; margin-bottom: 6px; }
+.linked-card-row { display: flex; align-items: center; gap: 12px; padding: 4px 0; }
+.card-ident { font-size: 13px; font-family: monospace; color: var(--color-text-muted); }
+.link-card-action { margin-bottom: 16px; }
+
+.card-linked-banner { margin-bottom: 20px; padding: 12px 16px; border: 1px solid #86efac; border-radius: 6px; background: #f0fdf4; color: #065F46; font-size: 14px; font-weight: 500; }
+
+.public-banner { margin-bottom: 20px; padding: 12px 16px; border: 1px solid #BFDBFE; border-radius: 6px; background: #EFF6FF; color: #1D4ED8; font-size: 14px; font-weight: 500; }
 
 .revoked-banner { margin-bottom: 20px; padding: 12px 16px; border: 1px solid var(--color-expired-border); border-radius: 6px; background: var(--color-expired-bg); color: var(--color-red); font-size: 14px; font-weight: 500; }
 

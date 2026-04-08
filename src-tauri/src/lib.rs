@@ -1,7 +1,7 @@
 mod commands;
 
 use commands::{
-    list_keys, generate_key, import_key, delete_key,
+    list_keys, generate_key, import_key, import_public_key, delete_key,
     export_public_key, get_available_subkeys,
     get_key_details, add_user_id, revoke_user_id, update_key_expiry,
     update_selected_subkeys_expiry, change_key_password, revoke_key_cmd,
@@ -9,6 +9,8 @@ use commands::{
     is_card_connected, list_cards, get_card_details,
     upload_key_to_card, update_card_name, update_card_url,
     change_user_pin, change_admin_pin,
+    link_card_to_key, unlink_card_from_key, auto_detect_card_links,
+    update_key_expiry_on_card, update_selected_subkeys_expiry_on_card,
     AppState,
 };
 
@@ -30,11 +32,12 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
-        .manage(AppState::new(db_path_str))
+        .manage(AppState::new(db_path_str, &tumpa_dir))
         .invoke_handler(tauri::generate_handler![
             list_keys,
             generate_key,
             import_key,
+            import_public_key,
             delete_key,
             export_public_key,
             get_available_subkeys,
@@ -55,6 +58,11 @@ pub fn run() {
             update_card_url,
             change_user_pin,
             change_admin_pin,
+            link_card_to_key,
+            unlink_card_from_key,
+            auto_detect_card_links,
+            update_key_expiry_on_card,
+            update_selected_subkeys_expiry_on_card,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

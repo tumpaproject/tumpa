@@ -22,6 +22,7 @@ pub struct KeyInfo {
     pub is_secret: bool,
     pub is_revoked: bool,
     pub revocation_time: Option<String>,
+    pub card_idents: Vec<String>,
     pub subkeys: Vec<SubkeyData>,
 }
 
@@ -53,6 +54,17 @@ pub struct SubkeyAvailability {
 }
 
 fn cert_info_to_key_info(info: &wecanencrypt::CertificateInfo) -> KeyInfo {
+    cert_info_to_key_info_inner(info, vec![])
+}
+
+pub fn cert_info_to_key_info_with_cards(info: &wecanencrypt::CertificateInfo, state: &super::AppState) -> KeyInfo {
+    let card_idents = state.card_links.lock()
+        .map(|links| links.get(&info.fingerprint).cloned().unwrap_or_default())
+        .unwrap_or_default();
+    cert_info_to_key_info_inner(info, card_idents)
+}
+
+fn cert_info_to_key_info_inner(info: &wecanencrypt::CertificateInfo, card_idents: Vec<String>) -> KeyInfo {
     let user_ids: Vec<UserIdData> = info.user_ids.iter().map(|uid| {
         // Parse "Name <email>" format
         let uid_str = &uid.value;
@@ -121,6 +133,7 @@ fn cert_info_to_key_info(info: &wecanencrypt::CertificateInfo) -> KeyInfo {
         is_revoked: info.is_revoked,
         revocation_time: info.revocation_time
             .map(|t| t.format("%d %b %Y %H:%M").to_string()),
+        card_idents,
         subkeys,
     }
 }
@@ -129,9 +142,9 @@ fn cert_info_to_key_info(info: &wecanencrypt::CertificateInfo) -> KeyInfo {
 pub fn list_keys(state: State<'_, AppState>) -> Result<Vec<KeyInfo>, String> {
     let store = state.keystore.lock().map_err(|e| e.to_string())?;
     let mut certs = store.list_certs().map_err(|e| e.to_string())?;
-    // Sort by creation time, latest first
     certs.sort_by(|a, b| b.creation_time.cmp(&a.creation_time));
-    Ok(certs.iter().map(cert_info_to_key_info).collect())
+    drop(store);
+    Ok(certs.iter().map(|c| cert_info_to_key_info_with_cards(c, &state)).collect())
 }
 
 #[tauri::command]
@@ -232,6 +245,28 @@ pub fn import_key(
 }
 
 #[tauri::command]
+pub fn import_public_key(
+    state: State<'_, AppState>,
+    file_path: String,
+) -> Result<KeyInfo, String> {
+    let data = std::fs::read(&file_path)
+        .map_err(|e| format!("Failed to read file: {}", e))?;
+
+    // Validate it's a parseable key (public or secret)
+    let _cert_info = parse_cert_bytes(&data, true)
+        .map_err(|e| format!("Failed to parse key file: {}", e))?;
+
+    let store = state.keystore.lock().map_err(|e| e.to_string())?;
+    let fp = store.import_cert(&data)
+        .map_err(|e| format!("Failed to import key: {}", e))?;
+
+    let info = store.get_cert_info(&fp)
+        .map_err(|e| format!("Failed to read key info: {}", e))?;
+
+    Ok(cert_info_to_key_info(&info))
+}
+
+#[tauri::command]
 pub fn delete_key(
     state: State<'_, AppState>,
     fingerprint: String,
@@ -304,7 +339,8 @@ pub fn get_key_details(
     let store = state.keystore.lock().map_err(|e| e.to_string())?;
     let info = store.get_cert_info(&fingerprint)
         .map_err(|e| format!("Key not found: {}", e))?;
-    Ok(cert_info_to_key_info(&info))
+    drop(store);
+    Ok(cert_info_to_key_info_with_cards(&info, &state))
 }
 
 #[tauri::command]

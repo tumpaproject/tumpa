@@ -176,6 +176,17 @@ pub async fn upload_key_to_card(
         ).map_err(|e| format!("Failed to upload authentication subkey: {}", e))?;
     }
 
+    // Auto-link card to key after successful upload
+    if let Ok(details) = card_details(None) {
+        let mut links = state.card_links.lock().map_err(|e| e.to_string())?;
+        let entry = links.entry(fingerprint).or_insert_with(Vec::new);
+        if !entry.contains(&details.ident) {
+            entry.push(details.ident);
+        }
+        drop(links);
+        let _ = state.save_card_links();
+    }
+
     Ok(())
 }
 
@@ -223,4 +234,203 @@ pub fn change_admin_pin(current_pin: String, new_pin: String) -> Result<(), Stri
     card_change_admin_pin(current_pin.as_bytes(), new_pin.as_bytes(), None)
         .map_err(|e| format!("Failed to change admin PIN: {}", e))?;
     Ok(())
+}
+
+/// Link a card ident to a key fingerprint. Supports multiple cards per key.
+#[tauri::command]
+pub fn link_card_to_key(
+    state: State<'_, AppState>,
+    fingerprint: String,
+    card_ident: String,
+) -> Result<(), String> {
+    let mut links = state.card_links.lock().map_err(|e| e.to_string())?;
+    let entry = links.entry(fingerprint).or_insert_with(Vec::new);
+    if !entry.contains(&card_ident) {
+        entry.push(card_ident);
+    }
+    drop(links);
+    state.save_card_links()
+}
+
+/// Remove a card ident from a key's associations.
+#[tauri::command]
+pub fn unlink_card_from_key(
+    state: State<'_, AppState>,
+    fingerprint: String,
+    card_ident: String,
+) -> Result<(), String> {
+    let mut links = state.card_links.lock().map_err(|e| e.to_string())?;
+    if let Some(entry) = links.get_mut(&fingerprint) {
+        entry.retain(|c| c != &card_ident);
+        if entry.is_empty() {
+            links.remove(&fingerprint);
+        }
+    }
+    drop(links);
+    state.save_card_links()
+}
+
+/// Scan connected cards and match their key fingerprints against the keystore.
+/// Returns detected associations that can be linked.
+#[derive(Serialize)]
+pub struct CardKeyMatch {
+    pub key_fingerprint: String,
+    pub card_ident: String,
+    pub card_name: String,
+}
+
+#[tauri::command]
+pub fn auto_detect_card_links(
+    state: State<'_, AppState>,
+) -> Result<Vec<CardKeyMatch>, String> {
+    let cards = card_list_all()
+        .map_err(|e| format!("Failed to list cards: {}", e))?;
+
+    let mut matches = Vec::new();
+
+    for card_summary in &cards {
+        // Get detailed card info to read key slot fingerprints
+        let info = card_details(Some(&card_summary.ident))
+            .map_err(|e| format!("Failed to read card {}: {}", card_summary.ident, e))?;
+
+        let card_fps: Vec<&str> = [
+            info.signature_fingerprint.as_deref(),
+            info.encryption_fingerprint.as_deref(),
+            info.authentication_fingerprint.as_deref(),
+        ].into_iter().flatten().collect();
+
+        if card_fps.is_empty() {
+            continue;
+        }
+
+        // Check against all keys in the keystore
+        let store = state.keystore.lock().map_err(|e| e.to_string())?;
+        let certs = store.list_certs().map_err(|e| e.to_string())?;
+        drop(store);
+
+        for cert in &certs {
+            // Check if any subkey fingerprint matches a card slot
+            let key_matches = cert.subkeys.iter().any(|sk| {
+                card_fps.iter().any(|cfp| {
+                    cfp.to_lowercase() == sk.fingerprint.to_lowercase()
+                })
+            });
+            // Also check primary key fingerprint
+            let primary_matches = card_fps.iter().any(|cfp| {
+                cfp.to_lowercase() == cert.fingerprint.to_lowercase()
+            });
+
+            if key_matches || primary_matches {
+                matches.push(CardKeyMatch {
+                    key_fingerprint: cert.fingerprint.clone(),
+                    card_ident: card_summary.ident.clone(),
+                    card_name: card_summary.manufacturer_name.clone(),
+                });
+            }
+        }
+    }
+
+    Ok(matches)
+}
+
+/// Update primary + all subkey expiry using the smartcard (PIN, not passphrase).
+#[tauri::command]
+pub fn update_key_expiry_on_card(
+    state: State<'_, AppState>,
+    fingerprint: String,
+    new_date: String,
+    pin: String,
+) -> Result<super::keystore::KeyInfo, String> {
+    use chrono::{NaiveDate, Utc};
+    use wecanencrypt::card::{
+        update_primary_expiry_on_card,
+        update_subkeys_expiry_on_card,
+    };
+
+    let expiry_date = NaiveDate::parse_from_str(&new_date, "%Y-%m-%d")
+        .map_err(|e| format!("Invalid date: {}", e))?;
+    let now = Utc::now();
+    let expiry_dt = expiry_date.and_hms_opt(0, 0, 0).unwrap();
+    let expiry_utc = chrono::TimeZone::from_utc_datetime(&Utc, &expiry_dt);
+    let seconds = (expiry_utc - now).num_seconds();
+    if seconds <= 0 {
+        return Err("Expiry date must be in the future.".to_string());
+    }
+    let expiry_secs = seconds as u64;
+
+    let store = state.keystore.lock().map_err(|e| e.to_string())?;
+    let (_cert_data, info) = store.get_cert(&fingerprint)
+        .map_err(|e| format!("Key not found: {}", e))?;
+
+    // Get public key for card operations
+    let armored = store.export_cert_armored(&fingerprint)
+        .map_err(|e| format!("Failed to export key: {}", e))?;
+    drop(store);
+
+    // Update primary expiry via card
+    let updated = update_primary_expiry_on_card(armored.as_bytes(), expiry_secs, pin.as_bytes())
+        .map_err(|e| format!("Failed to update primary expiry on card: {}", e))?;
+
+    // Update subkey expiries
+    let subkey_fps: Vec<String> = info.subkeys.iter()
+        .filter(|sk| sk.key_type != KeyType::Certification)
+        .map(|sk| sk.fingerprint.clone())
+        .collect();
+
+    let final_cert = if !subkey_fps.is_empty() {
+        let fp_refs: Vec<&str> = subkey_fps.iter().map(|s| s.as_str()).collect();
+        update_subkeys_expiry_on_card(&updated, &fp_refs, expiry_secs, pin.as_bytes())
+            .map_err(|e| format!("Failed to update subkey expiry on card: {}", e))?
+    } else {
+        updated
+    };
+
+    // Update in keystore
+    let store = state.keystore.lock().map_err(|e| e.to_string())?;
+    store.update_cert(&fingerprint, &final_cert)
+        .map_err(|e| format!("Failed to update key: {}", e))?;
+
+    let new_info = store.get_cert_info(&fingerprint)
+        .map_err(|e| format!("Failed to read key info: {}", e))?;
+    Ok(super::keystore::cert_info_to_key_info_with_cards(&new_info, &state))
+}
+
+/// Update selected subkey expiry using the smartcard (PIN, not passphrase).
+#[tauri::command]
+pub fn update_selected_subkeys_expiry_on_card(
+    state: State<'_, AppState>,
+    fingerprint: String,
+    subkey_fingerprints: Vec<String>,
+    new_date: String,
+    pin: String,
+) -> Result<super::keystore::KeyInfo, String> {
+    use chrono::{NaiveDate, Utc};
+    use wecanencrypt::card::update_subkeys_expiry_on_card;
+
+    let expiry_date = NaiveDate::parse_from_str(&new_date, "%Y-%m-%d")
+        .map_err(|e| format!("Invalid date: {}", e))?;
+    let now = Utc::now();
+    let expiry_dt = expiry_date.and_hms_opt(0, 0, 0).unwrap();
+    let expiry_utc = chrono::TimeZone::from_utc_datetime(&Utc, &expiry_dt);
+    let seconds = (expiry_utc - now).num_seconds();
+    if seconds <= 0 {
+        return Err("Expiry date must be in the future.".to_string());
+    }
+
+    let store = state.keystore.lock().map_err(|e| e.to_string())?;
+    let armored = store.export_cert_armored(&fingerprint)
+        .map_err(|e| format!("Failed to export key: {}", e))?;
+    drop(store);
+
+    let fp_refs: Vec<&str> = subkey_fingerprints.iter().map(|s| s.as_str()).collect();
+    let updated = update_subkeys_expiry_on_card(armored.as_bytes(), &fp_refs, seconds as u64, pin.as_bytes())
+        .map_err(|e| format!("Failed to update subkey expiry on card: {}", e))?;
+
+    let store = state.keystore.lock().map_err(|e| e.to_string())?;
+    store.update_cert(&fingerprint, &updated)
+        .map_err(|e| format!("Failed to update key: {}", e))?;
+
+    let new_info = store.get_cert_info(&fingerprint)
+        .map_err(|e| format!("Failed to read key info: {}", e))?;
+    Ok(super::keystore::cert_info_to_key_info_with_cards(&new_info, &state))
 }

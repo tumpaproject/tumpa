@@ -13,13 +13,13 @@ const store = useAppStore()
 
 async function importKey() {
   const path = await open({
-    title: 'Import Secret Key',
+    title: 'Import Key',
     multiple: false,
   })
   if (!path) return
 
   try {
-    await invoke('import_key', { filePath: path })
+    await invoke('import_public_key', { filePath: path })
     await store.refreshKeys()
     router.push('/keys')
   } catch (e) {
@@ -38,7 +38,7 @@ async function importKey() {
         Generate New Key
       </TButton>
       <TButton variant="transparent" :icon="importSvg" @click="importKey">
-        Import Secret Key
+        Import Key
       </TButton>
     </div>
   </div>
