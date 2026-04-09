@@ -28,7 +28,7 @@ onMounted(async () => {
       </div>
       <div class="info-row">
         <span class="info-label">Manufacturer:</span>
-        <span class="info-value">{{ store.cardDetails.manufacturer || '[unknown]' }}</span>
+        <span class="info-value">{{ store.cardDetails.manufacturer_name || store.cardDetails.manufacturer || '[unknown]' }}</span>
       </div>
       <div class="info-row">
         <span class="info-label">User PIN retries left:</span>

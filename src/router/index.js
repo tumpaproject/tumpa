@@ -15,6 +15,7 @@ import UserDetailsView from '@/views/UserDetailsView.vue'
 import ChangeKeyPasswordView from '@/views/ChangeKeyPasswordView.vue'
 import UploadToCardView from '@/views/UploadToCardView.vue'
 import UploadingView from '@/views/UploadingView.vue'
+import TouchModeView from '@/views/TouchModeView.vue'
 import ErrorView from '@/views/ErrorView.vue'
 
 const routes = [
@@ -33,6 +34,7 @@ const routes = [
   { path: '/card/edit-url', name: 'edit-url', component: EditUrlView },
   { path: '/card/change-user-pin', name: 'change-user-pin', component: ChangeUserPinView },
   { path: '/card/change-admin-pin', name: 'change-admin-pin', component: ChangeAdminPinView },
+  { path: '/card/touch-mode', name: 'touch-mode', component: TouchModeView },
   { path: '/error', name: 'error', component: ErrorView },
 ]
 

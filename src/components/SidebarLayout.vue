@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/appStore'
 import logoSvg from '@/assets/icons/logo.svg'
@@ -17,6 +17,11 @@ onMounted(async () => {
     router.replace('/keys')
   }
   await store.checkCard()
+  store.startCardPolling()
+})
+
+onUnmounted(() => {
+  store.stopCardPolling()
 })
 
 function goToKeys() {
@@ -99,6 +104,11 @@ async function goToCard(subItem = '') {
             :class="{ active: store.activeSubItem === 'change-admin-pin' }"
             @click="goToCard('change-admin-pin')"
           >Change Admin Pin</button>
+          <button
+            class="nav-item nav-item--sub"
+            :class="{ active: store.activeSubItem === 'touch-mode' }"
+            @click="goToCard('touch-mode')"
+          >Touch Mode</button>
         </template>
       </nav>
 

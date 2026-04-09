@@ -15,6 +15,9 @@ use wecanencrypt::{
         set_cardholder_name as card_set_name,
         set_public_key_url as card_set_url,
         CardKeySlot,
+        get_touch_modes as card_get_touch_modes,
+        set_touch_mode as card_set_touch_mode,
+        KeySlot, TouchMode,
     },
 };
 
@@ -433,4 +436,92 @@ pub fn update_selected_subkeys_expiry_on_card(
     let new_info = store.get_cert_info(&fingerprint)
         .map_err(|e| format!("Failed to read key info: {}", e))?;
     Ok(super::keystore::cert_info_to_key_info_with_cards(&new_info, &state))
+}
+
+/// Touch mode info for a single slot.
+#[derive(Serialize)]
+pub struct SlotTouchInfo {
+    pub slot: String,
+    pub mode: String,
+    pub is_fixed: bool,
+    pub supported: bool,
+}
+
+/// Get touch modes for all key slots on the connected card.
+#[tauri::command]
+pub fn get_card_touch_modes() -> Result<Vec<SlotTouchInfo>, String> {
+    if !card_connected() {
+        return Err("No smartcard connected.".to_string());
+    }
+
+    let (sig, enc, auth) = card_get_touch_modes(None)
+        .map_err(|e| format!("Failed to read touch modes: {}", e))?;
+
+    fn mode_to_string(m: &TouchMode) -> String {
+        match m {
+            TouchMode::Off => "Off".to_string(),
+            TouchMode::On => "On".to_string(),
+            TouchMode::Fixed => "Fixed".to_string(),
+            TouchMode::Cached => "Cached".to_string(),
+            TouchMode::CachedFixed => "CachedFixed".to_string(),
+        }
+    }
+
+    fn is_fixed(m: &TouchMode) -> bool {
+        matches!(m, TouchMode::Fixed | TouchMode::CachedFixed)
+    }
+
+    Ok(vec![
+        SlotTouchInfo {
+            slot: "Signature".to_string(),
+            mode: sig.as_ref().map(mode_to_string).unwrap_or_else(|| "N/A".to_string()),
+            is_fixed: sig.as_ref().map(is_fixed).unwrap_or(false),
+            supported: sig.is_some(),
+        },
+        SlotTouchInfo {
+            slot: "Encryption".to_string(),
+            mode: enc.as_ref().map(mode_to_string).unwrap_or_else(|| "N/A".to_string()),
+            is_fixed: enc.as_ref().map(is_fixed).unwrap_or(false),
+            supported: enc.is_some(),
+        },
+        SlotTouchInfo {
+            slot: "Authentication".to_string(),
+            mode: auth.as_ref().map(mode_to_string).unwrap_or_else(|| "N/A".to_string()),
+            is_fixed: auth.as_ref().map(is_fixed).unwrap_or(false),
+            supported: auth.is_some(),
+        },
+    ])
+}
+
+/// Set the touch mode for a specific key slot. Requires admin PIN.
+#[tauri::command]
+pub fn set_card_touch_mode(
+    slot: String,
+    mode: String,
+    admin_pin: String,
+) -> Result<(), String> {
+    if !card_connected() {
+        return Err("No smartcard connected.".to_string());
+    }
+
+    let key_slot = match slot.as_str() {
+        "Signature" => KeySlot::Signature,
+        "Encryption" => KeySlot::Encryption,
+        "Authentication" => KeySlot::Authentication,
+        _ => return Err(format!("Unknown slot: {}", slot)),
+    };
+
+    let touch_mode = match mode.as_str() {
+        "Off" => TouchMode::Off,
+        "On" => TouchMode::On,
+        "Fixed" => TouchMode::Fixed,
+        "Cached" => TouchMode::Cached,
+        "CachedFixed" => TouchMode::CachedFixed,
+        _ => return Err(format!("Unknown touch mode: {}", mode)),
+    };
+
+    card_set_touch_mode(key_slot, touch_mode, admin_pin.as_bytes(), None)
+        .map_err(|e| format!("Failed to set touch mode: {}", e))?;
+
+    Ok(())
 }

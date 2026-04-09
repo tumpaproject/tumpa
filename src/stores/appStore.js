@@ -1,6 +1,8 @@
 import { defineStore } from 'pinia'
 import { invoke } from '@tauri-apps/api/core'
 
+let cardPollInterval = null
+
 export const useAppStore = defineStore('app', {
   state: () => ({
     keys: [],
@@ -35,6 +37,24 @@ export const useAppStore = defineStore('app', {
         this.cardDetails = await invoke('get_card_details')
       } catch (e) {
         this.errorMessage = String(e)
+      }
+    },
+
+    startCardPolling() {
+      if (cardPollInterval) return
+      cardPollInterval = setInterval(async () => {
+        try {
+          this.cardConnected = await invoke('is_card_connected')
+        } catch {
+          this.cardConnected = false
+        }
+      }, 2000)
+    },
+
+    stopCardPolling() {
+      if (cardPollInterval) {
+        clearInterval(cardPollInterval)
+        cardPollInterval = null
       }
     },
 

@@ -11,6 +11,7 @@ use commands::{
     change_user_pin, change_admin_pin,
     link_card_to_key, unlink_card_from_key, auto_detect_card_links,
     update_key_expiry_on_card, update_selected_subkeys_expiry_on_card,
+    get_card_touch_modes, set_card_touch_mode,
     AppState,
 };
 
@@ -63,6 +64,8 @@ pub fn run() {
             auto_detect_card_links,
             update_key_expiry_on_card,
             update_selected_subkeys_expiry_on_card,
+            get_card_touch_modes,
+            set_card_touch_mode,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
