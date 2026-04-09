@@ -9,6 +9,7 @@ export const useAppStore = defineStore('app', {
     currentFingerprint: '',
     cardConnected: false,
     cardDetails: null,
+    pendingKeyGen: null,
     errorMessage: '',
     activeSection: 'keys',
     activeSubItem: '',
@@ -69,6 +70,14 @@ export const useAppStore = defineStore('app', {
 
     setError(msg) {
       this.errorMessage = msg
+    },
+
+    setPendingKeyGen(params) {
+      this.pendingKeyGen = params
+    },
+
+    clearPendingKeyGen() {
+      this.pendingKeyGen = null
     },
 
     clearError() {

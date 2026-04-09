@@ -1,27 +1,30 @@
 <script setup>
 import { onMounted } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import { useRouter } from 'vue-router'
 import { invoke } from '@tauri-apps/api/core'
 import { useAppStore } from '@/stores/appStore'
 import WaitSpinner from '@/components/WaitSpinner.vue'
 
 const router = useRouter()
-const route = useRoute()
 const store = useAppStore()
 
 onMounted(async () => {
-  try {
-    const { name, emails, password, expiryDate, encryption, signing, authentication, cipher } = route.query
+  const params = store.pendingKeyGen
+  if (!params) {
+    router.replace('/')
+    return
+  }
 
+  try {
     await invoke('generate_key', {
-      name,
-      emails: JSON.parse(emails),
-      password,
-      expiryDate: expiryDate || null,
-      encryption: encryption === 'true',
-      signing: signing === 'true',
-      authentication: authentication === 'true',
-      cipherSuite: cipher || 'curve25519',
+      name: params.name,
+      emails: params.emails,
+      password: params.password,
+      expiryDate: params.expiryDate || null,
+      encryption: params.encryption,
+      signing: params.signing,
+      authentication: params.authentication,
+      cipherSuite: params.cipher || 'curve25519',
     })
 
     await store.refreshKeys()
@@ -29,6 +32,9 @@ onMounted(async () => {
   } catch (e) {
     store.setError(String(e))
     router.replace('/error')
+  } finally {
+    // Clear sensitive params from store immediately
+    store.clearPendingKeyGen()
   }
 })
 </script>

@@ -1,6 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { useAppStore } from '@/stores/appStore'
 import TButton from '@/components/TButton.vue'
 import PasswordInput from '@/components/PasswordInput.vue'
 import DatePicker from '@/components/DatePicker.vue'
@@ -8,6 +9,7 @@ import backIconSvg from '@/assets/icons/backIcon.svg'
 import tickSvg from '@/assets/icons/tick_mark.svg'
 
 const router = useRouter()
+const store = useAppStore()
 
 const name = ref('')
 const emails = ref('')
@@ -42,19 +44,19 @@ function submit() {
     .map(e => e.trim())
     .filter(e => e.length > 0)
 
-  router.push({
-    name: 'generating',
-    query: {
-      name: name.value.trim(),
-      emails: JSON.stringify(emailList),
-      password: passphrase.value,
-      expiryDate: expiryDate.value || '',
-      encryption: encryption.value,
-      signing: signing.value,
-      authentication: authentication.value,
-      cipher: keyAlgo.value,
-    },
+  // Store params in Pinia (not URL) to avoid secrets in browser history
+  store.setPendingKeyGen({
+    name: name.value.trim(),
+    emails: emailList,
+    password: passphrase.value,
+    expiryDate: expiryDate.value || null,
+    encryption: encryption.value,
+    signing: signing.value,
+    authentication: authentication.value,
+    cipher: keyAlgo.value,
   })
+
+  router.push({ name: 'generating' })
 }
 </script>
 

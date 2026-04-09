@@ -35,11 +35,6 @@ onMounted(async () => {
     router.back()
     return
   }
-  // Restore error from a failed upload attempt
-  if (route.query.error) {
-    errorMessage.value = route.query.error
-    password.value = route.query.savedPassword || ''
-  }
   try {
     const avail = await invoke('get_available_subkeys', { fingerprint: fingerprint.value })
     primaryCanSign.value = avail.primary_can_sign
