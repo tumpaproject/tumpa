@@ -13,10 +13,10 @@
     "windows": [
       {
         "title": "Tumpa",
-        "width": 900,
-        "height": 551,
-        "minWidth": 900,
-        "minHeight": 551,
+        "width": 910,
+        "height": 600,
+        "minWidth": 910,
+        "minHeight": 600,
         "resizable": true,
         "center": true
       }
