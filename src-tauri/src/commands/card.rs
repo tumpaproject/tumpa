@@ -1,5 +1,6 @@
 use serde::Serialize;
 use tauri::State;
+use zeroize::Zeroize;
 use wecanencrypt::{
     parse_cert_bytes, update_password, KeyType,
     card::{
@@ -102,7 +103,7 @@ pub fn get_card_details(ident: Option<String>) -> Result<CardDetails, String> {
 pub async fn upload_key_to_card(
     state: State<'_, AppState>,
     fingerprint: String,
-    password: String,
+    mut password: String,
     which_subkeys: u8,
 ) -> Result<(), String> {
     if !card_connected() {
@@ -179,6 +180,8 @@ pub async fn upload_key_to_card(
         ).map_err(|e| format!("Failed to upload authentication subkey: {}", e))?;
     }
 
+    password.zeroize();
+
     // Auto-link card to key after successful upload
     if let Ok(details) = card_details(None) {
         let mut links = state.card_links.lock().map_err(|e| e.to_string())?;
@@ -194,27 +197,29 @@ pub async fn upload_key_to_card(
 }
 
 #[tauri::command]
-pub fn update_card_name(name: String, admin_pin: String) -> Result<(), String> {
+pub fn update_card_name(name: String, mut admin_pin: String) -> Result<(), String> {
     if !card_connected() {
         return Err("No smartcard connected.".to_string());
     }
     card_set_name(&name, admin_pin.as_bytes(), None)
         .map_err(|e| format!("Failed to set name: {}", e))?;
+    admin_pin.zeroize();
     Ok(())
 }
 
 #[tauri::command]
-pub fn update_card_url(url: String, admin_pin: String) -> Result<(), String> {
+pub fn update_card_url(url: String, mut admin_pin: String) -> Result<(), String> {
     if !card_connected() {
         return Err("No smartcard connected.".to_string());
     }
     card_set_url(&url, admin_pin.as_bytes(), None)
         .map_err(|e| format!("Failed to set URL: {}", e))?;
+    admin_pin.zeroize();
     Ok(())
 }
 
 #[tauri::command]
-pub fn change_user_pin(admin_pin: String, new_pin: String) -> Result<(), String> {
+pub fn change_user_pin(mut admin_pin: String, mut new_pin: String) -> Result<(), String> {
     if !card_connected() {
         return Err("No smartcard connected.".to_string());
     }
@@ -223,11 +228,13 @@ pub fn change_user_pin(admin_pin: String, new_pin: String) -> Result<(), String>
     }
     card_change_user_pin(admin_pin.as_bytes(), new_pin.as_bytes(), None)
         .map_err(|e| format!("Failed to change user PIN: {}", e))?;
+    admin_pin.zeroize();
+    new_pin.zeroize();
     Ok(())
 }
 
 #[tauri::command]
-pub fn change_admin_pin(current_pin: String, new_pin: String) -> Result<(), String> {
+pub fn change_admin_pin(mut current_pin: String, mut new_pin: String) -> Result<(), String> {
     if !card_connected() {
         return Err("No smartcard connected.".to_string());
     }
@@ -236,6 +243,8 @@ pub fn change_admin_pin(current_pin: String, new_pin: String) -> Result<(), Stri
     }
     card_change_admin_pin(current_pin.as_bytes(), new_pin.as_bytes(), None)
         .map_err(|e| format!("Failed to change admin PIN: {}", e))?;
+    current_pin.zeroize();
+    new_pin.zeroize();
     Ok(())
 }
 
@@ -342,7 +351,7 @@ pub fn update_key_expiry_on_card(
     state: State<'_, AppState>,
     fingerprint: String,
     new_date: String,
-    pin: String,
+    mut pin: String,
 ) -> Result<super::keystore::KeyInfo, String> {
     use chrono::{NaiveDate, Utc};
     use wecanencrypt::card::{
@@ -387,6 +396,7 @@ pub fn update_key_expiry_on_card(
     } else {
         updated
     };
+    pin.zeroize();
 
     // Update in keystore
     let store = state.keystore.lock().map_err(|e| e.to_string())?;
@@ -405,7 +415,7 @@ pub fn update_selected_subkeys_expiry_on_card(
     fingerprint: String,
     subkey_fingerprints: Vec<String>,
     new_date: String,
-    pin: String,
+    mut pin: String,
 ) -> Result<super::keystore::KeyInfo, String> {
     use chrono::{NaiveDate, Utc};
     use wecanencrypt::card::update_subkeys_expiry_on_card;
@@ -428,6 +438,7 @@ pub fn update_selected_subkeys_expiry_on_card(
     let fp_refs: Vec<&str> = subkey_fingerprints.iter().map(|s| s.as_str()).collect();
     let updated = update_subkeys_expiry_on_card(armored.as_bytes(), &fp_refs, seconds as u64, pin.as_bytes())
         .map_err(|e| format!("Failed to update subkey expiry on card: {}", e))?;
+    pin.zeroize();
 
     let store = state.keystore.lock().map_err(|e| e.to_string())?;
     store.update_cert(&fingerprint, &updated)
@@ -498,7 +509,7 @@ pub fn get_card_touch_modes() -> Result<Vec<SlotTouchInfo>, String> {
 pub fn set_card_touch_mode(
     slot: String,
     mode: String,
-    admin_pin: String,
+    mut admin_pin: String,
 ) -> Result<(), String> {
     if !card_connected() {
         return Err("No smartcard connected.".to_string());
@@ -522,6 +533,7 @@ pub fn set_card_touch_mode(
 
     card_set_touch_mode(key_slot, touch_mode, admin_pin.as_bytes(), None)
         .map_err(|e| format!("Failed to set touch mode: {}", e))?;
+    admin_pin.zeroize();
 
     Ok(())
 }

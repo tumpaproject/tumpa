@@ -147,3 +147,14 @@ Icons must be RGBA PNG format. Regenerate with `just icons`.
 
 ### Smart card not detected
 Ensure `pcscd` service is running: `systemctl start pcscd.socket`
+
+### Wayland display protocol error on Fedora 43
+If you see `Gdk-Message: Error 71 (Protocol error) dispatching to Wayland display`, run with:
+```bash
+WEBKIT_DISABLE_COMPOSITING_MODE=1 tumpa
+```
+Or force X11 backend:
+```bash
+GDK_BACKEND=x11 tumpa
+```
+This is a known WebKitGTK + Wayland compatibility issue.

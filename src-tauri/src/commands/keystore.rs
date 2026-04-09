@@ -8,6 +8,7 @@ use wecanencrypt::{
     CipherSuite, SubkeyFlags, KeyType,
 };
 use chrono::{Utc, NaiveDate, TimeZone};
+use zeroize::Zeroize;
 
 use super::AppState;
 
@@ -190,7 +191,7 @@ pub async fn generate_key(
     // Run key generation on a background thread to avoid blocking the UI
     let generated = tokio::task::spawn_blocking(move || {
         let uid_refs: Vec<&str> = uids.iter().map(|s| s.as_str()).collect();
-        create_key(
+        let result = create_key(
             &password,
             &uid_refs,
             cipher,
@@ -200,7 +201,11 @@ pub async fn generate_key(
             subkey_flags,
             true, // can primary sign
             true, // can primary expire
-        )
+        );
+        // Zeroize password in the spawned thread after use
+        let mut pw = password;
+        pw.zeroize();
+        result
     })
     .await
     .map_err(|e| format!("Key generation task failed: {}", e))?
@@ -349,7 +354,7 @@ pub fn add_user_id(
     fingerprint: String,
     name: String,
     email: String,
-    password: String,
+    mut password: String,
 ) -> Result<KeyInfo, String> {
     let uid_str = format!("{} <{}>", name, email);
 
@@ -359,6 +364,7 @@ pub fn add_user_id(
 
     let updated = add_uid(&cert_data, &uid_str, &password)
         .map_err(|e| format!("Failed to add user ID: {}", e))?;
+    password.zeroize();
 
     store.update_cert(&fingerprint, &updated)
         .map_err(|e| format!("Failed to update key: {}", e))?;
@@ -373,7 +379,7 @@ pub fn revoke_user_id(
     state: State<'_, AppState>,
     fingerprint: String,
     uid: String,
-    password: String,
+    mut password: String,
 ) -> Result<KeyInfo, String> {
     let store = state.keystore.lock().map_err(|e| e.to_string())?;
     let (cert_data, _) = store.get_cert(&fingerprint)
@@ -381,6 +387,7 @@ pub fn revoke_user_id(
 
     let updated = revoke_uid(&cert_data, &uid, &password)
         .map_err(|e| format!("Failed to revoke user ID: {}", e))?;
+    password.zeroize();
 
     store.update_cert(&fingerprint, &updated)
         .map_err(|e| format!("Failed to update key: {}", e))?;
@@ -395,7 +402,7 @@ pub fn update_key_expiry(
     state: State<'_, AppState>,
     fingerprint: String,
     new_date: String,
-    password: String,
+    mut password: String,
 ) -> Result<KeyInfo, String> {
     let expiry = NaiveDate::parse_from_str(&new_date, "%Y-%m-%d")
         .map_err(|e| format!("Invalid date: {}", e))?;
@@ -422,6 +429,7 @@ pub fn update_key_expiry(
     } else {
         updated
     };
+    password.zeroize();
 
     store.update_cert(&fingerprint, &final_cert)
         .map_err(|e| format!("Failed to update key: {}", e))?;
@@ -437,7 +445,7 @@ pub fn update_selected_subkeys_expiry(
     fingerprint: String,
     subkey_fingerprints: Vec<String>,
     new_date: String,
-    password: String,
+    mut password: String,
 ) -> Result<KeyInfo, String> {
     let expiry = NaiveDate::parse_from_str(&new_date, "%Y-%m-%d")
         .map_err(|e| format!("Invalid date: {}", e))?;
@@ -450,6 +458,7 @@ pub fn update_selected_subkeys_expiry(
     let fp_refs: Vec<&str> = subkey_fingerprints.iter().map(|s| s.as_str()).collect();
     let updated = update_subkeys_expiry(&cert_data, &fp_refs, expiry_dt, &password)
         .map_err(|e| format!("Failed to update subkey expiry: {}", e))?;
+    password.zeroize();
 
     store.update_cert(&fingerprint, &updated)
         .map_err(|e| format!("Failed to update key: {}", e))?;
@@ -463,8 +472,8 @@ pub fn update_selected_subkeys_expiry(
 pub fn change_key_password(
     state: State<'_, AppState>,
     fingerprint: String,
-    old_password: String,
-    new_password: String,
+    mut old_password: String,
+    mut new_password: String,
 ) -> Result<(), String> {
     let store = state.keystore.lock().map_err(|e| e.to_string())?;
     let (cert_data, _) = store.get_cert(&fingerprint)
@@ -472,6 +481,8 @@ pub fn change_key_password(
 
     let updated = update_password(&cert_data, &old_password, &new_password)
         .map_err(|e| format!("Failed to change password: {}", e))?;
+    old_password.zeroize();
+    new_password.zeroize();
 
     store.update_cert(&fingerprint, &updated)
         .map_err(|e| format!("Failed to update key: {}", e))?;
@@ -483,7 +494,7 @@ pub fn change_key_password(
 pub fn revoke_key_cmd(
     state: State<'_, AppState>,
     fingerprint: String,
-    password: String,
+    mut password: String,
 ) -> Result<KeyInfo, String> {
     let store = state.keystore.lock().map_err(|e| e.to_string())?;
     let (cert_data, _) = store.get_cert(&fingerprint)
@@ -491,6 +502,7 @@ pub fn revoke_key_cmd(
 
     let revoked = revoke_key(&cert_data, &password)
         .map_err(|e| format!("Failed to revoke key: {}", e))?;
+    password.zeroize();
 
     store.update_cert(&fingerprint, &revoked)
         .map_err(|e| format!("Failed to update key: {}", e))?;
