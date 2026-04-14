@@ -98,6 +98,7 @@ defineEmits(['click'])
   background: transparent;
   color: var(--color-indigo);
   height: auto;
+  min-height: 24px;
   padding: 0;
   font-size: 12px;
 }

@@ -228,6 +228,11 @@ async function goToCard(subItem = '') {
   cursor: pointer;
   padding: 4px;
   line-height: 1;
+  min-width: 24px;
+  min-height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .nav-chevron.open {
