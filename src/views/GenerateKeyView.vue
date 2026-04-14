@@ -63,7 +63,7 @@ function submit() {
 <template>
   <div class="generate-view">
     <div class="form-content">
-      <h2>Generate new key</h2>
+      <h1>Generate new key</h1>
 
       <label class="field-label" for="gen-name">Your Name:</label>
       <input id="gen-name" type="text" v-model="name" />
@@ -122,7 +122,7 @@ function submit() {
   max-width: 700px;
 }
 
-h2 {
+h1 {
   font-size: 24px;
   font-weight: 700;
   margin-bottom: 8px;

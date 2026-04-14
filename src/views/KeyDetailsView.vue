@@ -244,6 +244,8 @@ const nonPrimarySubkeys = () => {
     </div>
 
     <div class="details-content">
+      <h1>Key Details</h1>
+
       <!-- Revoke Key -->
       <div v-if="showRevokeKey && !keyData.is_revoked" class="revoke-key-form">
         <p class="revoke-warning">This will permanently revoke this key. This action cannot be undone.</p>
@@ -308,7 +310,7 @@ const nonPrimarySubkeys = () => {
       <!-- User IDs -->
       <div class="section">
         <div class="section-header">
-          <h3>User ID</h3>
+          <h2>User ID</h2>
           <TButton variant="white" thin @click="router.push(`/keys/${fingerprint}/add-uid`)" :disabled="keyData.is_revoked || !keyData.is_secret">Add new user</TButton>
         </div>
         <table class="uid-table">
@@ -321,12 +323,9 @@ const nonPrimarySubkeys = () => {
               :key="i"
               class="uid-row"
               :class="{ 'uid-revoked': uid.revoked }"
-              tabindex="0"
-              role="link"
               @click="router.push(`/keys/${fingerprint}/uid/${i}`)"
-              @keydown.enter="router.push(`/keys/${fingerprint}/uid/${i}`)"
             >
-              <td>{{ uid.name }}</td>
+              <td><a :href="`/keys/${fingerprint}/uid/${i}`" @click.prevent="router.push(`/keys/${fingerprint}/uid/${i}`)" class="uid-link">{{ uid.name }}</a></td>
               <td>{{ uid.email }}</td>
               <td><span v-if="uid.revoked" class="revoked-badge">Revoked</span><span v-else class="valid-badge">Valid</span></td>
               <td class="uid-arrow">&rsaquo;</td>
@@ -337,7 +336,7 @@ const nonPrimarySubkeys = () => {
 
       <!-- Primary Key -->
       <div class="section">
-        <h3>Primary key</h3>
+        <h2>Primary key</h2>
         <div class="accordion" :class="{ expanded: primaryExpanded }">
           <div class="accordion-header">
             <button class="accordion-header-btn" :aria-expanded="primaryExpanded" aria-controls="panel-primary" @click="primaryExpanded = !primaryExpanded">
@@ -388,7 +387,7 @@ const nonPrimarySubkeys = () => {
       <!-- Subkeys -->
       <div class="section">
         <div class="section-header">
-          <h3>Subkeys</h3>
+          <h2>Subkeys</h2>
           <TButton
             variant="white"
             thin
@@ -502,10 +501,11 @@ const nonPrimarySubkeys = () => {
 
 .revoked-banner { margin-bottom: 20px; padding: 12px 16px; border: 1px solid var(--color-expired-border); border-radius: 6px; background: var(--color-expired-bg); color: var(--color-red); font-size: 14px; font-weight: 500; }
 
+h1 { font-size: 24px; font-weight: 700; margin-bottom: 16px; }
 .section { margin-bottom: 24px; }
 .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-h3 { font-size: 18px; font-weight: 700; margin-bottom: 12px; }
-.section-header h3 { margin-bottom: 0; }
+h2 { font-size: 18px; font-weight: 700; margin-bottom: 12px; }
+.section-header h2 { margin-bottom: 0; }
 
 .uid-table { width: 100%; border-collapse: collapse; }
 .uid-table th { text-align: left; padding: 8px 12px; font-size: 13px; font-weight: 500; color: var(--color-text-muted); background: var(--color-bg-light); border-bottom: 1px solid var(--color-border); }
@@ -513,6 +513,8 @@ h3 { font-size: 18px; font-weight: 700; margin-bottom: 12px; }
 .uid-row { cursor: pointer; }
 .uid-row:hover { background: var(--color-bg-light); }
 .uid-revoked { opacity: 0.6; }
+.uid-link { color: inherit; text-decoration: none; }
+.uid-link:hover { text-decoration: underline; }
 .uid-arrow { text-align: right; font-size: 20px; color: var(--color-text-muted); }
 .revoked-badge { color: var(--color-red); font-size: 12px; font-weight: 500; }
 .valid-badge { color: #16a34a; font-size: 12px; font-weight: 500; }

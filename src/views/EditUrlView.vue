@@ -34,7 +34,7 @@ async function save() {
 <template>
   <div class="form-view">
     <div class="form-content">
-      <h2>Edit Public URL</h2>
+      <h1>Edit Public URL</h1>
       <label class="field-label" for="card-url">Public URL</label>
       <input id="card-url" type="text" v-model="url" />
       <label class="field-label" for="card-url-pin">Current Admin Pin</label>
@@ -50,7 +50,7 @@ async function save() {
 <style scoped>
 .form-view { display: flex; flex-direction: column; height: 100%; }
 .form-content { flex: 1; padding: 24px 32px; display: flex; flex-direction: column; gap: 8px; max-width: 700px; }
-h2 { font-size: 24px; font-weight: 700; margin-bottom: 8px; }
+h1 { font-size: 24px; font-weight: 700; margin-bottom: 8px; }
 .field-label { font-size: 14px; font-weight: 500; margin-top: 8px; }
 .form-footer { display: flex; justify-content: space-between; padding: 16px 32px; border-top: 1px solid var(--color-border); }
 </style>

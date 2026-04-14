@@ -77,7 +77,7 @@ async function applyChange() {
 
 <template>
   <div class="touch-view">
-    <h2>Touch Mode Settings</h2>
+    <h1>Touch Mode Settings</h1>
     <p class="subtitle">Configure whether physical touch is required for each key slot on the smartcard.</p>
 
     <div v-if="loading" class="loading">Loading touch mode settings...</div>
@@ -128,7 +128,7 @@ async function applyChange() {
   padding: 24px 32px;
 }
 
-h2 {
+h1 {
   font-size: 24px;
   font-weight: 700;
   margin-bottom: 8px;

@@ -31,7 +31,7 @@ async function importKey() {
 <template>
   <div class="start-view">
     <img :src="bigKeySvg" alt="" class="big-key" />
-    <h2>No keys added yet</h2>
+    <h1>No keys added yet</h1>
     <p>You can import an existing key or generate a new one</p>
     <div class="start-actions">
       <TButton variant="green" :icon="plusSvg" @click="router.push('/keys/generate')">
@@ -61,7 +61,7 @@ async function importKey() {
   opacity: 0.5;
 }
 
-h2 {
+h1 {
   font-size: 20px;
   font-weight: 700;
 }

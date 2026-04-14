@@ -103,7 +103,7 @@ async function uploadToCard(fingerprint) {
     </div>
 
     <div class="key-list-content">
-      <h2>{{ filterLabel }}</h2>
+      <h1>{{ filterLabel }}</h1>
       <div class="key-list">
         <KeyItem
           v-for="key in filteredKeys"
@@ -158,7 +158,7 @@ async function uploadToCard(fingerprint) {
   flex: 1;
 }
 
-h2 {
+h1 {
   font-size: 24px;
   font-weight: 700;
   margin-bottom: 16px;

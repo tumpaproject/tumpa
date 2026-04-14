@@ -44,10 +44,8 @@ function onBlur() {
       type="button"
       class="eye-btn"
       @click="toggleVisibility"
-      :aria-label="isVisible ? 'Hide password' : 'Show password'"
-      :aria-pressed="isVisible"
     >
-      <img :src="isVisible ? eyeVisible : eyeHidden" alt="" />
+      <img :src="isVisible ? eyeVisible : eyeHidden" alt="Toggle password visibility" />
     </button>
   </div>
 </template>

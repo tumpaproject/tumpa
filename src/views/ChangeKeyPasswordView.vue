@@ -44,7 +44,7 @@ async function save() {
 <template>
   <div class="form-view">
     <div class="form-content">
-      <h2>Change Key Password</h2>
+      <h1>Change Key Password</h1>
 
       <p class="fp-display">{{ fingerprint }}</p>
 
@@ -69,7 +69,7 @@ async function save() {
 <style scoped>
 .form-view { display: flex; flex-direction: column; height: 100%; }
 .form-content { flex: 1; padding: 24px 32px; display: flex; flex-direction: column; gap: 8px; max-width: 700px; }
-h2 { font-size: 24px; font-weight: 700; margin-bottom: 8px; }
+h1 { font-size: 24px; font-weight: 700; margin-bottom: 8px; }
 .fp-display { font-size: 13px; font-weight: 600; color: var(--color-text-muted); font-family: monospace; margin-bottom: 8px; }
 .field-label { font-size: 14px; font-weight: 500; margin-top: 8px; }
 .field-hint { font-size: 12px; color: var(--color-text-muted); margin-top: -4px; }

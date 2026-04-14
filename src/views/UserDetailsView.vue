@@ -73,7 +73,7 @@ async function confirmRevoke() {
     </div>
 
     <div class="details-content">
-      <h2>User details</h2>
+      <h1>User details</h1>
 
       <div v-if="showRevokeForm && !uid.revoked" class="revoke-form">
         <label class="field-label" for="revoke-uid-password">Enter key password to revoke this User ID:</label>
@@ -132,7 +132,7 @@ async function confirmRevoke() {
 
 .details-content { flex: 1; padding: 24px 32px; overflow-y: auto; }
 
-h2 { font-size: 24px; font-weight: 700; margin-bottom: 24px; }
+h1 { font-size: 24px; font-weight: 700; margin-bottom: 24px; }
 
 .revoke-form { margin-bottom: 24px; display: flex; flex-direction: column; gap: 8px; }
 .revoke-form .field-label { font-size: 13px; color: var(--color-text-muted); }

@@ -12,7 +12,7 @@ onMounted(async () => {
 
 <template>
   <div class="card-view">
-    <h2>Smart Card details</h2>
+    <h1>Smart Card details</h1>
     <dl class="card-info" v-if="store.cardDetails">
       <div class="info-row">
         <dt class="info-label">Serial Number</dt>
@@ -64,7 +64,7 @@ onMounted(async () => {
   padding: 24px 32px;
 }
 
-h2 {
+h1 {
   font-size: 24px;
   font-weight: 700;
   margin-bottom: 24px;

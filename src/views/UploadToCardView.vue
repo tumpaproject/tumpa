@@ -106,7 +106,7 @@ async function upload() {
   />
   <div v-else class="form-view">
     <div class="form-content" v-if="!loading">
-      <h2>Upload key to card</h2>
+      <h1>Upload key to card</h1>
 
       <p class="fp-display">{{ fingerprint }}</p>
 
@@ -171,7 +171,7 @@ async function upload() {
 <style scoped>
 .form-view { display: flex; flex-direction: column; height: 100%; }
 .form-content { flex: 1; padding: 24px 32px; display: flex; flex-direction: column; gap: 8px; max-width: 700px; }
-h2 { font-size: 24px; font-weight: 700; margin-bottom: 8px; }
+h1 { font-size: 24px; font-weight: 700; margin-bottom: 8px; }
 .fp-display { font-size: 13px; font-weight: 600; color: var(--color-text-muted); font-family: monospace; margin-bottom: 8px; }
 .field-label { font-size: 14px; font-weight: 500; margin-top: 12px; }
 .password-row { display: flex; align-items: baseline; gap: 12px; margin-top: 12px; }

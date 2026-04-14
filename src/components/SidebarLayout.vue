@@ -129,7 +129,6 @@ async function goToCard(subItem = '') {
     </aside>
 
     <main id="main-content" class="content">
-      <h1 class="visually-hidden">Tumpa - OpenPGP Key Manager</h1>
       <slot />
     </main>
   </div>

@@ -14,7 +14,7 @@ function goBack() {
 
 <template>
   <div class="error-view">
-    <h2>Error</h2>
+    <h1>Error</h1>
     <p role="alert">{{ store.errorMessage || 'An unknown error occurred.' }}</p>
     <TButton variant="default" @click="goBack">Go Back</TButton>
   </div>
@@ -30,7 +30,7 @@ function goBack() {
   gap: 16px;
 }
 
-h2 {
+h1 {
   font-size: 20px;
   font-weight: 700;
   color: var(--color-red);
