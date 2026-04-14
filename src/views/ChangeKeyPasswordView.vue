@@ -48,15 +48,15 @@ async function save() {
 
       <p class="fp-display">{{ fingerprint }}</p>
 
-      <label class="field-label">Current Password:</label>
-      <PasswordInput v-model="oldPassword" />
+      <label class="field-label" for="ckp-old">Current Password:</label>
+      <PasswordInput id="ckp-old" v-model="oldPassword" />
 
-      <label class="field-label">New Password:</label>
-      <PasswordInput v-model="newPassword" />
-      <span class="field-hint">Recommended: 10+ chars in length</span>
+      <label class="field-label" for="ckp-new">New Password:</label>
+      <PasswordInput id="ckp-new" v-model="newPassword" aria-describedby="ckp-new-hint" />
+      <span id="ckp-new-hint" class="field-hint">Recommended: 10+ chars in length</span>
 
-      <label class="field-label">Confirm New Password:</label>
-      <PasswordInput v-model="confirmPassword" />
+      <label class="field-label" for="ckp-confirm">Confirm New Password:</label>
+      <PasswordInput id="ckp-confirm" v-model="confirmPassword" />
     </div>
 
     <div class="form-footer">

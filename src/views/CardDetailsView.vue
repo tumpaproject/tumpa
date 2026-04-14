@@ -13,48 +13,48 @@ onMounted(async () => {
 <template>
   <div class="card-view">
     <h2>Smart Card details</h2>
-    <div class="card-info" v-if="store.cardDetails">
+    <dl class="card-info" v-if="store.cardDetails">
       <div class="info-row">
-        <span class="info-label">Serial Number:</span>
-        <span class="info-value">{{ store.cardDetails.serial_number }}</span>
+        <dt class="info-label">Serial Number</dt>
+        <dd class="info-value">{{ store.cardDetails.serial_number }}</dd>
       </div>
       <div class="info-row">
-        <span class="info-label">Name of cardholder:</span>
-        <span class="info-value">{{ store.cardDetails.cardholder_name || '[not set]' }}</span>
+        <dt class="info-label">Name of cardholder</dt>
+        <dd class="info-value">{{ store.cardDetails.cardholder_name || '[not set]' }}</dd>
       </div>
       <div class="info-row">
-        <span class="info-label">Public URL:</span>
-        <span class="info-value">{{ store.cardDetails.public_key_url || '[not set]' }}</span>
+        <dt class="info-label">Public URL</dt>
+        <dd class="info-value">{{ store.cardDetails.public_key_url || '[not set]' }}</dd>
       </div>
       <div class="info-row">
-        <span class="info-label">Manufacturer:</span>
-        <span class="info-value">{{ store.cardDetails.manufacturer_name || store.cardDetails.manufacturer || '[unknown]' }}</span>
+        <dt class="info-label">Manufacturer</dt>
+        <dd class="info-value">{{ store.cardDetails.manufacturer_name || store.cardDetails.manufacturer || '[unknown]' }}</dd>
       </div>
       <div class="info-row">
-        <span class="info-label">User PIN retries left:</span>
-        <span class="info-value">{{ store.cardDetails.pin_retry_counter }}</span>
+        <dt class="info-label">User PIN retries left</dt>
+        <dd class="info-value">{{ store.cardDetails.pin_retry_counter }}</dd>
       </div>
       <div class="info-row">
-        <span class="info-label">Reset PIN retries left:</span>
-        <span class="info-value">{{ store.cardDetails.reset_code_retry_counter }}</span>
+        <dt class="info-label">Reset PIN retries left</dt>
+        <dd class="info-value">{{ store.cardDetails.reset_code_retry_counter }}</dd>
       </div>
       <div class="info-row">
-        <span class="info-label">Admin PIN retries left:</span>
-        <span class="info-value">{{ store.cardDetails.admin_pin_retry_counter }}</span>
+        <dt class="info-label">Admin PIN retries left</dt>
+        <dd class="info-value">{{ store.cardDetails.admin_pin_retry_counter }}</dd>
       </div>
       <div class="info-row" v-if="store.cardDetails.signature_fingerprint">
-        <span class="info-label">Signing key:</span>
-        <span class="info-value fingerprint">{{ store.cardDetails.signature_fingerprint.toUpperCase() }}</span>
+        <dt class="info-label">Signing key</dt>
+        <dd class="info-value fingerprint">{{ store.cardDetails.signature_fingerprint.toUpperCase() }}</dd>
       </div>
       <div class="info-row" v-if="store.cardDetails.encryption_fingerprint">
-        <span class="info-label">Encryption key:</span>
-        <span class="info-value fingerprint">{{ store.cardDetails.encryption_fingerprint.toUpperCase() }}</span>
+        <dt class="info-label">Encryption key</dt>
+        <dd class="info-value fingerprint">{{ store.cardDetails.encryption_fingerprint.toUpperCase() }}</dd>
       </div>
       <div class="info-row" v-if="store.cardDetails.authentication_fingerprint">
-        <span class="info-label">Authentication key:</span>
-        <span class="info-value fingerprint">{{ store.cardDetails.authentication_fingerprint.toUpperCase() }}</span>
+        <dt class="info-label">Authentication key</dt>
+        <dd class="info-value fingerprint">{{ store.cardDetails.authentication_fingerprint.toUpperCase() }}</dd>
       </div>
-    </div>
+    </dl>
     <p v-else class="loading">Loading card details...</p>
   </div>
 </template>

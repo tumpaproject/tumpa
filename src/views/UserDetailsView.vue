@@ -76,40 +76,40 @@ async function confirmRevoke() {
       <h2>User details</h2>
 
       <div v-if="showRevokeForm && !uid.revoked" class="revoke-form">
-        <label class="field-label">Enter key password to revoke this User ID:</label>
+        <label class="field-label" for="revoke-uid-password">Enter key password to revoke this User ID:</label>
         <div class="revoke-row">
-          <PasswordInput v-model="revokePassword" placeholder="Key password" />
+          <PasswordInput id="revoke-uid-password" v-model="revokePassword" placeholder="Key password" />
           <TButton variant="red" thin @click="confirmRevoke">Revoke</TButton>
           <TButton variant="default" thin @click="showRevokeForm = false">Cancel</TButton>
         </div>
       </div>
 
-      <div class="info-table">
+      <dl class="info-table">
         <div class="info-row">
-          <span class="info-label">Status</span>
-          <span class="info-value" :class="{ revoked: uid.revoked }">{{ uid.revoked ? 'Revoked' : 'Valid' }}</span>
+          <dt class="info-label">Status</dt>
+          <dd class="info-value" :class="{ revoked: uid.revoked }">{{ uid.revoked ? 'Revoked' : 'Valid' }}</dd>
         </div>
         <div class="info-row" v-if="uid.revoked && uid.revocation_time">
-          <span class="info-label">Revoked on</span>
-          <span class="info-value revoked">{{ uid.revocation_time }}</span>
+          <dt class="info-label">Revoked on</dt>
+          <dd class="info-value revoked">{{ uid.revocation_time }}</dd>
         </div>
         <div class="info-row">
-          <span class="info-label">Name</span>
-          <span class="info-value">{{ uid.name }}</span>
+          <dt class="info-label">Name</dt>
+          <dd class="info-value">{{ uid.name }}</dd>
         </div>
         <div class="info-row">
-          <span class="info-label">Email</span>
-          <span class="info-value">{{ uid.email }}</span>
+          <dt class="info-label">Email</dt>
+          <dd class="info-value">{{ uid.email }}</dd>
         </div>
         <div class="info-row">
-          <span class="info-label">Created</span>
-          <span class="info-value">{{ keyData.creation_time }}</span>
+          <dt class="info-label">Created</dt>
+          <dd class="info-value">{{ keyData.creation_time }}</dd>
         </div>
         <div class="info-row">
-          <span class="info-label">Key ID</span>
-          <span class="info-value">{{ keyData.key_id }}</span>
+          <dt class="info-label">Key ID</dt>
+          <dd class="info-value">{{ keyData.key_id }}</dd>
         </div>
-      </div>
+      </dl>
     </div>
 
     <div class="form-footer">

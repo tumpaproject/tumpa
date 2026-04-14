@@ -31,7 +31,7 @@ const isExpired = (() => {
       <span class="key-type-tag">{{ keyData.key_type }}</span>
       <span v-if="!keyData.is_secret" class="public-tag">PUBLIC</span>
       <span v-else class="private-tag">PRIVATE</span>
-      <span v-if="keyData.card_idents && keyData.card_idents.length" class="card-tag" :title="keyData.card_idents.join(', ')">ON CARD</span>
+      <span v-if="keyData.card_idents && keyData.card_idents.length" class="card-tag" :aria-label="'On card: ' + keyData.card_idents.join(', ')">ON CARD</span>
       <span v-if="keyData.is_revoked" class="revoked-tag">REVOKED</span>
     </div>
 

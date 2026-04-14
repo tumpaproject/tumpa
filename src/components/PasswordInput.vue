@@ -3,6 +3,8 @@ import { ref } from 'vue'
 import eyeVisible from '@/assets/icons/eye_visible.svg'
 import eyeHidden from '@/assets/icons/eye_hidden.svg'
 
+defineOptions({ inheritAttrs: false })
+
 const props = defineProps({
   modelValue: { type: String, default: '' },
   placeholder: { type: String, default: '' },
@@ -24,6 +26,7 @@ function onBlur() {
 <template>
   <div class="password-input">
     <input
+      v-bind="$attrs"
       :type="isVisible ? 'text' : 'password'"
       :value="modelValue"
       :placeholder="placeholder"
@@ -37,8 +40,14 @@ function onBlur() {
       autocapitalize="off"
       spellcheck="false"
     />
-    <button type="button" class="eye-btn" @click="toggleVisibility" tabindex="-1">
-      <img :src="isVisible ? eyeVisible : eyeHidden" alt="Toggle visibility" />
+    <button
+      type="button"
+      class="eye-btn"
+      @click="toggleVisibility"
+      :aria-label="isVisible ? 'Hide password' : 'Show password'"
+      :aria-pressed="isVisible"
+    >
+      <img :src="isVisible ? eyeVisible : eyeHidden" alt="" />
     </button>
   </div>
 </template>

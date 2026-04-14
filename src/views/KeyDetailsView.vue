@@ -247,9 +247,9 @@ const nonPrimarySubkeys = () => {
       <!-- Revoke Key -->
       <div v-if="showRevokeKey && !keyData.is_revoked" class="revoke-key-form">
         <p class="revoke-warning">This will permanently revoke this key. This action cannot be undone.</p>
-        <label class="field-label">Enter key password to confirm revocation:</label>
+        <label class="field-label" for="revoke-key-password">Enter key password to confirm revocation:</label>
         <div class="revoke-key-row">
-          <PasswordInput v-model="revokeKeyPassword" placeholder="Key password" />
+          <PasswordInput id="revoke-key-password" v-model="revokeKeyPassword" placeholder="Key password" />
           <TButton variant="red" thin @click="revokeKey">Revoke Key</TButton>
           <TButton variant="default" thin @click="showRevokeKey = false">Cancel</TButton>
         </div>
@@ -321,7 +321,10 @@ const nonPrimarySubkeys = () => {
               :key="i"
               class="uid-row"
               :class="{ 'uid-revoked': uid.revoked }"
+              tabindex="0"
+              role="link"
               @click="router.push(`/keys/${fingerprint}/uid/${i}`)"
+              @keydown.enter="router.push(`/keys/${fingerprint}/uid/${i}`)"
             >
               <td>{{ uid.name }}</td>
               <td>{{ uid.email }}</td>
@@ -337,36 +340,40 @@ const nonPrimarySubkeys = () => {
         <h3>Primary key</h3>
         <div class="accordion" :class="{ expanded: primaryExpanded }">
           <div class="accordion-header">
-            <button class="accordion-header-btn" @click="primaryExpanded = !primaryExpanded">
+            <button class="accordion-header-btn" :aria-expanded="primaryExpanded" aria-controls="panel-primary" @click="primaryExpanded = !primaryExpanded">
               <img :src="keyIconSvg" alt="" class="acc-icon" />
               <span class="acc-fp">{{ keyData.fingerprint }}</span>
-              <img :src="downIconSvg" alt="" class="acc-chevron" :class="{ rotated: primaryExpanded }" />
+              <img :src="downIconSvg" alt="" class="acc-chevron" :class="{ rotated: primaryExpanded }" aria-hidden="true" />
             </button>
           </div>
-          <div class="accordion-body" v-if="primaryExpanded">
-            <div class="detail-row">
-              <span class="detail-label">Status:</span>
-              <span class="detail-value">{{ keyData.expiration_time === 'Never' || new Date(keyData.expiration_time) > new Date() ? 'Valid' : 'Expired' }}</span>
-            </div>
-            <div class="detail-row">
-              <span class="detail-label">Created on:</span>
-              <span class="detail-value">{{ keyData.creation_time }}</span>
-            </div>
-            <div class="detail-row">
-              <span class="detail-label">Expiration date</span>
-              <div class="expiry-widget" v-if="!showExpiryEdit">
-                <span class="expiry-value">{{ keyData.expiration_time }}</span>
-                <button class="expiry-change-btn" @click="showExpiryEdit = true" :disabled="keyData.is_revoked || (!keyData.is_secret && !hasLinkedCard)">Change</button>
+          <div id="panel-primary" class="accordion-body" v-if="primaryExpanded">
+            <dl class="detail-list">
+              <div class="detail-row">
+                <dt class="detail-label">Status:</dt>
+                <dd class="detail-value">{{ keyData.expiration_time === 'Never' || new Date(keyData.expiration_time) > new Date() ? 'Valid' : 'Expired' }}</dd>
               </div>
-              <div class="expiry-edit" v-else>
-                <DatePicker v-model="newExpiryDate" :min-date="new Date().toISOString().split('T')[0]" />
-                <PasswordInput v-model="expiryPassword" :placeholder="hasLinkedCard ? 'Card PIN' : 'Key password'" />
-                <TButton variant="green" thin @click="updateExpiry">Save</TButton>
-                <TButton variant="default" thin @click="showExpiryEdit = false">Cancel</TButton>
+              <div class="detail-row">
+                <dt class="detail-label">Created on:</dt>
+                <dd class="detail-value">{{ keyData.creation_time }}</dd>
               </div>
-            </div>
+              <div class="detail-row">
+                <dt class="detail-label">Expiration date</dt>
+                <dd class="detail-value">
+                  <div class="expiry-widget" v-if="!showExpiryEdit">
+                    <span class="expiry-value">{{ keyData.expiration_time }}</span>
+                    <button class="expiry-change-btn" @click="showExpiryEdit = true" :disabled="keyData.is_revoked || (!keyData.is_secret && !hasLinkedCard)">Change</button>
+                  </div>
+                  <div class="expiry-edit" v-else>
+                    <DatePicker v-model="newExpiryDate" :min-date="new Date().toISOString().split('T')[0]" />
+                    <PasswordInput v-model="expiryPassword" :placeholder="hasLinkedCard ? 'Card PIN' : 'Key password'" />
+                    <TButton variant="green" thin @click="updateExpiry">Save</TButton>
+                    <TButton variant="default" thin @click="showExpiryEdit = false">Cancel</TButton>
+                  </div>
+                </dd>
+              </div>
+            </dl>
 
-            <button class="advanced-toggle" @click="showAdvanced = !showAdvanced">
+            <button class="advanced-toggle" :aria-expanded="showAdvanced" @click="showAdvanced = !showAdvanced">
               Advanced {{ showAdvanced ? '\u2303' : '\u2304' }}
             </button>
 
@@ -412,30 +419,33 @@ const nonPrimarySubkeys = () => {
               @change="selectedSubkeys[sk.fingerprint] = $event.target.checked"
               @click.stop
               class="subkey-checkbox"
+              :aria-label="'Select subkey ' + sk.fingerprint"
             />
-            <button class="accordion-header-btn" @click="toggleSubkey(sk.fingerprint)">
+            <button class="accordion-header-btn" :aria-expanded="!!expandedSubkeys[sk.fingerprint]" :aria-controls="'panel-' + sk.fingerprint" @click="toggleSubkey(sk.fingerprint)">
               <img :src="keyIconSvg" alt="" class="acc-icon" />
               <span class="acc-fp">{{ sk.fingerprint }}</span>
-              <img :src="downIconSvg" alt="" class="acc-chevron" :class="{ rotated: expandedSubkeys[sk.fingerprint] }" />
+              <img :src="downIconSvg" alt="" class="acc-chevron" :class="{ rotated: expandedSubkeys[sk.fingerprint] }" aria-hidden="true" />
             </button>
           </div>
-          <div class="accordion-body" v-if="expandedSubkeys[sk.fingerprint]">
-            <div class="detail-row">
-              <span class="detail-label">Type:</span>
-              <span class="detail-value">{{ sk.key_type }}</span>
-            </div>
-            <div class="detail-row">
-              <span class="detail-label">Created on:</span>
-              <span class="detail-value">{{ sk.creation_time }}</span>
-            </div>
-            <div class="detail-row">
-              <span class="detail-label">Expires on:</span>
-              <span class="detail-value">{{ sk.expiration_time }}</span>
-            </div>
-            <div class="detail-row" v-if="sk.is_revoked">
-              <span class="detail-label">Status:</span>
-              <span class="detail-value" style="color: var(--color-red)">Revoked</span>
-            </div>
+          <div :id="'panel-' + sk.fingerprint" class="accordion-body" v-if="expandedSubkeys[sk.fingerprint]">
+            <dl class="detail-list">
+              <div class="detail-row">
+                <dt class="detail-label">Type:</dt>
+                <dd class="detail-value">{{ sk.key_type }}</dd>
+              </div>
+              <div class="detail-row">
+                <dt class="detail-label">Created on:</dt>
+                <dd class="detail-value">{{ sk.creation_time }}</dd>
+              </div>
+              <div class="detail-row">
+                <dt class="detail-label">Expires on:</dt>
+                <dd class="detail-value">{{ sk.expiration_time }}</dd>
+              </div>
+              <div class="detail-row" v-if="sk.is_revoked">
+                <dt class="detail-label">Status:</dt>
+                <dd class="detail-value revoked-status">Revoked</dd>
+              </div>
+            </dl>
           </div>
         </div>
       </div>
@@ -523,6 +533,7 @@ h3 { font-size: 18px; font-weight: 700; margin-bottom: 12px; }
 .acc-chevron.rotated { transform: rotate(180deg); }
 .accordion-body { padding: 12px 16px; display: flex; flex-direction: column; gap: 10px; }
 
+.detail-list { display: flex; flex-direction: column; gap: 10px; }
 .detail-row { display: flex; align-items: center; gap: 16px; }
 .detail-label { min-width: 120px; font-size: 13px; color: var(--color-text-muted); }
 .detail-value { font-size: 14px; font-weight: 500; }
@@ -539,5 +550,6 @@ h3 { font-size: 18px; font-weight: 700; margin-bottom: 12px; }
 .advanced-toggle:hover { background: #DADDE2; }
 .advanced-section { display: flex; gap: 12px; margin-top: 12px; }
 
+.revoked-status { color: var(--color-red); }
 .form-footer { display: flex; justify-content: space-between; padding: 16px 24px; border-top: 1px solid var(--color-border); }
 </style>

@@ -95,7 +95,7 @@ async function uploadToCard(fingerprint) {
         Import Key
       </TButton>
       <div class="toolbar-spacer"></div>
-      <select v-model="keyFilter" class="key-filter">
+      <select v-model="keyFilter" class="key-filter" aria-label="Filter keys by type">
         <option value="all">All keys</option>
         <option value="private">Private keys</option>
         <option value="public">Public keys</option>

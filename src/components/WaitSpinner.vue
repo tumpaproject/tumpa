@@ -17,6 +17,8 @@ const currentSticker = ref(stickers[Math.floor(Math.random() * stickers.length)]
 let intervalId = null
 
 onMounted(() => {
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  if (prefersReducedMotion) return
   intervalId = setInterval(() => {
     currentSticker.value = stickers[Math.floor(Math.random() * stickers.length)]
   }, 500)
@@ -28,7 +30,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="wait-spinner">
+  <div class="wait-spinner" role="status" aria-live="polite">
     <img :src="currentSticker" alt="" class="sticker" />
     <p class="message">{{ message }}</p>
     <p v-if="hint" class="hint">{{ hint }}</p>

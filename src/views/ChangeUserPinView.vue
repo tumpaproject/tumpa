@@ -35,10 +35,10 @@ async function save() {
   <div class="form-view">
     <div class="form-content">
       <h2>Change User Pin</h2>
-      <label class="field-label">Current Admin Pin</label>
-      <PasswordInput v-model="adminPin" />
-      <label class="field-label">New User Pin</label>
-      <PasswordInput v-model="newPin" />
+      <label class="field-label" for="cup-admin">Current Admin Pin</label>
+      <PasswordInput id="cup-admin" v-model="adminPin" />
+      <label class="field-label" for="cup-new">New User Pin</label>
+      <PasswordInput id="cup-new" v-model="newPin" />
     </div>
     <div class="form-footer">
       <div></div>

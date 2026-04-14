@@ -65,33 +65,33 @@ function submit() {
     <div class="form-content">
       <h2>Generate new key</h2>
 
-      <label class="field-label">Your Name:</label>
-      <input type="text" v-model="name" />
+      <label class="field-label" for="gen-name">Your Name:</label>
+      <input id="gen-name" type="text" v-model="name" />
 
-      <label class="field-label">Email addresses:</label>
-      <textarea v-model="emails" placeholder="One email per line" rows="3"></textarea>
+      <label class="field-label" for="gen-emails">Email addresses:</label>
+      <textarea id="gen-emails" v-model="emails" placeholder="One email per line" rows="3"></textarea>
 
-      <label class="field-label">Key Passphrase:</label>
-      <PasswordInput v-model="passphrase" />
-      <span class="field-hint">Recommended: 10+ chars in length</span>
+      <label class="field-label" for="gen-passphrase">Key Passphrase:</label>
+      <PasswordInput id="gen-passphrase" v-model="passphrase" aria-describedby="gen-passphrase-hint" />
+      <span id="gen-passphrase-hint" class="field-hint">Recommended: 10+ chars in length</span>
 
-      <label class="field-label">Expiration date:</label>
-      <DatePicker v-model="expiryDate" :min-date="new Date().toISOString().split('T')[0]" />
+      <label class="field-label" for="gen-expiry">Expiration date:</label>
+      <DatePicker id="gen-expiry" v-model="expiryDate" :min-date="new Date().toISOString().split('T')[0]" />
 
-      <button class="advanced-toggle" @click="showAdvanced = !showAdvanced">
+      <button class="advanced-toggle" :aria-expanded="showAdvanced" @click="showAdvanced = !showAdvanced">
         Advanced {{ showAdvanced ? '\u2303' : '\u2304' }}
       </button>
 
       <template v-if="showAdvanced">
-        <label class="field-label">Key type:</label>
-        <div class="checkbox-group">
+        <fieldset class="checkbox-group">
+          <legend class="field-label">Key capabilities</legend>
           <label><input type="checkbox" v-model="encryption" /> Encryption subkey</label>
           <label><input type="checkbox" v-model="signing" /> Signing subkey</label>
           <label><input type="checkbox" v-model="authentication" /> Authentication subkey</label>
-        </div>
+        </fieldset>
 
-        <label class="field-label">Key type:</label>
-        <select v-model="keyAlgo">
+        <label class="field-label" for="gen-algo">Key algorithm:</label>
+        <select id="gen-algo" v-model="keyAlgo">
           <option value="curve25519">Curve25519</option>
           <option value="rsa4096">RSA4096</option>
         </select>

@@ -45,15 +45,15 @@ async function create() {
     <div class="form-content">
       <h2>Add new user ID</h2>
 
-      <label class="field-label">Name:</label>
-      <input type="text" v-model="name" />
-      <span class="field-hint">Full name of the key owner</span>
+      <label class="field-label" for="uid-name">Name:</label>
+      <input id="uid-name" type="text" v-model="name" aria-describedby="uid-name-hint" />
+      <span id="uid-name-hint" class="field-hint">Full name of the key owner</span>
 
-      <label class="field-label">Email:</label>
-      <input type="text" v-model="email" />
+      <label class="field-label" for="uid-email">Email:</label>
+      <input id="uid-email" type="text" v-model="email" />
 
-      <label class="field-label">Key Password:</label>
-      <PasswordInput v-model="password" />
+      <label class="field-label" for="uid-password">Key Password:</label>
+      <PasswordInput id="uid-password" v-model="password" />
     </div>
 
     <div class="form-footer">

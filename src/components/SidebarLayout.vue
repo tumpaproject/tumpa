@@ -51,12 +51,13 @@ async function goToCard(subItem = '') {
 
 <template>
   <div class="layout">
-    <aside class="sidebar">
+    <a href="#main-content" class="skip-link">Skip to content</a>
+    <aside class="sidebar" aria-label="Sidebar">
       <div class="sidebar-logo">
         <img :src="logoSvg" alt="Tumpa" />
       </div>
 
-      <nav class="sidebar-nav">
+      <nav class="sidebar-nav" aria-label="Main navigation">
         <button
           class="nav-item nav-item--icon"
           :class="{ active: store.activeSection === 'keys' }"
@@ -68,15 +69,24 @@ async function goToCard(subItem = '') {
 
         <div class="nav-spacer"></div>
 
-        <button
-          class="nav-item nav-item--icon"
-          :class="{ active: store.activeSection === 'card' && !store.activeSubItem }"
-          @click="goToCard()"
-        >
-          <img :src="usbkeySvg" alt="" class="nav-icon" />
-          <span>Smart Card</span>
-          <span class="nav-chevron" :class="{ open: smartCardOpen }" @click.stop="smartCardOpen = !smartCardOpen">&#9662;</span>
-        </button>
+        <div class="nav-item-group">
+          <button
+            class="nav-item nav-item--icon nav-item--grow"
+            :class="{ active: store.activeSection === 'card' && !store.activeSubItem }"
+            @click="goToCard()"
+          >
+            <img :src="usbkeySvg" alt="" class="nav-icon" />
+            <span>Smart Card</span>
+          </button>
+          <button
+            type="button"
+            class="nav-chevron"
+            :class="{ open: smartCardOpen }"
+            :aria-expanded="smartCardOpen"
+            aria-label="Toggle Smart Card submenu"
+            @click="smartCardOpen = !smartCardOpen"
+          >&#9662;</button>
+        </div>
 
         <template v-if="smartCardOpen">
           <button
@@ -118,7 +128,8 @@ async function goToCard(subItem = '') {
       </div>
     </aside>
 
-    <main class="content">
+    <main id="main-content" class="content">
+      <h1 class="visually-hidden">Tumpa - OpenPGP Key Manager</h1>
       <slot />
     </main>
   </div>
@@ -191,6 +202,16 @@ async function goToCard(subItem = '') {
   color: var(--color-sidebar-submenu-text);
 }
 
+.nav-item-group {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.nav-item--grow {
+  flex: 1;
+}
+
 .nav-icon {
   width: 20px;
   height: 20px;
@@ -198,9 +219,15 @@ async function goToCard(subItem = '') {
 }
 
 .nav-chevron {
-  margin-left: auto;
+  margin-left: 0;
   font-size: 12px;
   transition: transform 0.2s;
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  padding: 4px;
+  line-height: 1;
 }
 
 .nav-chevron.open {

@@ -35,10 +35,10 @@ async function save() {
   <div class="form-view">
     <div class="form-content">
       <h2>Edit Public URL</h2>
-      <label class="field-label">Public URL</label>
-      <input type="text" v-model="url" />
-      <label class="field-label">Current Admin Pin</label>
-      <PasswordInput v-model="adminPin" />
+      <label class="field-label" for="card-url">Public URL</label>
+      <input id="card-url" type="text" v-model="url" />
+      <label class="field-label" for="card-url-pin">Current Admin Pin</label>
+      <PasswordInput id="card-url-pin" v-model="adminPin" />
     </div>
     <div class="form-footer">
       <div></div>

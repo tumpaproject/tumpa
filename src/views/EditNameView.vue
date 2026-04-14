@@ -35,10 +35,10 @@ async function save() {
   <div class="form-view">
     <div class="form-content">
       <h2>Rename Smart Card</h2>
-      <label class="field-label">Name</label>
-      <input type="text" v-model="name" />
-      <label class="field-label">Current Admin Pin</label>
-      <PasswordInput v-model="adminPin" />
+      <label class="field-label" for="card-name">Name</label>
+      <input id="card-name" type="text" v-model="name" />
+      <label class="field-label" for="card-name-pin">Current Admin Pin</label>
+      <PasswordInput id="card-name-pin" v-model="adminPin" />
     </div>
     <div class="form-footer">
       <div></div>

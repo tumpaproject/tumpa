@@ -24,8 +24,7 @@ const encryptionAvailable = ref(false)
 const authenticationAvailable = ref(false)
 
 // User selections
-const uploadPrimary = ref(false)
-const uploadSigningSubkey = ref(false)
+const signingSlot = ref('')
 const uploadEncryption = ref(false)
 const uploadAuthentication = ref(false)
 
@@ -46,24 +45,14 @@ onMounted(async () => {
     uploadAuthentication.value = avail.authentication
 
     if (avail.signing_subkey) {
-      uploadSigningSubkey.value = true
-      uploadPrimary.value = false
+      signingSlot.value = 'subkey'
     } else if (avail.primary_can_sign) {
-      uploadPrimary.value = true
-      uploadSigningSubkey.value = false
+      signingSlot.value = 'primary'
     }
   } catch (e) {
     errorMessage.value = String(e)
   }
   loading.value = false
-})
-
-// Primary and signing subkey are mutually exclusive for the signing slot
-watch(uploadPrimary, (val) => {
-  if (val) uploadSigningSubkey.value = false
-})
-watch(uploadSigningSubkey, (val) => {
-  if (val) uploadPrimary.value = false
 })
 
 // Clear error when password changes
@@ -79,9 +68,9 @@ async function upload() {
 
   let whichSubkeys = 0
   if (uploadEncryption.value) whichSubkeys += 1
-  if (uploadPrimary.value) whichSubkeys += 2
+  if (signingSlot.value === 'primary') whichSubkeys += 2
   if (uploadAuthentication.value) whichSubkeys += 4
-  if (uploadSigningSubkey.value) whichSubkeys += 8
+  if (signingSlot.value === 'subkey') whichSubkeys += 8
 
   if (whichSubkeys === 0) {
     errorMessage.value = 'Please select at least one key to upload.'
@@ -122,33 +111,37 @@ async function upload() {
       <p class="fp-display">{{ fingerprint }}</p>
 
       <div class="password-row">
-        <label class="field-label">Key Password:</label>
-        <span v-if="errorMessage" class="error-text">{{ errorMessage }}</span>
+        <label class="field-label" for="upload-password">Key Password:</label>
+        <span v-if="errorMessage" id="upload-error" class="error-text" role="alert">{{ errorMessage }}</span>
       </div>
-      <PasswordInput v-model="password" />
+      <PasswordInput id="upload-password" v-model="password" :aria-describedby="errorMessage ? 'upload-error' : undefined" />
 
-      <label class="field-label">Signing slot:</label>
-      <div class="checkbox-group">
+      <fieldset class="checkbox-group">
+        <legend class="field-label">Signing slot</legend>
         <label :class="{ disabled: !primaryCanSign }">
           <input
-            type="checkbox"
-            v-model="uploadPrimary"
+            type="radio"
+            name="signing-slot"
+            value="primary"
+            v-model="signingSlot"
             :disabled="!primaryCanSign"
           />
           Primary key (signing)
         </label>
         <label :class="{ disabled: !signingSubkeyAvailable }">
           <input
-            type="checkbox"
-            v-model="uploadSigningSubkey"
+            type="radio"
+            name="signing-slot"
+            value="subkey"
+            v-model="signingSlot"
             :disabled="!signingSubkeyAvailable"
           />
           Signing subkey
         </label>
-      </div>
+      </fieldset>
 
-      <label class="field-label">Other subkeys:</label>
-      <div class="checkbox-group">
+      <fieldset class="checkbox-group">
+        <legend class="field-label">Other subkeys</legend>
         <label :class="{ disabled: !encryptionAvailable }">
           <input
             type="checkbox"
@@ -165,7 +158,7 @@ async function upload() {
           />
           Authentication subkey
         </label>
-      </div>
+      </fieldset>
     </div>
 
     <div class="form-footer">

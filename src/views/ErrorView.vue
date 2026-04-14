@@ -15,7 +15,7 @@ function goBack() {
 <template>
   <div class="error-view">
     <h2>Error</h2>
-    <p>{{ store.errorMessage || 'An unknown error occurred.' }}</p>
+    <p role="alert">{{ store.errorMessage || 'An unknown error occurred.' }}</p>
     <TButton variant="default" @click="goBack">Go Back</TButton>
   </div>
 </template>

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, nextTick, onMounted, onUnmounted } from 'vue'
 
 const props = defineProps({
   modelValue: {
@@ -16,7 +16,9 @@ const emit = defineEmits(['update:modelValue'])
 
 const isOpen = ref(false)
 const pickerRef = ref(null)
+const triggerRef = ref(null)
 const currentMonth = ref(new Date())
+const focusedDayIndex = ref(-1)
 
 const selectedDate = computed(() => {
   if (props.modelValue) {
@@ -87,15 +89,28 @@ function formatDate(date) {
 
 function togglePicker() {
   isOpen.value = !isOpen.value
-  if (isOpen.value && selectedDate.value) {
-    currentMonth.value = new Date(selectedDate.value)
-  } else if (isOpen.value) {
-    currentMonth.value = new Date()
+  if (isOpen.value) {
+    if (selectedDate.value) {
+      currentMonth.value = new Date(selectedDate.value)
+    } else {
+      currentMonth.value = new Date()
+    }
+    focusedDayIndex.value = -1
+    nextTick(() => {
+      const selectedIdx = calendarDays.value.findIndex(d => d.isSelected)
+      const targetIdx = selectedIdx !== -1 ? selectedIdx : calendarDays.value.findIndex(d => d.day && !d.disabled)
+      if (targetIdx !== -1) {
+        focusedDayIndex.value = targetIdx
+        focusDayAtIndex(targetIdx)
+      }
+    })
   }
 }
 
 function closePicker() {
   isOpen.value = false
+  focusedDayIndex.value = -1
+  nextTick(() => triggerRef.value?.focus())
 }
 
 function selectDate(dateStr) {
@@ -109,22 +124,130 @@ function prevMonth() {
   const newDate = new Date(currentMonth.value)
   newDate.setMonth(newDate.getMonth() - 1)
   currentMonth.value = newDate
+  focusedDayIndex.value = -1
 }
 
 function nextMonth() {
   const newDate = new Date(currentMonth.value)
   newDate.setMonth(newDate.getMonth() + 1)
   currentMonth.value = newDate
+  focusedDayIndex.value = -1
+}
+
+function getDayTabindex(item, index) {
+  if (!item.day || item.disabled) return -1
+  if (focusedDayIndex.value === index) return 0
+  if (focusedDayIndex.value === -1 && item.isSelected) return 0
+  if (focusedDayIndex.value === -1 && !calendarDays.value.some(d => d.isSelected)) {
+    const firstAvail = calendarDays.value.findIndex(d => d.day && !d.disabled)
+    if (firstAvail === index) return 0
+  }
+  return -1
+}
+
+function focusDayAtIndex(index) {
+  nextTick(() => {
+    const grid = pickerRef.value?.querySelector('.calendar-grid')
+    if (!grid) return
+    const buttons = grid.querySelectorAll('button.day-cell')
+    if (buttons[index]) buttons[index].focus()
+  })
+}
+
+function findNextAvailable(fromIndex, direction) {
+  const days = calendarDays.value
+  let i = fromIndex + direction
+  while (i >= 0 && i < days.length) {
+    if (days[i].day && !days[i].disabled) return i
+    i += direction
+  }
+  return -1
+}
+
+function handleDayKeydown(event, index) {
+  const { key } = event
+  let newIndex = -1
+
+  if (key === 'ArrowLeft') {
+    newIndex = findNextAvailable(index, -1)
+  } else if (key === 'ArrowRight') {
+    newIndex = findNextAvailable(index, 1)
+  } else if (key === 'ArrowUp') {
+    // Move up one week
+    const target = index - 7
+    if (target >= 0) {
+      const item = calendarDays.value[target]
+      if (item && item.day && !item.disabled) newIndex = target
+    }
+  } else if (key === 'ArrowDown') {
+    // Move down one week
+    const target = index + 7
+    if (target < calendarDays.value.length) {
+      const item = calendarDays.value[target]
+      if (item && item.day && !item.disabled) newIndex = target
+    }
+  } else if (key === 'Home') {
+    // First day of this week row
+    const weekStart = index - (index % 7)
+    newIndex = findNextAvailable(weekStart - 1, 1)
+    if (newIndex > index) newIndex = -1 // Don't go forward
+  } else if (key === 'End') {
+    // Last day of this week row
+    const weekEnd = index - (index % 7) + 6
+    const maxEnd = Math.min(weekEnd, calendarDays.value.length - 1)
+    newIndex = findNextAvailable(maxEnd + 1, -1)
+    if (newIndex < index) newIndex = -1 // Don't go backward
+  } else if (key === 'PageUp') {
+    event.preventDefault()
+    prevMonth()
+    nextTick(() => {
+      const targetIdx = calendarDays.value.findIndex(d => d.day && !d.disabled)
+      if (targetIdx !== -1) {
+        focusedDayIndex.value = targetIdx
+        focusDayAtIndex(targetIdx)
+      }
+    })
+    return
+  } else if (key === 'PageDown') {
+    event.preventDefault()
+    nextMonth()
+    nextTick(() => {
+      const targetIdx = calendarDays.value.findIndex(d => d.day && !d.disabled)
+      if (targetIdx !== -1) {
+        focusedDayIndex.value = targetIdx
+        focusDayAtIndex(targetIdx)
+      }
+    })
+    return
+  } else if (key === 'Enter' || key === ' ') {
+    event.preventDefault()
+    const item = calendarDays.value[index]
+    if (item && !item.disabled && item.date) selectDate(item.date)
+    return
+  } else if (key === 'Escape') {
+    event.preventDefault()
+    closePicker()
+    return
+  } else {
+    return
+  }
+
+  if (newIndex !== -1) {
+    event.preventDefault()
+    focusedDayIndex.value = newIndex
+    focusDayAtIndex(newIndex)
+  }
 }
 
 function handleClickOutside(event) {
   if (pickerRef.value && !pickerRef.value.contains(event.target)) {
-    closePicker()
+    isOpen.value = false
+    focusedDayIndex.value = -1
   }
 }
 
 function handleKeydown(event) {
-  if (event.key === 'Escape') {
+  if (event.key === 'Escape' && isOpen.value) {
     closePicker()
   }
 }
@@ -142,38 +265,52 @@ onUnmounted(() => {
 
 <template>
   <div class="date-picker" ref="pickerRef">
-    <div class="date-input" @click="togglePicker">
-      <span :class="{ placeholder: !modelValue }">{{ displayDate }}</span>
-      <svg class="calendar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <button
+      type="button"
+      class="date-input"
+      ref="triggerRef"
+      @click="togglePicker"
+      aria-haspopup="dialog"
+      :aria-expanded="isOpen"
+      :aria-label="modelValue ? 'Change date, currently ' + displayDate : 'Choose a date'"
+    >
+      <span :class="{ placeholder: !modelValue }" aria-hidden="true">{{ displayDate }}</span>
+      <svg class="calendar-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
         <line x1="16" y1="2" x2="16" y2="6"></line>
         <line x1="8" y1="2" x2="8" y2="6"></line>
         <line x1="3" y1="10" x2="21" y2="10"></line>
       </svg>
-    </div>
+    </button>
 
-    <div v-if="isOpen" class="calendar-dropdown">
+    <div v-if="isOpen" class="calendar-dropdown" role="dialog" aria-label="Choose date">
       <div class="calendar-header">
-        <button type="button" class="nav-btn" @click="prevMonth">&lt;</button>
-        <span class="month-label">{{ currentMonthName }}</span>
-        <button type="button" class="nav-btn" @click="nextMonth">&gt;</button>
+        <button type="button" class="nav-btn" @click="prevMonth" aria-label="Previous month">&lt;</button>
+        <span class="month-label" aria-live="polite">{{ currentMonthName }}</span>
+        <button type="button" class="nav-btn" @click="nextMonth" aria-label="Next month">&gt;</button>
       </div>
 
-      <div class="calendar-grid">
-        <div v-for="day in dayNames" :key="day" class="day-header">{{ day }}</div>
-        <div
+      <div class="calendar-grid" role="grid" aria-label="Calendar">
+        <div v-for="day in dayNames" :key="day" class="day-header" role="columnheader">{{ day }}</div>
+        <button
           v-for="(item, index) in calendarDays"
           :key="index"
+          type="button"
           class="day-cell"
           :class="{
             disabled: item.disabled,
             selected: item.isSelected,
             empty: !item.day
           }"
+          :aria-selected="item.isSelected || undefined"
+          :aria-disabled="item.disabled || undefined"
+          :disabled="item.disabled || !item.day"
+          :tabindex="getDayTabindex(item, index)"
           @click="!item.disabled && selectDate(item.date)"
+          @keydown="handleDayKeydown($event, index)"
         >
           {{ item.day }}
-        </div>
+        </button>
       </div>
     </div>
   </div>
@@ -189,6 +326,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  width: 100%;
   padding: 10px 12px;
   border: 1px solid var(--color-border-input);
   border-radius: 6px;
@@ -196,6 +334,8 @@ onUnmounted(() => {
   cursor: pointer;
   font-size: 14px;
   font-family: var(--font-family);
+  color: var(--color-text);
+  text-align: left;
 }
 
 .date-input:hover {
@@ -271,9 +411,13 @@ onUnmounted(() => {
   cursor: pointer;
   border-radius: 4px;
   font-size: 14px;
+  background: none;
+  border: none;
+  font-family: var(--font-family);
+  color: var(--color-text);
 }
 
-.day-cell:hover:not(.disabled):not(.empty) {
+.day-cell:hover:not(:disabled):not(.empty) {
   background: #E8E0F0;
 }
 
@@ -282,12 +426,13 @@ onUnmounted(() => {
   color: white;
 }
 
-.day-cell.disabled {
+.day-cell:disabled {
   color: #ccc;
   cursor: not-allowed;
 }
 
 .day-cell.empty {
   cursor: default;
+  visibility: hidden;
 }
 </style>

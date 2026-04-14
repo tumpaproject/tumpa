@@ -81,7 +81,7 @@ async function applyChange() {
     <p class="subtitle">Configure whether physical touch is required for each key slot on the smartcard.</p>
 
     <div v-if="loading" class="loading">Loading touch mode settings...</div>
-    <div v-else-if="error" class="error-msg">{{ error }}</div>
+    <div v-else-if="error" class="error-msg" role="alert">{{ error }}</div>
 
     <div v-else class="slots">
       <div v-for="slot in slots" :key="slot.slot" class="slot-card">
@@ -100,19 +100,19 @@ async function applyChange() {
 
         <div v-if="changingSlot === slot.slot" class="slot-edit">
           <div class="edit-row">
-            <label class="edit-label">New mode:</label>
-            <select v-model="selectedMode" class="mode-select">
+            <label class="edit-label" for="touch-mode-select">New mode:</label>
+            <select id="touch-mode-select" v-model="selectedMode" class="mode-select">
               <option v-for="m in touchModes" :key="m" :value="m">{{ m }}</option>
             </select>
           </div>
-          <div v-if="selectedMode === 'Fixed' || selectedMode === 'CachedFixed'" class="fixed-alert">
+          <div v-if="selectedMode === 'Fixed' || selectedMode === 'CachedFixed'" class="fixed-alert" role="alert">
             This setting is PERMANENT and cannot be changed even with a factory reset!
           </div>
           <div class="edit-row">
-            <label class="edit-label">Admin PIN:</label>
-            <PasswordInput v-model="adminPin" placeholder="Admin PIN" />
+            <label class="edit-label" for="touch-admin-pin">Admin PIN:</label>
+            <PasswordInput id="touch-admin-pin" v-model="adminPin" placeholder="Admin PIN" />
           </div>
-          <div v-if="changeError" class="change-error">{{ changeError }}</div>
+          <div v-if="changeError" class="change-error" role="alert">{{ changeError }}</div>
           <div class="edit-actions">
             <TButton variant="green" thin @click="applyChange">Apply</TButton>
             <TButton variant="default" thin @click="cancelChange">Cancel</TButton>
