@@ -56,16 +56,19 @@ clean-dist:
 clean-rust:
     rm -rf src-tauri/target
 
-# Generate app icons from SVG source
+# Generate app icons from SVG source (square owl icon)
 icons:
     #!/usr/bin/env bash
-    SVG="src/assets/icons/logo.svg"
+    SVG="src/assets/icons/tumpa-icon.svg"
     ICONS="src-tauri/icons"
+    BG="#54298B"
     mkdir -p "$ICONS"
-    convert -background transparent "$SVG" -resize 32x32 "PNG32:$ICONS/32x32.png"
-    convert -background transparent "$SVG" -resize 128x128 "PNG32:$ICONS/128x128.png"
-    convert -background transparent "$SVG" -resize 256x256 "PNG32:$ICONS/128x128@2x.png"
-    convert -background transparent "$SVG" -resize 512x512 "PNG32:$ICONS/icon.png"
+    convert -background "$BG" "$SVG" -resize 32x32 -gravity center -extent 32x32 "PNG32:$ICONS/32x32.png"
+    convert -background "$BG" "$SVG" -resize 128x128 -gravity center -extent 128x128 "PNG32:$ICONS/128x128.png"
+    convert -background "$BG" "$SVG" -resize 256x256 -gravity center -extent 256x256 "PNG32:$ICONS/128x128@2x.png"
+    convert -background "$BG" "$SVG" -resize 512x512 -gravity center -extent 512x512 "PNG32:$ICONS/icon.png"
+    # Windows ICO (multi-resolution)
+    convert "$ICONS/32x32.png" "$ICONS/128x128.png" "$ICONS/icon.png" "$ICONS/icon.ico"
     echo "Icons generated in $ICONS/"
 
 # Convert semver prerelease to RPM-compatible version
@@ -108,6 +111,72 @@ build-rpm base_image="fedora:43":
         .
 
     CONTAINER_ID=$(docker create "tumpa-rpm-$DISTRO_NAME")
+    docker cp "$CONTAINER_ID:/app/src-tauri/target/release/bundle/rpm/." "$OUTPUT_DIR/"
+    docker rm "$CONTAINER_ID"
+
+    # Rename RPM files to include distro tag
+    distro=$(echo "$BASE_IMAGE" | cut -d: -f1)
+    ver=$(echo "$BASE_IMAGE" | cut -d: -f2)
+    case "$distro" in
+        fedora) distro_tag="fc${ver}" ;;
+        centos|rocky|alma) distro_tag="el${ver}" ;;
+        *) distro_tag="${distro}${ver}" ;;
+    esac
+    for f in "$OUTPUT_DIR"/*.rpm; do
+        [ -f "$f" ] || continue
+        basename=$(basename "$f")
+        newname=$(echo "$basename" | sed "s/\.\(x86_64\|aarch64\)\.rpm/.${distro_tag}.\1.rpm/")
+        if [ "$basename" != "$newname" ]; then
+            mv "$f" "$OUTPUT_DIR/$newname"
+        fi
+    done
+
+    echo ""
+    echo "RPM package(s) for $BASE_IMAGE available in $OUTPUT_DIR/"
+    ls -la "$OUTPUT_DIR/"*.rpm 2>/dev/null || echo "No RPM files found"
+
+# Build RPM using local (unpublished) wecanencrypt
+# Usage: just build-rpm-local [wecanencrypt_path] [base_image]
+# Examples:
+#   just build-rpm-local                                           # defaults
+#   just build-rpm-local /home/kdas/code/learning/wecanencrypt
+#   just build-rpm-local /home/kdas/code/learning/wecanencrypt fedora:42
+build-rpm-local wecanencrypt_path="/home/kdas/code/learning/wecanencrypt" base_image="fedora:43":
+    #!/usr/bin/env bash
+    set -e
+    BASE_IMAGE="{{base_image}}"
+    WCE_PATH="{{wecanencrypt_path}}"
+    DISTRO_NAME=$(echo "$BASE_IMAGE" | tr ':' '-')
+    OUTPUT_DIR="dist/$DISTRO_NAME"
+
+    if [ ! -d "$WCE_PATH/src" ]; then
+        echo "Error: wecanencrypt not found at $WCE_PATH"
+        exit 1
+    fi
+
+    SEMVER=$(grep '"version"' src-tauri/tauri.conf.json | head -1 | sed 's/.*: *"\([^"]*\)".*/\1/')
+    RPM_VERSION="${SEMVER//-/\~}"
+
+    echo "Building RPM for $BASE_IMAGE (with local wecanencrypt from $WCE_PATH)..."
+    echo "Semver: $SEMVER -> RPM version: $RPM_VERSION"
+    mkdir -p "$OUTPUT_DIR"
+
+    # Create a temp build context with both tumpa and wecanencrypt
+    BUILD_CTX=$(mktemp -d)
+    trap "rm -rf $BUILD_CTX" EXIT
+
+    # Copy sources into build context
+    rsync -a --exclude='target' --exclude='node_modules' --exclude='dist' --exclude='.git' . "$BUILD_CTX/tumpa/"
+    rsync -a --exclude='target' --exclude='.git' "$WCE_PATH/" "$BUILD_CTX/wecanencrypt/"
+
+    docker build \
+        --build-arg BASE_IMAGE="$BASE_IMAGE" \
+        --build-arg PKG_VERSION="$RPM_VERSION" \
+        -f Dockerfile.rpm.local \
+        -t "tumpa-rpm-local-$DISTRO_NAME" \
+        "$BUILD_CTX"
+
+    CONTAINER_ID=$(docker create "tumpa-rpm-local-$DISTRO_NAME")
     docker cp "$CONTAINER_ID:/app/src-tauri/target/release/bundle/rpm/." "$OUTPUT_DIR/"
     docker rm "$CONTAINER_ID"
 
