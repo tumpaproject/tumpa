@@ -2,7 +2,7 @@ use serde::Serialize;
 use tauri::State;
 use zeroize::Zeroize;
 use wecanencrypt::{
-    parse_cert_bytes, update_password, KeyType,
+    parse_key_bytes, update_password, KeyType,
     card::{
         is_card_connected as card_connected,
         list_all_cards as card_list_all,
@@ -115,11 +115,11 @@ pub async fn upload_key_to_card(
     }
 
     let store = state.keystore.lock().map_err(|e| e.to_string())?;
-    let (cert_data, _) = store.get_cert(&fingerprint)
+    let (cert_data, _) = store.get_key(&fingerprint)
         .map_err(|e| format!("Key not found: {}", e))?;
     drop(store);
 
-    let cert_info = parse_cert_bytes(&cert_data, true)
+    let cert_info = parse_key_bytes(&cert_data, true)
         .map_err(|e| format!("Failed to parse certificate: {}", e))?;
 
     // Verify password before touching the card — update_password with
@@ -317,7 +317,7 @@ pub fn auto_detect_card_links(
 
         // Check against all keys in the keystore
         let store = state.keystore.lock().map_err(|e| e.to_string())?;
-        let certs = store.list_certs().map_err(|e| e.to_string())?;
+        let certs = store.list_keys().map_err(|e| e.to_string())?;
         drop(store);
 
         for cert in &certs {
@@ -371,11 +371,11 @@ pub fn update_key_expiry_on_card(
     let expiry_secs = seconds as u64;
 
     let store = state.keystore.lock().map_err(|e| e.to_string())?;
-    let (_cert_data, info) = store.get_cert(&fingerprint)
+    let (_cert_data, info) = store.get_key(&fingerprint)
         .map_err(|e| format!("Key not found: {}", e))?;
 
     // Get public key for card operations
-    let armored = store.export_cert_armored(&fingerprint)
+    let armored = store.export_key_armored(&fingerprint)
         .map_err(|e| format!("Failed to export key: {}", e))?;
     drop(store);
 
@@ -400,10 +400,10 @@ pub fn update_key_expiry_on_card(
 
     // Update in keystore
     let store = state.keystore.lock().map_err(|e| e.to_string())?;
-    store.update_cert(&fingerprint, &final_cert)
+    store.update_key(&fingerprint, &final_cert)
         .map_err(|e| format!("Failed to update key: {}", e))?;
 
-    let new_info = store.get_cert_info(&fingerprint)
+    let new_info = store.get_key_info(&fingerprint)
         .map_err(|e| format!("Failed to read key info: {}", e))?;
     Ok(super::keystore::cert_info_to_key_info_with_cards(&new_info, &state))
 }
@@ -431,7 +431,7 @@ pub fn update_selected_subkeys_expiry_on_card(
     }
 
     let store = state.keystore.lock().map_err(|e| e.to_string())?;
-    let armored = store.export_cert_armored(&fingerprint)
+    let armored = store.export_key_armored(&fingerprint)
         .map_err(|e| format!("Failed to export key: {}", e))?;
     drop(store);
 
@@ -441,10 +441,10 @@ pub fn update_selected_subkeys_expiry_on_card(
     pin.zeroize();
 
     let store = state.keystore.lock().map_err(|e| e.to_string())?;
-    store.update_cert(&fingerprint, &updated)
+    store.update_key(&fingerprint, &updated)
         .map_err(|e| format!("Failed to update key: {}", e))?;
 
-    let new_info = store.get_cert_info(&fingerprint)
+    let new_info = store.get_key_info(&fingerprint)
         .map_err(|e| format!("Failed to read key info: {}", e))?;
     Ok(super::keystore::cert_info_to_key_info_with_cards(&new_info, &state))
 }

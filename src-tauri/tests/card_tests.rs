@@ -140,7 +140,7 @@ fn test_upload_bitmask_logic() {
 #[ignore = "requires physical smartcard, DESTRUCTIVE: resets card and uploads keys"]
 fn test_full_upload_workflow() {
     use wecanencrypt::{
-        create_key, parse_cert_bytes,
+        create_key, parse_key_bytes,
         CipherSuite, SubkeyFlags, KeyType,
         card::{
             reset_card,
@@ -166,7 +166,7 @@ fn test_full_upload_workflow() {
         true,
     ).expect("Key generation failed");
 
-    let cert_info = parse_cert_bytes(&key.secret_key, true).unwrap();
+    let cert_info = parse_key_bytes(&key.secret_key, true).unwrap();
     assert!(cert_info.is_secret);
 
     reset_card(None).expect("Failed to reset card");

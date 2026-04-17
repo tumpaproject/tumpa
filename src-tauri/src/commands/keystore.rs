@@ -1,7 +1,7 @@
 use serde::Serialize;
 use tauri::State;
 use wecanencrypt::{
-    create_key, parse_cert_bytes,
+    create_key, parse_key_bytes,
     add_uid, revoke_uid,
     update_primary_expiry, update_subkeys_expiry,
     update_password, revoke_key,
@@ -54,18 +54,18 @@ pub struct SubkeyAvailability {
     pub authentication: bool,
 }
 
-fn cert_info_to_key_info(info: &wecanencrypt::CertificateInfo) -> KeyInfo {
+fn cert_info_to_key_info(info: &wecanencrypt::KeyInfo) -> KeyInfo {
     cert_info_to_key_info_inner(info, vec![])
 }
 
-pub fn cert_info_to_key_info_with_cards(info: &wecanencrypt::CertificateInfo, state: &super::AppState) -> KeyInfo {
+pub fn cert_info_to_key_info_with_cards(info: &wecanencrypt::KeyInfo, state: &super::AppState) -> KeyInfo {
     let card_idents = state.card_links.lock()
         .map(|links| links.get(&info.fingerprint).cloned().unwrap_or_default())
         .unwrap_or_default();
     cert_info_to_key_info_inner(info, card_idents)
 }
 
-fn cert_info_to_key_info_inner(info: &wecanencrypt::CertificateInfo, card_idents: Vec<String>) -> KeyInfo {
+fn cert_info_to_key_info_inner(info: &wecanencrypt::KeyInfo, card_idents: Vec<String>) -> KeyInfo {
     let user_ids: Vec<UserIdData> = info.user_ids.iter().map(|uid| {
         // Parse "Name <email>" format
         let uid_str = &uid.value;
@@ -142,7 +142,7 @@ fn cert_info_to_key_info_inner(info: &wecanencrypt::CertificateInfo, card_idents
 #[tauri::command]
 pub fn list_keys(state: State<'_, AppState>) -> Result<Vec<KeyInfo>, String> {
     let store = state.keystore.lock().map_err(|e| e.to_string())?;
-    let mut certs = store.list_certs().map_err(|e| e.to_string())?;
+    let mut certs = store.list_keys().map_err(|e| e.to_string())?;
     certs.sort_by(|a, b| b.creation_time.cmp(&a.creation_time));
     drop(store);
     Ok(certs.iter().map(|c| cert_info_to_key_info_with_cards(c, &state)).collect())
@@ -213,11 +213,11 @@ pub async fn generate_key(
 
     // Import into keystore (fast, no need for background thread)
     let store = state.keystore.lock().map_err(|e| e.to_string())?;
-    let fp = store.import_cert(&generated.secret_key)
+    let fp = store.import_key(&generated.secret_key)
         .map_err(|e| format!("Failed to store key: {}", e))?;
 
     // Get full info
-    let info = store.get_cert_info(&fp)
+    let info = store.get_key_info(&fp)
         .map_err(|e| format!("Failed to read key info: {}", e))?;
 
     Ok(cert_info_to_key_info(&info))
@@ -232,7 +232,7 @@ pub fn import_key(
     let data = std::fs::read(&file_path)
         .map_err(|e| format!("Failed to read file: {}", e))?;
 
-    let cert_info = parse_cert_bytes(&data, true)
+    let cert_info = parse_key_bytes(&data, true)
         .map_err(|e| format!("Failed to parse key file: {}", e))?;
 
     if !cert_info.is_secret {
@@ -240,10 +240,10 @@ pub fn import_key(
     }
 
     let store = state.keystore.lock().map_err(|e| e.to_string())?;
-    let fp = store.import_cert(&data)
+    let fp = store.import_key(&data)
         .map_err(|e| format!("Failed to import key: {}", e))?;
 
-    let info = store.get_cert_info(&fp)
+    let info = store.get_key_info(&fp)
         .map_err(|e| format!("Failed to read key info: {}", e))?;
 
     Ok(cert_info_to_key_info(&info))
@@ -258,14 +258,14 @@ pub fn import_public_key(
         .map_err(|e| format!("Failed to read file: {}", e))?;
 
     // Validate it's a parseable key (public or secret)
-    let _cert_info = parse_cert_bytes(&data, true)
+    let _cert_info = parse_key_bytes(&data, true)
         .map_err(|e| format!("Failed to parse key file: {}", e))?;
 
     let store = state.keystore.lock().map_err(|e| e.to_string())?;
-    let fp = store.import_cert(&data)
+    let fp = store.import_key(&data)
         .map_err(|e| format!("Failed to import key: {}", e))?;
 
-    let info = store.get_cert_info(&fp)
+    let info = store.get_key_info(&fp)
         .map_err(|e| format!("Failed to read key info: {}", e))?;
 
     Ok(cert_info_to_key_info(&info))
@@ -277,7 +277,7 @@ pub fn delete_key(
     fingerprint: String,
 ) -> Result<(), String> {
     let store = state.keystore.lock().map_err(|e| e.to_string())?;
-    store.delete_cert(&fingerprint)
+    store.delete_key(&fingerprint)
         .map_err(|e| format!("Failed to delete key: {}", e))?;
     Ok(())
 }
@@ -289,7 +289,7 @@ pub fn export_public_key(
     file_path: String,
 ) -> Result<(), String> {
     let store = state.keystore.lock().map_err(|e| e.to_string())?;
-    let armored = store.export_cert_armored(&fingerprint)
+    let armored = store.export_key_armored(&fingerprint)
         .map_err(|e| format!("Failed to export key: {}", e))?;
     drop(store);
 
@@ -304,7 +304,7 @@ pub fn get_available_subkeys(
     fingerprint: String,
 ) -> Result<SubkeyAvailability, String> {
     let store = state.keystore.lock().map_err(|e| e.to_string())?;
-    let info = store.get_cert_info(&fingerprint)
+    let info = store.get_key_info(&fingerprint)
         .map_err(|e| format!("Key not found: {}", e))?;
 
     let now = Utc::now();
@@ -342,7 +342,7 @@ pub fn get_key_details(
     fingerprint: String,
 ) -> Result<KeyInfo, String> {
     let store = state.keystore.lock().map_err(|e| e.to_string())?;
-    let info = store.get_cert_info(&fingerprint)
+    let info = store.get_key_info(&fingerprint)
         .map_err(|e| format!("Key not found: {}", e))?;
     drop(store);
     Ok(cert_info_to_key_info_with_cards(&info, &state))
@@ -359,17 +359,17 @@ pub fn add_user_id(
     let uid_str = format!("{} <{}>", name, email);
 
     let store = state.keystore.lock().map_err(|e| e.to_string())?;
-    let (cert_data, _) = store.get_cert(&fingerprint)
+    let (cert_data, _) = store.get_key(&fingerprint)
         .map_err(|e| format!("Key not found: {}", e))?;
 
     let updated = add_uid(&cert_data, &uid_str, &password)
         .map_err(|e| format!("Failed to add user ID: {}", e))?;
     password.zeroize();
 
-    store.update_cert(&fingerprint, &updated)
+    store.update_key(&fingerprint, &updated)
         .map_err(|e| format!("Failed to update key: {}", e))?;
 
-    let info = store.get_cert_info(&fingerprint)
+    let info = store.get_key_info(&fingerprint)
         .map_err(|e| format!("Failed to read key info: {}", e))?;
     Ok(cert_info_to_key_info(&info))
 }
@@ -382,17 +382,17 @@ pub fn revoke_user_id(
     mut password: String,
 ) -> Result<KeyInfo, String> {
     let store = state.keystore.lock().map_err(|e| e.to_string())?;
-    let (cert_data, _) = store.get_cert(&fingerprint)
+    let (cert_data, _) = store.get_key(&fingerprint)
         .map_err(|e| format!("Key not found: {}", e))?;
 
     let updated = revoke_uid(&cert_data, &uid, &password)
         .map_err(|e| format!("Failed to revoke user ID: {}", e))?;
     password.zeroize();
 
-    store.update_cert(&fingerprint, &updated)
+    store.update_key(&fingerprint, &updated)
         .map_err(|e| format!("Failed to update key: {}", e))?;
 
-    let info = store.get_cert_info(&fingerprint)
+    let info = store.get_key_info(&fingerprint)
         .map_err(|e| format!("Failed to read key info: {}", e))?;
     Ok(cert_info_to_key_info(&info))
 }
@@ -409,7 +409,7 @@ pub fn update_key_expiry(
     let expiry_dt = Utc.from_utc_datetime(&expiry.and_hms_opt(0, 0, 0).unwrap());
 
     let store = state.keystore.lock().map_err(|e| e.to_string())?;
-    let (cert_data, info) = store.get_cert(&fingerprint)
+    let (cert_data, info) = store.get_key(&fingerprint)
         .map_err(|e| format!("Key not found: {}", e))?;
 
     // Update primary key expiry
@@ -431,10 +431,10 @@ pub fn update_key_expiry(
     };
     password.zeroize();
 
-    store.update_cert(&fingerprint, &final_cert)
+    store.update_key(&fingerprint, &final_cert)
         .map_err(|e| format!("Failed to update key: {}", e))?;
 
-    let new_info = store.get_cert_info(&fingerprint)
+    let new_info = store.get_key_info(&fingerprint)
         .map_err(|e| format!("Failed to read key info: {}", e))?;
     Ok(cert_info_to_key_info(&new_info))
 }
@@ -452,7 +452,7 @@ pub fn update_selected_subkeys_expiry(
     let expiry_dt = Utc.from_utc_datetime(&expiry.and_hms_opt(0, 0, 0).unwrap());
 
     let store = state.keystore.lock().map_err(|e| e.to_string())?;
-    let (cert_data, _) = store.get_cert(&fingerprint)
+    let (cert_data, _) = store.get_key(&fingerprint)
         .map_err(|e| format!("Key not found: {}", e))?;
 
     let fp_refs: Vec<&str> = subkey_fingerprints.iter().map(|s| s.as_str()).collect();
@@ -460,10 +460,10 @@ pub fn update_selected_subkeys_expiry(
         .map_err(|e| format!("Failed to update subkey expiry: {}", e))?;
     password.zeroize();
 
-    store.update_cert(&fingerprint, &updated)
+    store.update_key(&fingerprint, &updated)
         .map_err(|e| format!("Failed to update key: {}", e))?;
 
-    let new_info = store.get_cert_info(&fingerprint)
+    let new_info = store.get_key_info(&fingerprint)
         .map_err(|e| format!("Failed to read key info: {}", e))?;
     Ok(cert_info_to_key_info(&new_info))
 }
@@ -476,7 +476,7 @@ pub fn change_key_password(
     mut new_password: String,
 ) -> Result<(), String> {
     let store = state.keystore.lock().map_err(|e| e.to_string())?;
-    let (cert_data, _) = store.get_cert(&fingerprint)
+    let (cert_data, _) = store.get_key(&fingerprint)
         .map_err(|e| format!("Key not found: {}", e))?;
 
     let updated = update_password(&cert_data, &old_password, &new_password)
@@ -484,7 +484,7 @@ pub fn change_key_password(
     old_password.zeroize();
     new_password.zeroize();
 
-    store.update_cert(&fingerprint, &updated)
+    store.update_key(&fingerprint, &updated)
         .map_err(|e| format!("Failed to update key: {}", e))?;
 
     Ok(())
@@ -497,17 +497,17 @@ pub fn revoke_key_cmd(
     mut password: String,
 ) -> Result<KeyInfo, String> {
     let store = state.keystore.lock().map_err(|e| e.to_string())?;
-    let (cert_data, _) = store.get_cert(&fingerprint)
+    let (cert_data, _) = store.get_key(&fingerprint)
         .map_err(|e| format!("Key not found: {}", e))?;
 
     let revoked = revoke_key(&cert_data, &password)
         .map_err(|e| format!("Failed to revoke key: {}", e))?;
     password.zeroize();
 
-    store.update_cert(&fingerprint, &revoked)
+    store.update_key(&fingerprint, &revoked)
         .map_err(|e| format!("Failed to update key: {}", e))?;
 
-    let info = store.get_cert_info(&fingerprint)
+    let info = store.get_key_info(&fingerprint)
         .map_err(|e| format!("Failed to read key info: {}", e))?;
     Ok(cert_info_to_key_info(&info))
 }

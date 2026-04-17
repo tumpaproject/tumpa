@@ -35,7 +35,7 @@ pub async fn upload_to_keyserver(
 ) -> Result<KeyserverUploadResult, String> {
     let armored = {
         let store = state.keystore.lock().map_err(|e| e.to_string())?;
-        store.export_cert_armored(&fingerprint)
+        store.export_key_armored(&fingerprint)
             .map_err(|e| format!("Failed to export key: {}", e))?
     };
 
