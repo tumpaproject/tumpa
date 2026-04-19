@@ -17,8 +17,40 @@ const emit = defineEmits(['update:modelValue'])
 const isOpen = ref(false)
 const pickerRef = ref(null)
 const triggerRef = ref(null)
+const dropdownRef = ref(null)
 const currentMonth = ref(new Date())
 const focusedDayIndex = ref(-1)
+const dropdownStyle = ref({})
+
+const DROPDOWN_WIDTH = 280
+const DROPDOWN_HEIGHT = 320
+const GAP = 4
+
+function positionDropdown() {
+  if (!triggerRef.value) return
+  const rect = triggerRef.value.getBoundingClientRect()
+  const viewportW = window.innerWidth
+  const viewportH = window.innerHeight
+
+  let left = rect.left
+  if (left + DROPDOWN_WIDTH > viewportW - 8) {
+    left = Math.max(8, viewportW - DROPDOWN_WIDTH - 8)
+  }
+
+  const spaceBelow = viewportH - rect.bottom
+  const spaceAbove = rect.top
+  const openUpward = spaceBelow < DROPDOWN_HEIGHT + GAP && spaceAbove > spaceBelow
+  const top = openUpward
+    ? Math.max(8, rect.top - DROPDOWN_HEIGHT - GAP)
+    : rect.bottom + GAP
+
+  dropdownStyle.value = {
+    position: 'fixed',
+    top: `${top}px`,
+    left: `${left}px`,
+    width: `${DROPDOWN_WIDTH}px`
+  }
+}
 
 const selectedDate = computed(() => {
   if (props.modelValue) {
@@ -96,7 +128,9 @@ function togglePicker() {
       currentMonth.value = new Date()
     }
     focusedDayIndex.value = -1
+    positionDropdown()
     nextTick(() => {
+      positionDropdown()
       const selectedIdx = calendarDays.value.findIndex(d => d.isSelected)
       const targetIdx = selectedIdx !== -1 ? selectedIdx : calendarDays.value.findIndex(d => d.day && !d.disabled)
       if (targetIdx !== -1) {
@@ -147,7 +181,7 @@ function getDayTabindex(item, index) {
 
 function focusDayAtIndex(index) {
   nextTick(() => {
-    const grid = pickerRef.value?.querySelector('.calendar-grid')
+    const grid = dropdownRef.value?.querySelector('.calendar-grid')
     if (!grid) return
     const buttons = grid.querySelectorAll('button.day-cell')
     if (buttons[index]) buttons[index].focus()
@@ -240,7 +274,9 @@ function handleDayKeydown(event, index) {
 }
 
 function handleClickOutside(event) {
-  if (pickerRef.value && !pickerRef.value.contains(event.target)) {
+  const insideTrigger = pickerRef.value && pickerRef.value.contains(event.target)
+  const insideDropdown = dropdownRef.value && dropdownRef.value.contains(event.target)
+  if (!insideTrigger && !insideDropdown) {
     isOpen.value = false
     focusedDayIndex.value = -1
   }
@@ -252,14 +288,22 @@ function handleKeydown(event) {
   }
 }
 
+function handleReposition() {
+  if (isOpen.value) positionDropdown()
+}
+
 onMounted(() => {
   document.addEventListener('click', handleClickOutside)
   document.addEventListener('keydown', handleKeydown)
+  window.addEventListener('resize', handleReposition)
+  window.addEventListener('scroll', handleReposition, true)
 })
 
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
   document.removeEventListener('keydown', handleKeydown)
+  window.removeEventListener('resize', handleReposition)
+  window.removeEventListener('scroll', handleReposition, true)
 })
 </script>
 
@@ -283,36 +327,45 @@ onUnmounted(() => {
       </svg>
     </button>
 
-    <div v-if="isOpen" class="calendar-dropdown" role="dialog" aria-label="Choose date">
-      <div class="calendar-header">
-        <button type="button" class="nav-btn" @click="prevMonth" aria-label="Previous month">&lt;</button>
-        <span class="month-label" aria-live="polite">{{ currentMonthName }}</span>
-        <button type="button" class="nav-btn" @click="nextMonth" aria-label="Next month">&gt;</button>
-      </div>
+    <Teleport to="body">
+      <div
+        v-if="isOpen"
+        ref="dropdownRef"
+        class="calendar-dropdown"
+        role="dialog"
+        aria-label="Choose date"
+        :style="dropdownStyle"
+      >
+        <div class="calendar-header">
+          <button type="button" class="nav-btn" @click="prevMonth" aria-label="Previous month">&lt;</button>
+          <span class="month-label" aria-live="polite">{{ currentMonthName }}</span>
+          <button type="button" class="nav-btn" @click="nextMonth" aria-label="Next month">&gt;</button>
+        </div>
 
-      <div class="calendar-grid" role="grid" aria-label="Calendar">
-        <div v-for="day in dayNames" :key="day" class="day-header" role="columnheader">{{ day }}</div>
-        <button
-          v-for="(item, index) in calendarDays"
-          :key="index"
-          type="button"
-          class="day-cell"
-          :class="{
-            disabled: item.disabled,
-            selected: item.isSelected,
-            empty: !item.day
-          }"
-          :aria-selected="item.isSelected || undefined"
-          :aria-disabled="item.disabled || undefined"
-          :disabled="item.disabled || !item.day"
-          :tabindex="getDayTabindex(item, index)"
-          @click="!item.disabled && selectDate(item.date)"
-          @keydown="handleDayKeydown($event, index)"
-        >
-          {{ item.day }}
-        </button>
+        <div class="calendar-grid" role="grid" aria-label="Calendar">
+          <div v-for="day in dayNames" :key="day" class="day-header" role="columnheader">{{ day }}</div>
+          <button
+            v-for="(item, index) in calendarDays"
+            :key="index"
+            type="button"
+            class="day-cell"
+            :class="{
+              disabled: item.disabled,
+              selected: item.isSelected,
+              empty: !item.day
+            }"
+            :aria-selected="item.isSelected || undefined"
+            :aria-disabled="item.disabled || undefined"
+            :disabled="item.disabled || !item.day"
+            :tabindex="getDayTabindex(item, index)"
+            @click="!item.disabled && selectDate(item.date)"
+            @keydown="handleDayKeydown($event, index)"
+          >
+            {{ item.day }}
+          </button>
+        </div>
       </div>
-    </div>
+    </Teleport>
   </div>
 </template>
 
@@ -353,16 +406,13 @@ onUnmounted(() => {
 }
 
 .calendar-dropdown {
-  position: absolute;
-  bottom: 0;
-  left: 55%;
   background: white;
   border: 1px solid var(--color-border);
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   padding: 12px;
   z-index: 1000;
-  width: 280px;
+  font-family: var(--font-family);
 }
 
 .calendar-header {
