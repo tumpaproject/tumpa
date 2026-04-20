@@ -4,12 +4,14 @@ import { useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/appStore'
 import CardConnectMobile from '@/views-mobile/CardConnectMobile.vue'
 import { useCardOp } from '@/utils/useCardOp'
+import { setCardTransport } from '@/utils/cardTransport'
 
 const router = useRouter()
 const store = useAppStore()
 
 const adminPin = ref('')
 const newPin = ref('')
+const transport = ref('nfc')
 
 const { busy, phase, error, run, cancel } = useCardOp()
 
@@ -19,6 +21,7 @@ async function save() {
     return
   }
   try {
+    await setCardTransport(transport.value)
     await run('change_user_pin', {
       adminPin: adminPin.value,
       newPin: newPin.value,
@@ -50,6 +53,18 @@ async function save() {
       autocomplete="new-password"
       inputmode="numeric"
     />
+
+    <fieldset class="group">
+      <legend class="label">Card transport</legend>
+      <label class="opt">
+        <input type="radio" name="transport" value="nfc" v-model="transport" />
+        NFC
+      </label>
+      <label class="opt">
+        <input type="radio" name="transport" value="usb" v-model="transport" />
+        USB-C
+      </label>
+    </fieldset>
 
     <p v-if="error && !busy" class="error" role="alert">{{ error }}</p>
 
@@ -121,4 +136,29 @@ input:focus {
 }
 
 .primary:disabled { opacity: 0.55; cursor: wait; }
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin: 6px 0 0;
+}
+.group legend { padding: 0 4px; }
+.opt {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  min-height: 32px;
+  cursor: pointer;
+}
+.opt input[type="radio"] {
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  flex-shrink: 0;
+}
 </style>

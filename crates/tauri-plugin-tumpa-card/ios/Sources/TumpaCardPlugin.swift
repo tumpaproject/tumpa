@@ -476,7 +476,10 @@ class TumpaCardPlugin: Plugin {
   @objc public func beginSession(_ invoke: Invoke) throws {
     let args = try invoke.parseArgs(BeginSessionArgs.self)
     switch args.transport {
-    case "nfc":
+    case "nfc", "auto":
+      // "auto" on iOS always resolves to NFC — the `com.apple.smartcard`
+      // entitlement needed for `TKSmartCard` over USB-C isn't granted
+      // to generic App Store apps, so there's no USB path to pick.
       beginNFCSession(aid: Data(args.appletAid), invoke: invoke)
     case "usb":
       invoke.reject(

@@ -1,10 +1,10 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
 import { useAppStore } from '@/stores/appStore'
 import CardConnectMobile from '@/views-mobile/CardConnectMobile.vue'
+import { setCardTransport } from '@/utils/cardTransport'
 
 const router = useRouter()
 const store = useAppStore()
@@ -16,6 +16,10 @@ const errorMessage = ref('')
 let unlistenCardConnected = null
 
 onMounted(async () => {
+  // Start every SmartCards-tab visit from a clean slate so the user
+  // can visually confirm whether the next Read actually contacted the
+  // card (vs. showing stale details from a prior session).
+  store.clearCardDetails()
   try {
     unlistenCardConnected = await listen('plugin:tumpa-card:card-connected', () => {
       overlayPhase.value = 'connected'
@@ -29,11 +33,12 @@ onUnmounted(() => {
   if (typeof unlistenCardConnected === 'function') unlistenCardConnected()
 })
 
-async function readCard() {
+async function readCard(transport) {
   errorMessage.value = ''
   overlayPhase.value = 'waiting'
   reading.value = true
   try {
+    await setCardTransport(transport)
     await store.fetchCardDetails()
     if (store.errorMessage) {
       errorMessage.value = store.errorMessage
@@ -54,14 +59,20 @@ function cancel() {
 <template>
   <div class="card-home">
     <div class="toolbar">
-      <button class="primary" :disabled="reading" @click="readCard">
-        {{ store.cardDetails ? 'Read again' : 'Read card' }}
+      <button class="primary" :disabled="reading" @click="readCard('nfc')">
+        Read (NFC)
+      </button>
+      <button class="secondary" :disabled="reading" @click="readCard('usb')">
+        Read (USB)
       </button>
     </div>
 
     <p v-if="!store.cardDetails && !reading" class="hint">
-      Tap <strong>Read card</strong>, then hold your OpenPGP smartcard
-      against the top of the phone.
+      <strong>NFC</strong>: tap your OpenPGP smartcard against the top
+      of the phone after pressing the button.
+      <br>
+      <strong>USB</strong>: plug a YubiKey or other CCID reader into
+      the phone's USB-C port first, then press the button.
     </p>
 
     <p v-if="errorMessage && !reading" class="error" role="alert">
@@ -149,20 +160,30 @@ function cancel() {
   gap: 10px;
 }
 
-.primary {
+.primary, .secondary {
   flex: 1;
   min-height: 48px;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
   border-radius: 12px;
-  border: none;
-  background: var(--color-green);
-  color: #0a2e1c;
   cursor: pointer;
   font-family: var(--font-family);
 }
 
-.primary:disabled { opacity: 0.55; cursor: wait; }
+.primary {
+  border: none;
+  background: var(--color-green);
+  color: #0a2e1c;
+}
+
+.secondary {
+  background: #fff;
+  color: var(--color-text);
+  border: 1px solid var(--color-border-input);
+}
+
+.primary:disabled,
+.secondary:disabled { opacity: 0.55; cursor: wait; }
 
 .hint {
   font-size: 14px;

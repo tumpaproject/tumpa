@@ -12,6 +12,7 @@ import {
   isMissingSecretError,
   isCancelledError,
 } from '@/utils/keyring'
+import { setCardTransport } from '@/utils/cardTransport'
 
 const router = useRouter()
 const route = useRoute()
@@ -21,6 +22,7 @@ const fingerprint = ref('')
 const password = ref('')
 const loading = ref(true)
 const uploading = ref(false)
+const uploaded = ref(false)
 const errorMessage = ref('')
 
 // Availability flags
@@ -33,6 +35,10 @@ const authenticationAvailable = ref(false)
 const signingSlot = ref('')         // 'primary' | 'subkey'
 const uploadEncryption = ref(false)
 const uploadAuthentication = ref(false)
+// Transport the user wants to use for this upload. Default 'nfc' —
+// works on every device with NFC hardware; USB needs a CCID reader
+// plugged in before upload.
+const transport = ref('nfc')
 
 // Keyring — only exposed on mobile. Checkbox persists the passphrase
 // to the platform keyring (iOS Keychain / Android EncryptedSharedPrefs)
@@ -125,6 +131,7 @@ async function upload() {
   uploading.value = true
 
   try {
+    await setCardTransport(transport.value)
     await invoke('upload_key_to_card', {
       fingerprint: fingerprint.value,
       password: password.value,
@@ -143,12 +150,16 @@ async function upload() {
       }
     }
     password.value = ''
-    router.replace('/keys')
+    uploaded.value = true
   } catch (e) {
     errorMessage.value = String(e)
   } finally {
     uploading.value = false
   }
+}
+
+function done() {
+  router.replace('/card')
 }
 
 async function useSavedPassphrase() {
@@ -186,6 +197,15 @@ function cancelUpload() {
 <template>
   <div class="upload-view">
     <div v-if="loading" class="muted">Loading key details…</div>
+    <div v-else-if="uploaded" class="success-view">
+      <div class="success-icon" aria-hidden="true">&#x2713;</div>
+      <h2 class="success-title">Upload complete</h2>
+      <p class="success-sub">
+        Your key is on the card. Open the SmartCards tab to review
+        which keys are in each slot.
+      </p>
+      <button class="primary" @click="done">Done</button>
+    </div>
     <template v-else>
       <p class="fp">{{ fingerprint }}</p>
 
@@ -211,6 +231,18 @@ function cancelUpload() {
         <input type="checkbox" v-model="rememberPassphrase" />
         Remember passphrase (Face ID / Touch ID)
       </label>
+
+      <fieldset class="group">
+        <legend class="label">Card transport</legend>
+        <label class="opt">
+          <input type="radio" name="transport" value="nfc" v-model="transport" />
+          NFC (tap the card)
+        </label>
+        <label class="opt">
+          <input type="radio" name="transport" value="usb" v-model="transport" />
+          USB-C (plug the reader in)
+        </label>
+      </fieldset>
 
       <fieldset class="group">
         <legend class="label">Signing slot</legend>
@@ -287,6 +319,48 @@ function cancelUpload() {
 }
 
 .muted { color: var(--color-text-muted); padding: 24px; text-align: center; }
+
+.success-view {
+  padding: 32px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  text-align: center;
+}
+
+.success-icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: var(--color-green);
+  color: #0a2e1c;
+  font-size: 40px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.success-title {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.success-sub {
+  font-size: 14px;
+  color: var(--color-text-muted);
+  margin: 0;
+  line-height: 1.45;
+  max-width: 320px;
+}
+
+.success-view .primary {
+  margin-top: 8px;
+  width: 100%;
+  max-width: 320px;
+}
 
 .fp {
   font-family: ui-monospace, Menlo, monospace;

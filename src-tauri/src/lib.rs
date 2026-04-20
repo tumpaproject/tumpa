@@ -37,6 +37,9 @@ use commands::{
     get_card_touch_modes, set_card_touch_mode,
 };
 
+#[cfg(any(target_os = "android", target_os = "ios"))]
+use card_bridge::{set_card_transport, CardTransportState};
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let builder = tauri::Builder::default()
@@ -60,7 +63,10 @@ pub fn run() {
         // `wecanencrypt::card::get_card_backend()` routes through the
         // Tauri plugin + libtumpa's MobileCardBackend instead of PC/SC.
         #[cfg(any(target_os = "android", target_os = "ios"))]
-        card_bridge::register_backend_provider(app.handle().clone())?;
+        {
+            app.manage(CardTransportState::default());
+            card_bridge::register_backend_provider(app.handle().clone())?;
+        }
 
         Ok(())
     });
@@ -129,6 +135,7 @@ pub fn run() {
         update_selected_subkeys_expiry_on_card,
         get_card_touch_modes,
         set_card_touch_mode,
+        set_card_transport,
     ]);
 
     builder

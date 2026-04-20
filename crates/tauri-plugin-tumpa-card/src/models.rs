@@ -17,6 +17,10 @@ pub enum Transport {
     /// `TKSmartCard` via USB-C accessory. The OS permission dialog
     /// appears the first time an eligible reader is plugged in.
     Usb,
+    /// Let the native plugin pick: USB if a CCID reader is already
+    /// plugged in, NFC otherwise. iOS treats this as `Nfc` (no
+    /// third-party USB smartcard path available).
+    Auto,
 }
 
 /// Argument to `begin_session`.

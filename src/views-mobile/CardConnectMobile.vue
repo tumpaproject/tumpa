@@ -51,7 +51,10 @@ defineEmits(['cancel'])
         </template>
       </p>
       <p v-if="error" class="error" role="alert">{{ error }}</p>
-      <button v-if="phase === 'waiting'" class="cancel" @click="$emit('cancel')">Cancel</button>
+      <!-- Always rendered. Cancel is the only exit when the native
+           session is waiting and the user wants to back out (no tap
+           coming, wrong card, plugged in the wrong reader, …). -->
+      <button class="cancel" @click="$emit('cancel')">Cancel</button>
     </div>
   </div>
 </template>

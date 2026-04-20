@@ -44,6 +44,10 @@ export const useAppStore = defineStore('app', {
       }
     },
 
+    clearCardDetails() {
+      this.cardDetails = null
+    },
+
     startCardPolling() {
       if (cardPollInterval) return
       cardPollInterval = setInterval(async () => {

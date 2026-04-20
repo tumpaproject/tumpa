@@ -26,10 +26,39 @@ use libtumpa::card::{
     mobile::{CardBridge, MobileCardBackend},
     WecanencryptCardError, WecanencryptError,
 };
-use tauri::{AppHandle, Runtime};
+use tauri::{AppHandle, Manager, Runtime};
 use tauri_plugin_tumpa_card::{
     BeginSessionRequest, EndSessionRequest, TransmitApduRequest, Transport, TumpaCardExt,
 };
+
+/// Shared UI-driven transport preference. Exposed to JS via
+/// `set_card_transport` / `get_card_transport` so the user can pick
+/// NFC or USB explicitly when both are plausible (e.g. Android with a
+/// YubiKey both taped and plugged in), or fall back to `Auto` and let
+/// the native plugin decide.
+pub struct CardTransportState(pub Mutex<Transport>);
+
+impl Default for CardTransportState {
+    fn default() -> Self {
+        Self(Mutex::new(Transport::Auto))
+    }
+}
+
+#[tauri::command]
+pub fn set_card_transport<R: Runtime>(
+    app: AppHandle<R>,
+    transport: String,
+) -> Result<(), String> {
+    let t = match transport.as_str() {
+        "nfc" => Transport::Nfc,
+        "usb" => Transport::Usb,
+        "auto" => Transport::Auto,
+        other => return Err(format!("unknown transport: {other}")),
+    };
+    let state = app.state::<CardTransportState>();
+    *state.0.lock().unwrap() = t;
+    Ok(())
+}
 
 /// Short-form OpenPGP application AID (RID `D276000124` + PIX `01`).
 ///
@@ -119,10 +148,18 @@ pub(crate) fn register_backend_provider<R: Runtime + 'static>(
     app: AppHandle<R>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     external::set_backend_provider(move |_ident: Option<&str>| {
-        // Phase 1 hardcodes NFC; a follow-up will thread a transport
-        // choice from the UI into the provider closure (probably via
-        // a `Mutex<Transport>` in managed state).
-        let bridge = TauriCardBridge::new(app.clone(), Transport::Nfc);
+        // Read the UI-driven transport choice each time we mint a
+        // backend — the user may switch between NFC and USB between
+        // card operations without restarting the app. Default is
+        // `Auto`, which lets the native plugin pick (USB if plugged
+        // in, NFC otherwise).
+        let transport = app
+            .state::<CardTransportState>()
+            .0
+            .lock()
+            .map(|t| *t)
+            .unwrap_or(Transport::Auto);
+        let bridge = TauriCardBridge::new(app.clone(), transport);
         let backend = MobileCardBackend::new(bridge).map_err(|e| {
             WecanencryptError::Card(WecanencryptCardError::CommunicationError(e.to_string()))
         })?;
