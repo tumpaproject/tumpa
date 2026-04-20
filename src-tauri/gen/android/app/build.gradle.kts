@@ -19,7 +19,11 @@ android {
     defaultConfig {
         manifestPlaceholders["usesCleartextTraffic"] = "false"
         applicationId = "in.kushaldas.tumpa"
-        minSdk = 24
+        // minSdk bumped from 24 to 26 (Android 8.0) for
+        // tauri-plugin-tumpa-card. This matches the level at which
+        // modern NFC smartcard support, USB-host APIs, and EncryptedSharedPreferences
+        // are widely available.
+        minSdk = 26
         targetSdk = 36
         versionCode = tauriProperties.getProperty("tauri.android.versionCode", "1").toInt()
         versionName = tauriProperties.getProperty("tauri.android.versionName", "1.0")

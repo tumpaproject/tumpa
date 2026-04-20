@@ -1,11 +1,16 @@
 pub mod keystore;
-#[cfg(not(any(target_os = "android", target_os = "ios")))]
+
+// The card commands module is available on desktop and mobile. On
+// mobile the PCSC-only bits (enumeration + card-link auto-detect) are
+// gated off inside the module; what remains routes through
+// `wecanencrypt::card::external` → `MobileCardBackend` → the
+// tauri-plugin-tumpa-card native bridge.
 pub mod card;
+
 #[cfg(not(any(target_os = "android", target_os = "ios")))]
 pub mod keyserver;
 
 pub use keystore::*;
-#[cfg(not(any(target_os = "android", target_os = "ios")))]
 pub use card::*;
 #[cfg(not(any(target_os = "android", target_os = "ios")))]
 pub use keyserver::*;

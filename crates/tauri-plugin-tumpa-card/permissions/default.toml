@@ -1,0 +1,19 @@
+"$schema" = "schemas/schema.json"
+
+[default]
+description = """
+Default permission set for the tumpa-card plugin.
+
+Allows beginning a card session (NFC or USB), transmitting APDUs,
+ending the session, and reading / writing biometric-gated secrets
+(card PINs and on-disk key passphrases) in the platform keyring.
+"""
+permissions = [
+    "allow-begin-session",
+    "allow-transmit-apdu",
+    "allow-end-session",
+    "allow-save-secret",
+    "allow-read-secret",
+    "allow-clear-secret",
+    "allow-clear-all-secrets",
+]

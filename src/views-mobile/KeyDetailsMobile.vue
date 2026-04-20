@@ -97,6 +97,13 @@ function displayUid(uid) {
       </section>
 
       <div class="actions">
+        <button
+          v-if="key.is_secret"
+          class="primary"
+          @click="router.push({ name: 'upload-to-card', query: { fingerprint } })"
+        >
+          Upload to card
+        </button>
         <button class="secondary" @click="exportKey">Export public key</button>
         <button class="danger" @click="deleteKey">Delete key</button>
       </div>
@@ -126,6 +133,7 @@ function displayUid(uid) {
 
 .actions { display: flex; flex-direction: column; gap: 10px; }
 .actions button { min-height: 48px; font-size: 15px; font-weight: 600; border-radius: 10px; cursor: pointer; font-family: var(--font-family); border: 1px solid transparent; }
+.primary { background: var(--color-green); color: #0a2e1c; }
 .secondary { background: #fff; color: var(--color-text); border-color: var(--color-border-input); }
 .danger { background: var(--color-red); color: #fff; }
 

@@ -6001,6 +6001,96 @@
           "type": "string",
           "const": "opener:deny-reveal-item-in-dir",
           "markdownDescription": "Denies the reveal_item_in_dir command without any pre-configured scope."
+        },
+        {
+          "description": "Default permission set for the tumpa-card plugin.\n\nAllows beginning a card session (NFC or USB), transmitting APDUs,\nending the session, and reading / writing biometric-gated secrets\n(card PINs and on-disk key passphrases) in the platform keyring.\n\n#### This default permission set includes:\n\n- `allow-begin-session`\n- `allow-transmit-apdu`\n- `allow-end-session`\n- `allow-save-secret`\n- `allow-read-secret`\n- `allow-clear-secret`\n- `allow-clear-all-secrets`",
+          "type": "string",
+          "const": "tumpa-card:default",
+          "markdownDescription": "Default permission set for the tumpa-card plugin.\n\nAllows beginning a card session (NFC or USB), transmitting APDUs,\nending the session, and reading / writing biometric-gated secrets\n(card PINs and on-disk key passphrases) in the platform keyring.\n\n#### This default permission set includes:\n\n- `allow-begin-session`\n- `allow-transmit-apdu`\n- `allow-end-session`\n- `allow-save-secret`\n- `allow-read-secret`\n- `allow-clear-secret`\n- `allow-clear-all-secrets`"
+        },
+        {
+          "description": "Enables the begin_session command without any pre-configured scope.",
+          "type": "string",
+          "const": "tumpa-card:allow-begin-session",
+          "markdownDescription": "Enables the begin_session command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the clear_all_secrets command without any pre-configured scope.",
+          "type": "string",
+          "const": "tumpa-card:allow-clear-all-secrets",
+          "markdownDescription": "Enables the clear_all_secrets command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the clear_secret command without any pre-configured scope.",
+          "type": "string",
+          "const": "tumpa-card:allow-clear-secret",
+          "markdownDescription": "Enables the clear_secret command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the end_session command without any pre-configured scope.",
+          "type": "string",
+          "const": "tumpa-card:allow-end-session",
+          "markdownDescription": "Enables the end_session command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the read_secret command without any pre-configured scope.",
+          "type": "string",
+          "const": "tumpa-card:allow-read-secret",
+          "markdownDescription": "Enables the read_secret command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the save_secret command without any pre-configured scope.",
+          "type": "string",
+          "const": "tumpa-card:allow-save-secret",
+          "markdownDescription": "Enables the save_secret command without any pre-configured scope."
+        },
+        {
+          "description": "Enables the transmit_apdu command without any pre-configured scope.",
+          "type": "string",
+          "const": "tumpa-card:allow-transmit-apdu",
+          "markdownDescription": "Enables the transmit_apdu command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the begin_session command without any pre-configured scope.",
+          "type": "string",
+          "const": "tumpa-card:deny-begin-session",
+          "markdownDescription": "Denies the begin_session command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the clear_all_secrets command without any pre-configured scope.",
+          "type": "string",
+          "const": "tumpa-card:deny-clear-all-secrets",
+          "markdownDescription": "Denies the clear_all_secrets command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the clear_secret command without any pre-configured scope.",
+          "type": "string",
+          "const": "tumpa-card:deny-clear-secret",
+          "markdownDescription": "Denies the clear_secret command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the end_session command without any pre-configured scope.",
+          "type": "string",
+          "const": "tumpa-card:deny-end-session",
+          "markdownDescription": "Denies the end_session command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the read_secret command without any pre-configured scope.",
+          "type": "string",
+          "const": "tumpa-card:deny-read-secret",
+          "markdownDescription": "Denies the read_secret command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the save_secret command without any pre-configured scope.",
+          "type": "string",
+          "const": "tumpa-card:deny-save-secret",
+          "markdownDescription": "Denies the save_secret command without any pre-configured scope."
+        },
+        {
+          "description": "Denies the transmit_apdu command without any pre-configured scope.",
+          "type": "string",
+          "const": "tumpa-card:deny-transmit-apdu",
+          "markdownDescription": "Denies the transmit_apdu command without any pre-configured scope."
         }
       ]
     },

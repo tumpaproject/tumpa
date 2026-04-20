@@ -49,3 +49,15 @@ src-tauri/gen/apple/Pods/
 # Tauri mobile dev cache
 src-tauri/gen/android/.tauri/
 src-tauri/gen/apple/.tauri/
+crates/*/target/
+crates/*/Cargo.lock
+# Plugin dev caches (vendored tauri-api) and Gradle build output —
+# regenerated on every `tauri ios/android dev`, not source.
+crates/*/.tauri/
+crates/*/android/.tauri/
+crates/*/android/build/
+crates/*/android/.gradle/
+crates/*/android/local.properties
+crates/*/ios/.build/
+crates/*/ios/Package.resolved
+

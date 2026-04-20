@@ -1,0 +1,28 @@
+[package]
+name = "tauri-plugin-tumpa-card"
+version = "0.1.0"
+description = "Tauri plugin bridging OpenPGP smartcard APDUs to native NFC / USB on Android and iOS"
+edition = "2021"
+license = "GPL-3.0-or-later"
+authors = ["Kushal Das"]
+links = "tauri-plugin-tumpa-card"
+
+[package.metadata.docs.rs]
+targets = ["aarch64-apple-ios", "aarch64-linux-android"]
+
+[package.metadata.platforms.support]
+android = { level = "full", notes = "NFC (IsoDep) + USB CCID — any OpenPGP v3 card" }
+ios = { level = "full", notes = "NFC (NFCISO7816Tag) — USB-C via TKSmartCard pending Apple entitlement" }
+linux = { level = "none", notes = "desktop uses card-backend-pcsc" }
+macos = { level = "none", notes = "desktop uses card-backend-pcsc" }
+windows = { level = "none", notes = "desktop uses card-backend-pcsc" }
+
+[build-dependencies]
+tauri-plugin = { version = "2", features = ["build"] }
+
+[dependencies]
+tauri = { version = "2" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+log = "0.4"

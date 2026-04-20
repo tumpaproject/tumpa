@@ -1,0 +1,13 @@
+# Automatically generated - DO NOT EDIT!
+
+"$schema" = "../../schemas/schema.json"
+
+[[permission]]
+identifier = "allow-transmit-apdu"
+description = "Enables the transmit_apdu command without any pre-configured scope."
+commands.allow = ["transmit_apdu"]
+
+[[permission]]
+identifier = "deny-transmit-apdu"
+description = "Denies the transmit_apdu command without any pre-configured scope."
+commands.deny = ["transmit_apdu"]

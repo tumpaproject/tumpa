@@ -51,7 +51,6 @@ pub struct SubkeyData {
     pub is_revoked: bool,
 }
 
-#[cfg(not(any(target_os = "android", target_os = "ios")))]
 #[derive(Serialize)]
 pub struct SubkeyAvailability {
     pub primary_can_sign: bool,
@@ -284,7 +283,6 @@ pub fn export_public_key(
     Ok(())
 }
 
-#[cfg(not(any(target_os = "android", target_os = "ios")))]
 #[tauri::command]
 pub fn get_available_subkeys(
     state: State<'_, AppState>,

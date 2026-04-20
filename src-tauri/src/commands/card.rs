@@ -1,9 +1,16 @@
-//! Smartcard-backed `#[tauri::command]` functions (desktop only).
+//! Smartcard-backed `#[tauri::command]` functions.
 //!
 //! All card logic lives in `libtumpa::card`; this module is just a thin
 //! IPC shell that serializes arguments, wraps PINs/passphrases in
 //! zeroing containers, and reshapes libtumpa results into the JSON
 //! structs the frontend expects.
+//!
+//! Works on both desktop and mobile. On desktop the card backend is
+//! PC/SC; on mobile it's the tauri-plugin-tumpa-card bridge registered
+//! via `card_bridge::register_backend_provider`. Enumeration APIs
+//! (`is_card_connected`, `list_cards`, `auto_detect_card_links`) are
+//! PCSC-only — mobile skips those and drives sessions explicitly from
+//! the UI.
 
 use libtumpa::card::{
     admin, link,
@@ -16,6 +23,7 @@ use tauri::State;
 
 use super::AppState;
 
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
 #[derive(Serialize)]
 pub struct CardSummaryInfo {
     pub ident: String,
@@ -40,11 +48,13 @@ pub struct CardDetails {
     pub manufacturer_name: Option<String>,
 }
 
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
 #[tauri::command]
 pub fn is_card_connected() -> bool {
     libtumpa::card::is_card_connected()
 }
 
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
 #[tauri::command]
 pub fn list_cards() -> Result<Vec<CardSummaryInfo>, String> {
     let cards = libtumpa::card::list_all_cards()
@@ -163,6 +173,7 @@ pub fn unlink_card_from_key(
 
 /// Wire shape for auto-detect results. Matches the desktop frontend's
 /// existing expectations from pre-libtumpa days.
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
 #[derive(Serialize)]
 pub struct CardKeyMatch {
     pub key_fingerprint: String,
@@ -170,6 +181,7 @@ pub struct CardKeyMatch {
     pub card_name: String,
 }
 
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
 #[tauri::command]
 pub fn auto_detect_card_links(
     state: State<'_, AppState>,

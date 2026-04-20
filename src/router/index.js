@@ -23,6 +23,7 @@ import StartMobile from '@/views-mobile/StartMobile.vue'
 import KeyListMobile from '@/views-mobile/KeyListMobile.vue'
 import GenerateKeyMobile from '@/views-mobile/GenerateKeyMobile.vue'
 import KeyDetailsMobile from '@/views-mobile/KeyDetailsMobile.vue'
+import UploadToCardMobile from '@/views-mobile/UploadToCardMobile.vue'
 
 const desktopRoutes = [
   { path: '/', name: 'start', component: StartView, meta: { title: 'Welcome' } },
@@ -44,14 +45,16 @@ const desktopRoutes = [
   { path: '/error', name: 'error', component: ErrorView, meta: { title: 'Error' } },
 ]
 
-// Mobile surface is intentionally small: list, details, generate.
-// Card + UID management + keyserver flows stay desktop-only for Phase 1.
+// Mobile surface is intentionally small: list, details, generate, and
+// card upload. Full card admin (PIN change, touch mode, etc.) comes
+// after the native NFC/USB bridge ships.
 const mobileRoutes = [
   { path: '/', name: 'start', component: StartMobile, meta: { title: 'Tumpa' } },
   { path: '/keys', name: 'key-list', component: KeyListMobile, meta: { title: 'Keys' } },
   { path: '/keys/generate', name: 'generate-key', component: GenerateKeyMobile, meta: { title: 'Generate key' } },
   { path: '/keys/generating', name: 'generating', component: GeneratingView, meta: { title: 'Generating…' } },
   { path: '/keys/:fingerprint', name: 'key-details', component: KeyDetailsMobile, props: true, meta: { title: 'Key' } },
+  { path: '/card/upload', name: 'upload-to-card', component: UploadToCardMobile, meta: { title: 'Upload to card' } },
   { path: '/error', name: 'error', component: ErrorView, meta: { title: 'Error' } },
   // Anything else on mobile falls back to the start screen.
   { path: '/:pathMatch(.*)*', redirect: '/' },
