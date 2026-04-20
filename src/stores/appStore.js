@@ -13,6 +13,9 @@ export const useAppStore = defineStore('app', {
     errorMessage: '',
     activeSection: 'keys',
     activeSubItem: '',
+    // Runtime platform flag. Populated once at app startup by main.js.
+    // Mobile builds skip card routes and use a simplified UI.
+    isMobile: false,
   }),
 
   getters: {
@@ -82,6 +85,10 @@ export const useAppStore = defineStore('app', {
 
     clearError() {
       this.errorMessage = ''
+    },
+
+    setMobile(value) {
+      this.isMobile = !!value
     },
   },
 })

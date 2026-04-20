@@ -4,6 +4,12 @@ node_modules/
 # Build output
 dist/
 src-tauri/target/
+# Root-level build dir from build-dmg.py / justfile
+/build/
+
+# Python virtualenv (used by build scripts)
+.venv/
+venv/
 
 # IDE
 .vscode/
@@ -31,3 +37,15 @@ src-tauri/Cargo.lock
 
 # pnpm
 pnpm-debug.log*
+
+# Xcode user-specific state (also covered by gen/apple/.gitignore,
+# repeated here so stray xcuserdata elsewhere doesn't leak in)
+**/xcuserdata/
+**/*.xcuserstate
+
+# iOS CocoaPods install state (Podfile itself is committed)
+src-tauri/gen/apple/Pods/
+
+# Tauri mobile dev cache
+src-tauri/gen/android/.tauri/
+src-tauri/gen/apple/.tauri/

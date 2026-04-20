@@ -44,6 +44,7 @@ pub struct SubkeyData {
     pub is_revoked: bool,
 }
 
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
 #[derive(Serialize)]
 pub struct SubkeyAvailability {
     /// Primary key can sign (certification key with signing capability)
@@ -59,9 +60,15 @@ fn cert_info_to_key_info(info: &wecanencrypt::KeyInfo) -> KeyInfo {
 }
 
 pub fn cert_info_to_key_info_with_cards(info: &wecanencrypt::KeyInfo, state: &super::AppState) -> KeyInfo {
+    #[cfg(not(any(target_os = "android", target_os = "ios")))]
     let card_idents = state.card_links.lock()
         .map(|links| links.get(&info.fingerprint).cloned().unwrap_or_default())
         .unwrap_or_default();
+    #[cfg(any(target_os = "android", target_os = "ios"))]
+    let card_idents: Vec<String> = {
+        let _ = state;
+        Vec::new()
+    };
     cert_info_to_key_info_inner(info, card_idents)
 }
 
@@ -298,6 +305,7 @@ pub fn export_public_key(
     Ok(())
 }
 
+#[cfg(not(any(target_os = "android", target_os = "ios")))]
 #[tauri::command]
 pub fn get_available_subkeys(
     state: State<'_, AppState>,

@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import { isMobilePlatform } from '@/utils/platform'
 
 import StartView from '@/views/StartView.vue'
 import KeyListView from '@/views/KeyListView.vue'
@@ -18,7 +19,12 @@ import UploadingView from '@/views/UploadingView.vue'
 import TouchModeView from '@/views/TouchModeView.vue'
 import ErrorView from '@/views/ErrorView.vue'
 
-const routes = [
+import StartMobile from '@/views-mobile/StartMobile.vue'
+import KeyListMobile from '@/views-mobile/KeyListMobile.vue'
+import GenerateKeyMobile from '@/views-mobile/GenerateKeyMobile.vue'
+import KeyDetailsMobile from '@/views-mobile/KeyDetailsMobile.vue'
+
+const desktopRoutes = [
   { path: '/', name: 'start', component: StartView, meta: { title: 'Welcome' } },
   { path: '/keys', name: 'key-list', component: KeyListView, meta: { title: 'Keys' } },
   { path: '/keys/generate', name: 'generate-key', component: GenerateKeyView, meta: { title: 'Generate Key' } },
@@ -38,9 +44,22 @@ const routes = [
   { path: '/error', name: 'error', component: ErrorView, meta: { title: 'Error' } },
 ]
 
+// Mobile surface is intentionally small: list, details, generate.
+// Card + UID management + keyserver flows stay desktop-only for Phase 1.
+const mobileRoutes = [
+  { path: '/', name: 'start', component: StartMobile, meta: { title: 'Tumpa' } },
+  { path: '/keys', name: 'key-list', component: KeyListMobile, meta: { title: 'Keys' } },
+  { path: '/keys/generate', name: 'generate-key', component: GenerateKeyMobile, meta: { title: 'Generate key' } },
+  { path: '/keys/generating', name: 'generating', component: GeneratingView, meta: { title: 'Generating…' } },
+  { path: '/keys/:fingerprint', name: 'key-details', component: KeyDetailsMobile, props: true, meta: { title: 'Key' } },
+  { path: '/error', name: 'error', component: ErrorView, meta: { title: 'Error' } },
+  // Anything else on mobile falls back to the start screen.
+  { path: '/:pathMatch(.*)*', redirect: '/' },
+]
+
 const router = createRouter({
   history: createWebHistory(),
-  routes,
+  routes: isMobilePlatform() ? mobileRoutes : desktopRoutes,
 })
 
 router.afterEach((to) => {

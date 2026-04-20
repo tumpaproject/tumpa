@@ -19,9 +19,18 @@ tauri-plugin-dialog = "2"
 tauri-plugin-fs = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-wecanencrypt = { version = "0.10.0", features = ["keystore", "card", "network"] }
 chrono = { version = "0.4", features = ["serde"] }
 tokio = { version = "1", features = ["rt"] }
-dirs = "6"
-reqwest = { version = "0.12", features = ["json"] }
 zeroize = "1"
+
+[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
+wecanencrypt = { version = "0.10.0", features = ["keystore", "card", "network"] }
+reqwest = { version = "0.12", features = ["json"] }
+dirs = "6"
+
+# Mobile builds drop the `card` (pcsc) and `network` (keyserver) features.
+# `network` brings in reqwest with native-tls which pulls openssl-sys and
+# blocks cross-compilation; keyserver upload / verify flows aren't part of
+# the mobile MVP anyway — see Phase 1 plan.
+[target.'cfg(any(target_os = "android", target_os = "ios"))'.dependencies]
+wecanencrypt = { version = "0.10.0", default-features = false, features = ["keystore"] }
