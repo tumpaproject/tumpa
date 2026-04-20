@@ -24,6 +24,11 @@ import KeyListMobile from '@/views-mobile/KeyListMobile.vue'
 import GenerateKeyMobile from '@/views-mobile/GenerateKeyMobile.vue'
 import KeyDetailsMobile from '@/views-mobile/KeyDetailsMobile.vue'
 import UploadToCardMobile from '@/views-mobile/UploadToCardMobile.vue'
+import CardHomeMobile from '@/views-mobile/CardHomeMobile.vue'
+import EditNameMobile from '@/views-mobile/EditNameMobile.vue'
+import EditUrlMobile from '@/views-mobile/EditUrlMobile.vue'
+import ChangeUserPinMobile from '@/views-mobile/ChangeUserPinMobile.vue'
+import ChangeAdminPinMobile from '@/views-mobile/ChangeAdminPinMobile.vue'
 
 const desktopRoutes = [
   { path: '/', name: 'start', component: StartView, meta: { title: 'Welcome' } },
@@ -45,16 +50,20 @@ const desktopRoutes = [
   { path: '/error', name: 'error', component: ErrorView, meta: { title: 'Error' } },
 ]
 
-// Mobile surface is intentionally small: list, details, generate, and
-// card upload. Full card admin (PIN change, touch mode, etc.) comes
-// after the native NFC/USB bridge ships.
+// Mobile surface mirrors the desktop card admin flows — read, rename,
+// edit URL, change user/admin PIN — routed through the NFC bridge.
 const mobileRoutes = [
   { path: '/', name: 'start', component: StartMobile, meta: { title: 'Tumpa' } },
   { path: '/keys', name: 'key-list', component: KeyListMobile, meta: { title: 'Keys' } },
   { path: '/keys/generate', name: 'generate-key', component: GenerateKeyMobile, meta: { title: 'Generate key' } },
   { path: '/keys/generating', name: 'generating', component: GeneratingView, meta: { title: 'Generating…' } },
   { path: '/keys/:fingerprint', name: 'key-details', component: KeyDetailsMobile, props: true, meta: { title: 'Key' } },
+  { path: '/card', name: 'card-home', component: CardHomeMobile, meta: { title: 'SmartCards' } },
   { path: '/card/upload', name: 'upload-to-card', component: UploadToCardMobile, meta: { title: 'Upload to card' } },
+  { path: '/card/edit-name', name: 'edit-name', component: EditNameMobile, meta: { title: 'Rename card' } },
+  { path: '/card/edit-url', name: 'edit-url', component: EditUrlMobile, meta: { title: 'Edit public URL' } },
+  { path: '/card/change-user-pin', name: 'change-user-pin', component: ChangeUserPinMobile, meta: { title: 'Change user PIN' } },
+  { path: '/card/change-admin-pin', name: 'change-admin-pin', component: ChangeAdminPinMobile, meta: { title: 'Change admin PIN' } },
   { path: '/error', name: 'error', component: ErrorView, meta: { title: 'Error' } },
   // Anything else on mobile falls back to the start screen.
   { path: '/:pathMatch(.*)*', redirect: '/' },

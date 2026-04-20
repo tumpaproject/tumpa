@@ -6,7 +6,13 @@ const route = useRoute()
 const router = useRouter()
 
 const title = computed(() => route.meta?.title || 'Tumpa')
-const canGoBack = computed(() => route.name !== 'start' && route.name !== 'key-list')
+const canGoBack = computed(() => route.name !== 'start' && route.name !== 'key-list' && route.name !== 'card-home')
+
+// Tabs hide on the welcome screen (where the user has no keys yet and
+// the layout is centered); otherwise they're always visible so the
+// user can flip between Keys and SmartCards from any screen.
+const showTabs = computed(() => route.name !== 'start')
+const activeTab = computed(() => route.path.startsWith('/card') ? 'card' : 'keys')
 
 function back() {
   router.back()
@@ -29,6 +35,28 @@ function back() {
     <main class="content">
       <slot />
     </main>
+    <nav v-if="showTabs" class="tab-bar" role="tablist">
+      <button
+        class="tab"
+        :class="{ active: activeTab === 'keys' }"
+        role="tab"
+        :aria-selected="activeTab === 'keys'"
+        @click="router.push('/keys')"
+      >
+        <span class="tab-icon" aria-hidden="true">&#x1F511;</span>
+        <span class="tab-label">Keys</span>
+      </button>
+      <button
+        class="tab"
+        :class="{ active: activeTab === 'card' }"
+        role="tab"
+        :aria-selected="activeTab === 'card'"
+        @click="router.push('/card')"
+      >
+        <span class="tab-icon" aria-hidden="true">&#x1F4B3;</span>
+        <span class="tab-label">SmartCards</span>
+      </button>
+    </nav>
   </div>
 </template>
 
@@ -82,6 +110,44 @@ function back() {
 .content {
   flex: 1;
   overflow-y: auto;
+}
+
+.tab-bar {
+  display: flex;
+  border-top: 1px solid var(--color-border);
+  background: var(--color-bg);
   padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: 56px;
+  background: transparent;
+  border: none;
+  color: var(--color-text-muted);
+  font-family: var(--font-family);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.tab:active { background: var(--color-bg-light); }
+
+.tab.active {
+  color: var(--color-sidebar);
+}
+
+.tab-icon {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.tab-label {
+  font-size: 12px;
 }
 </style>
