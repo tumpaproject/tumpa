@@ -26,7 +26,7 @@ use libtumpa::card::{
     mobile::{CardBridge, MobileCardBackend},
     WecanencryptCardError, WecanencryptError,
 };
-use tauri::{AppHandle, Manager, Runtime};
+use tauri::{AppHandle, Emitter, Manager, Runtime};
 use tauri_plugin_tumpa_card::{
     BeginSessionRequest, EndSessionRequest, TransmitApduRequest, Transport, TumpaCardExt,
 };
@@ -109,6 +109,14 @@ impl<R: Runtime> CardBridge for TauriCardBridge<R> {
             })
             .map_err(|e| SmartcardError::Error(format!("begin_session: {e}")))?;
         *self.session_id.lock().unwrap() = Some(resp.session_id);
+
+        // Tell the UI the card is ready so it can flip its overlay
+        // from "Hold your security key" to "Card connected — …". We
+        // emit from Rust instead of using the Kotlin/Swift plugin's
+        // `trigger()` because on Android that only reaches Channel-
+        // based listeners, not the global `listen()` API the Vue side
+        // uses. Tauri's `emit` is the same mechanism on both platforms.
+        let _ = self.app.emit("plugin:tumpa-card:card-connected", ());
         Ok(())
     }
 

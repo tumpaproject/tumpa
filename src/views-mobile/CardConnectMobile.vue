@@ -32,22 +32,31 @@ defineEmits(['cancel'])
 
 <template>
   <div class="overlay" role="dialog" aria-modal="true" aria-labelledby="cc-title">
-    <div class="card">
+    <div class="card" :class="{ 'phase-connected': phase === 'connected' }">
+      <!-- Two-phase indicator. In 'waiting' the outer ring pulses to
+           prompt a tap; in 'connected' a check mark and a rotating
+           progress arc make it obvious the flow has moved on and the
+           native side is driving APDUs. -->
       <div class="pulse" aria-hidden="true">
-        <div class="pulse-dot" :class="{ active: phase === 'connected' }"></div>
+        <div class="pulse-dot" :class="{ active: phase === 'connected' }">
+          <span v-if="phase === 'connected'" class="check">&#x2713;</span>
+        </div>
         <div v-if="phase === 'waiting'" class="pulse-ring"></div>
+        <div v-else class="spinner-ring"></div>
       </div>
       <h2 id="cc-title" class="title">
         <template v-if="phase === 'waiting'">Hold your security key to the phone</template>
-        <template v-else>Card found — {{ action }}…</template>
+        <template v-else>
+          Card connected — {{ action }}<span class="ellipsis" aria-hidden="true"></span>
+        </template>
       </h2>
       <p class="subtitle">
         <template v-if="phase === 'waiting'">
           Hold the back of the phone against the card, or plug it in via USB-C.
         </template>
         <template v-else>
-          Keep the card pressed against the phone. Do not remove until this
-          screen disappears.
+          Keep the card in place. This can take 10–30 seconds for a full
+          upload — do not remove until this screen disappears.
         </template>
       </p>
       <p v-if="error" class="error" role="alert">{{ error }}</p>
@@ -84,6 +93,20 @@ defineEmits(['cancel'])
   align-items: center;
   gap: 14px;
   box-shadow: 0 24px 48px rgba(0, 0, 0, 0.25);
+  transition: transform 0.3s ease;
+}
+
+/* A small scale-up the moment we flip from "waiting" to "connected",
+   so the transition is unmistakable even on a quick USB session where
+   the card is found a split-second after Upload is tapped. */
+.card.phase-connected {
+  animation: found-pop 0.45s ease-out;
+}
+
+@keyframes found-pop {
+  0%   { transform: scale(0.96); }
+  55%  { transform: scale(1.04); }
+  100% { transform: scale(1); }
 }
 
 .pulse {
@@ -99,11 +122,24 @@ defineEmits(['cancel'])
   border-radius: 50%;
   background: var(--color-sidebar);
   transition: background 0.25s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0a2e1c;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1;
 }
 
 .pulse-dot.active {
   background: var(--color-green);
   animation: breathe 1.4s ease-in-out infinite;
+}
+
+.check {
+  /* Check mark only exists during connected phase. Pops in briefly
+     then sits there while the spinner rotates around it. */
+  animation: check-in 0.4s ease-out;
 }
 
 .pulse-ring {
@@ -115,6 +151,17 @@ defineEmits(['cancel'])
   animation: pulse-ring 1.6s ease-out infinite;
 }
 
+/* Rotating arc around the check mark — indicates the card is live
+   and APDUs are in flight. */
+.spinner-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 3px solid rgba(0, 0, 0, 0.08);
+  border-top-color: var(--color-green);
+  animation: spin 1s linear infinite;
+}
+
 @keyframes pulse-ring {
   0% { transform: scale(0.6); opacity: 0.8; }
   100% { transform: scale(1.15); opacity: 0; }
@@ -123,6 +170,35 @@ defineEmits(['cancel'])
 @keyframes breathe {
   0%, 100% { transform: scale(1); }
   50%      { transform: scale(1.12); }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes check-in {
+  0%   { transform: scale(0); opacity: 0; }
+  60%  { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* Animated ellipsis after "uploading" so the text feels alive even
+   if a single APDU happens to take several seconds (RSA key import
+   on YubiKey can pause for ~5s). */
+.ellipsis::after {
+  content: '';
+  display: inline-block;
+  width: 1.2em;
+  text-align: left;
+  animation: ellipsis 1.2s steps(4, end) infinite;
+}
+
+@keyframes ellipsis {
+  0%   { content: ''; }
+  25%  { content: '.'; }
+  50%  { content: '..'; }
+  75%  { content: '...'; }
+  100% { content: ''; }
 }
 
 .title {
