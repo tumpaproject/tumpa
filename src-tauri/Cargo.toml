@@ -24,13 +24,21 @@ tokio = { version = "1", features = ["rt"] }
 zeroize = "1"
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
-wecanencrypt = { version = "0.10.0", features = ["keystore", "card", "network"] }
-reqwest = { version = "0.12", features = ["json"] }
+# Desktop gets the full libtumpa: card (PC/SC via card-backend-pcsc) +
+# network (VKS upload, email verification, WKD fetch).
+libtumpa = { path = "../../libtumpa", default-features = false, features = ["card", "network"] }
 dirs = "6"
 
-# Mobile builds drop the `card` (pcsc) and `network` (keyserver) features.
-# `network` brings in reqwest with native-tls which pulls openssl-sys and
-# blocks cross-compilation; keyserver upload / verify flows aren't part of
-# the mobile MVP anyway — see Phase 1 plan.
+# Mobile builds drop libtumpa's `card` and `network` features. `card` pulls
+# card-backend-pcsc which is desktop-only; `network` pulls reqwest with
+# native-tls (openssl-sys) which blocks cross-compilation. Keyserver and
+# card flows aren't part of the mobile MVP — see the Phase 1 plan.
 [target.'cfg(any(target_os = "android", target_os = "ios"))'.dependencies]
-wecanencrypt = { version = "0.10.0", default-features = false, features = ["keystore"] }
+libtumpa = { path = "../../libtumpa", default-features = false }
+
+# Integration tests under `tests/` exercise wecanencrypt APIs directly
+# (predating libtumpa). Keep the dev-dep so they keep compiling. libtumpa
+# pulls wecanencrypt 0.11 in as a transitive anyway; we match the version
+# here so cargo resolves a single copy.
+[dev-dependencies]
+wecanencrypt = { version = "0.11.0", features = ["keystore", "card", "network"] }

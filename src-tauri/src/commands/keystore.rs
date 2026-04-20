@@ -1,14 +1,21 @@
+//! Keystore-backed #[tauri::command] functions.
+//!
+//! These are thin IPC shells that call into `libtumpa::key` for all the
+//! OpenPGP logic. libtumpa handles the keystore mutation + readback; this
+//! module just handles Tauri wiring, serialization shapes, and the small
+//! conveniences the UI expects (combined name+email UID, date parsing,
+//! `card_idents` annotation on `KeyInfo`).
+//!
+//! Secrets (`password`) are wrapped in `libtumpa::Passphrase` (a
+//! `Zeroizing<String>`) at the entry point so the underlying buffer is
+//! zeroed as soon as the command returns.
+
+use chrono::{NaiveDate, TimeZone, Utc};
+use libtumpa::{
+    key, CipherSuite, KeyStore, KeyType, Passphrase, SubkeyFlags,
+};
 use serde::Serialize;
 use tauri::State;
-use wecanencrypt::{
-    create_key, parse_key_bytes,
-    add_uid, revoke_uid,
-    update_primary_expiry, update_subkeys_expiry,
-    update_password, revoke_key,
-    CipherSuite, SubkeyFlags, KeyType,
-};
-use chrono::{Utc, NaiveDate, TimeZone};
-use zeroize::Zeroize;
 
 use super::AppState;
 
@@ -47,84 +54,93 @@ pub struct SubkeyData {
 #[cfg(not(any(target_os = "android", target_os = "ios")))]
 #[derive(Serialize)]
 pub struct SubkeyAvailability {
-    /// Primary key can sign (certification key with signing capability)
     pub primary_can_sign: bool,
-    /// Separate signing subkey exists
     pub signing_subkey: bool,
     pub encryption: bool,
     pub authentication: bool,
 }
 
-fn cert_info_to_key_info(info: &wecanencrypt::KeyInfo) -> KeyInfo {
+fn cert_info_to_key_info(info: &libtumpa::KeyInfo) -> KeyInfo {
     cert_info_to_key_info_inner(info, vec![])
 }
 
-pub fn cert_info_to_key_info_with_cards(info: &wecanencrypt::KeyInfo, state: &super::AppState) -> KeyInfo {
+/// Build the wire `KeyInfo` with `card_idents` populated from the
+/// keystore's `card_keys` table (desktop) or empty (mobile).
+pub fn cert_info_to_key_info_with_cards(
+    info: &libtumpa::KeyInfo,
+    #[cfg(not(any(target_os = "android", target_os = "ios")))] store: &KeyStore,
+    #[cfg(any(target_os = "android", target_os = "ios"))] _store: &KeyStore,
+) -> KeyInfo {
     #[cfg(not(any(target_os = "android", target_os = "ios")))]
-    let card_idents = state.card_links.lock()
-        .map(|links| links.get(&info.fingerprint).cloned().unwrap_or_default())
+    let card_idents = libtumpa::card::link::card_idents_for_key(store, &info.fingerprint)
         .unwrap_or_default();
     #[cfg(any(target_os = "android", target_os = "ios"))]
-    let card_idents: Vec<String> = {
-        let _ = state;
-        Vec::new()
-    };
+    let card_idents: Vec<String> = Vec::new();
     cert_info_to_key_info_inner(info, card_idents)
 }
 
-fn cert_info_to_key_info_inner(info: &wecanencrypt::KeyInfo, card_idents: Vec<String>) -> KeyInfo {
-    let user_ids: Vec<UserIdData> = info.user_ids.iter().map(|uid| {
-        // Parse "Name <email>" format
-        let uid_str = &uid.value;
-        let (name, email) = if let Some(lt_pos) = uid_str.find('<') {
-            let name = uid_str[..lt_pos].trim().to_string();
-            let email = uid_str[lt_pos+1..].trim_end_matches('>').trim().to_string();
-            (name, email)
-        } else {
-            (uid_str.clone(), String::new())
-        };
-        UserIdData {
-            name,
-            email,
-            revoked: uid.revoked,
-            revocation_time: uid.revocation_time
-                .map(|t| t.format("%d %b %Y %H:%M").to_string()),
-        }
-    }).collect();
-
-    let subkeys: Vec<SubkeyData> = info.subkeys.iter().map(|sk| {
-        let key_type = match sk.key_type {
-            KeyType::Encryption => "encryption",
-            KeyType::Signing => "signing",
-            KeyType::Authentication => "authentication",
-            KeyType::Certification => "certification",
-            KeyType::Unknown => "unknown",
-        };
-        SubkeyData {
-            fingerprint: sk.fingerprint.clone(),
-            key_type: key_type.to_string(),
-            creation_time: sk.creation_time.format("%d %b %Y").to_string(),
-            expiration_time: sk.expiration_time
-                .map(|t| t.format("%d %b %Y").to_string())
-                .unwrap_or_else(|| "Never".to_string()),
-            is_revoked: sk.is_revoked,
-        }
-    }).collect();
-
-    // Determine cipher suite from any subkey's algorithm + bit_length
-    let key_type = info.subkeys.iter()
-        .find(|sk| sk.key_type != KeyType::Unknown)
-        .map(|sk| {
-            match (sk.algorithm.as_str(), sk.bit_length) {
-                ("RSA", n) if n >= 4096 => "RSA4096".to_string(),
-                ("RSA", n) if n >= 2048 => "RSA2048".to_string(),
-                ("RSA", n) => format!("RSA{}", n),
-                ("EdDSA", _) | ("Ed25519", _) | ("ECDH", _) => "Cv25519".to_string(),
-                ("ECDSA", 256) | ("ECDH P-256", _) => "NistP256".to_string(),
-                ("ECDSA", 384) | ("ECDH P-384", _) => "NistP384".to_string(),
-                ("ECDSA", 521) | ("ECDH P-521", _) => "NistP521".to_string(),
-                (other, _) => other.to_string(),
+fn cert_info_to_key_info_inner(info: &libtumpa::KeyInfo, card_idents: Vec<String>) -> KeyInfo {
+    let user_ids: Vec<UserIdData> = info
+        .user_ids
+        .iter()
+        .map(|uid| {
+            let uid_str = &uid.value;
+            let (name, email) = if let Some(lt_pos) = uid_str.find('<') {
+                let name = uid_str[..lt_pos].trim().to_string();
+                let email = uid_str[lt_pos + 1..].trim_end_matches('>').trim().to_string();
+                (name, email)
+            } else {
+                (uid_str.clone(), String::new())
+            };
+            UserIdData {
+                name,
+                email,
+                revoked: uid.revoked,
+                revocation_time: uid
+                    .revocation_time
+                    .map(|t| t.format("%d %b %Y %H:%M").to_string()),
             }
+        })
+        .collect();
+
+    let subkeys: Vec<SubkeyData> = info
+        .subkeys
+        .iter()
+        .map(|sk| {
+            let key_type = match sk.key_type {
+                KeyType::Encryption => "encryption",
+                KeyType::Signing => "signing",
+                KeyType::Authentication => "authentication",
+                KeyType::Certification => "certification",
+                KeyType::Unknown => "unknown",
+            };
+            SubkeyData {
+                fingerprint: sk.fingerprint.clone(),
+                key_type: key_type.to_string(),
+                creation_time: sk.creation_time.format("%d %b %Y").to_string(),
+                expiration_time: sk
+                    .expiration_time
+                    .map(|t| t.format("%d %b %Y").to_string())
+                    .unwrap_or_else(|| "Never".to_string()),
+                is_revoked: sk.is_revoked,
+            }
+        })
+        .collect();
+
+    // Derive the displayed "cipher suite" from the first identifiable subkey.
+    let key_type = info
+        .subkeys
+        .iter()
+        .find(|sk| sk.key_type != KeyType::Unknown)
+        .map(|sk| match (sk.algorithm.as_str(), sk.bit_length) {
+            ("RSA", n) if n >= 4096 => "RSA4096".to_string(),
+            ("RSA", n) if n >= 2048 => "RSA2048".to_string(),
+            ("RSA", n) => format!("RSA{}", n),
+            ("EdDSA", _) | ("Ed25519", _) | ("ECDH", _) => "Cv25519".to_string(),
+            ("ECDSA", 256) | ("ECDH P-256", _) => "NistP256".to_string(),
+            ("ECDSA", 384) | ("ECDH P-384", _) => "NistP384".to_string(),
+            ("ECDSA", 521) | ("ECDH P-521", _) => "NistP521".to_string(),
+            (other, _) => other.to_string(),
         })
         .unwrap_or_else(|| "Unknown".to_string());
 
@@ -132,18 +148,26 @@ fn cert_info_to_key_info_inner(info: &wecanencrypt::KeyInfo, card_idents: Vec<St
         fingerprint: info.fingerprint.clone(),
         key_id: info.key_id.clone(),
         creation_time: info.creation_time.format("%d %b %Y").to_string(),
-        expiration_time: info.expiration_time
+        expiration_time: info
+            .expiration_time
             .map(|t| t.format("%d %b %Y").to_string())
             .unwrap_or_else(|| "Never".to_string()),
         key_type,
         user_ids,
         is_secret: info.is_secret,
         is_revoked: info.is_revoked,
-        revocation_time: info.revocation_time
+        revocation_time: info
+            .revocation_time
             .map(|t| t.format("%d %b %Y %H:%M").to_string()),
         card_idents,
         subkeys,
     }
+}
+
+fn parse_expiry(date_str: &str) -> Result<chrono::DateTime<Utc>, String> {
+    let date = NaiveDate::parse_from_str(date_str, "%Y-%m-%d")
+        .map_err(|e| format!("Invalid date: {}", e))?;
+    Ok(Utc.from_utc_datetime(&date.and_hms_opt(0, 0, 0).unwrap()))
 }
 
 #[tauri::command]
@@ -151,8 +175,10 @@ pub fn list_keys(state: State<'_, AppState>) -> Result<Vec<KeyInfo>, String> {
     let store = state.keystore.lock().map_err(|e| e.to_string())?;
     let mut certs = store.list_keys().map_err(|e| e.to_string())?;
     certs.sort_by(|a, b| b.creation_time.cmp(&a.creation_time));
-    drop(store);
-    Ok(certs.iter().map(|c| cert_info_to_key_info_with_cards(c, &state)).collect())
+    Ok(certs
+        .iter()
+        .map(|c| cert_info_to_key_info_with_cards(c, &*store))
+        .collect())
 }
 
 #[tauri::command]
@@ -167,92 +193,63 @@ pub async fn generate_key(
     authentication: bool,
     cipher_suite: String,
 ) -> Result<KeyInfo, String> {
-    // Build UIDs
-    let uids: Vec<String> = emails.iter()
+    let uids: Vec<String> = emails
+        .iter()
         .map(|email| format!("{} <{}>", name, email))
         .collect();
 
-    // Parse cipher suite
     let cipher = match cipher_suite.to_lowercase().as_str() {
         "rsa4096" | "rsa4k" => CipherSuite::Rsa4k,
         _ => CipherSuite::Cv25519,
     };
 
-    // Parse expiry as DateTime<Utc>
-    let expiry = if let Some(date_str) = expiry_date {
-        if let Ok(date) = NaiveDate::parse_from_str(&date_str, "%Y-%m-%d") {
-            Some(Utc.from_utc_datetime(&date.and_hms_opt(0, 0, 0).unwrap()))
-        } else {
-            None
-        }
-    } else {
-        None
+    let expiry = match expiry_date.as_deref() {
+        Some(s) if !s.is_empty() => Some(parse_expiry(s)?),
+        _ => None,
     };
 
-    let subkey_flags = SubkeyFlags {
-        encryption,
-        signing,
-        authentication,
+    let params = key::GenerateKeyParams {
+        uids,
+        cipher_suite: cipher,
+        expiry,
+        subkey_flags: SubkeyFlags {
+            encryption,
+            signing,
+            authentication,
+        },
+        can_primary_sign: true,
     };
 
-    // Run key generation on a background thread to avoid blocking the UI
-    let generated = tokio::task::spawn_blocking(move || {
-        let uid_refs: Vec<&str> = uids.iter().map(|s| s.as_str()).collect();
-        let result = create_key(
-            &password,
-            &uid_refs,
-            cipher,
-            None, // creation time
-            expiry, // primary expiry
-            expiry, // subkey expiry
-            subkey_flags,
-            true, // can primary sign
-            true, // can primary expire
-        );
-        // Zeroize password in the spawned thread after use
-        let mut pw = password;
-        pw.zeroize();
-        result
-    })
-    .await
-    .map_err(|e| format!("Key generation task failed: {}", e))?
-    .map_err(|e| format!("Key generation failed: {}", e))?;
+    // libtumpa::key::generate is CPU-heavy (RSA 4096 can take seconds).
+    // Run it on a blocking-thread so the async runtime isn't stalled,
+    // then import into the keystore on the command's worker thread.
+    let pw = Passphrase::new(password);
+    let generated = tokio::task::spawn_blocking(move || key::generate(params, &pw))
+        .await
+        .map_err(|e| format!("Key generation task failed: {}", e))?
+        .map_err(|e| e.to_string())?;
 
-    // Import into keystore (fast, no need for background thread)
     let store = state.keystore.lock().map_err(|e| e.to_string())?;
-    let fp = store.import_key(&generated.secret_key)
+    let fp = store
+        .import_key(&generated.secret_key)
         .map_err(|e| format!("Failed to store key: {}", e))?;
-
-    // Get full info
-    let info = store.get_key_info(&fp)
+    let info = store
+        .get_key_info(&fp)
         .map_err(|e| format!("Failed to read key info: {}", e))?;
 
     Ok(cert_info_to_key_info(&info))
 }
 
 #[tauri::command]
-pub fn import_key(
-    state: State<'_, AppState>,
-    file_path: String,
-) -> Result<KeyInfo, String> {
-    // Read and parse to check if it's a secret key
-    let data = std::fs::read(&file_path)
-        .map_err(|e| format!("Failed to read file: {}", e))?;
-
-    let cert_info = parse_key_bytes(&data, true)
-        .map_err(|e| format!("Failed to parse key file: {}", e))?;
-
-    if !cert_info.is_secret {
-        return Err("Please select a private key file.".to_string());
-    }
-
+pub fn import_key(state: State<'_, AppState>, file_path: String) -> Result<KeyInfo, String> {
+    let data = std::fs::read(&file_path).map_err(|e| format!("Failed to read file: {}", e))?;
     let store = state.keystore.lock().map_err(|e| e.to_string())?;
-    let fp = store.import_key(&data)
-        .map_err(|e| format!("Failed to import key: {}", e))?;
-
-    let info = store.get_key_info(&fp)
-        .map_err(|e| format!("Failed to read key info: {}", e))?;
-
+    let info = key::import_secret(&*store, &data).map_err(|e| match e {
+        libtumpa::Error::InvalidInput(s) if s.contains("not a secret") => {
+            "Please select a private key file.".to_string()
+        }
+        other => other.to_string(),
+    })?;
     Ok(cert_info_to_key_info(&info))
 }
 
@@ -261,32 +258,16 @@ pub fn import_public_key(
     state: State<'_, AppState>,
     file_path: String,
 ) -> Result<KeyInfo, String> {
-    let data = std::fs::read(&file_path)
-        .map_err(|e| format!("Failed to read file: {}", e))?;
-
-    // Validate it's a parseable key (public or secret)
-    let _cert_info = parse_key_bytes(&data, true)
-        .map_err(|e| format!("Failed to parse key file: {}", e))?;
-
+    let data = std::fs::read(&file_path).map_err(|e| format!("Failed to read file: {}", e))?;
     let store = state.keystore.lock().map_err(|e| e.to_string())?;
-    let fp = store.import_key(&data)
-        .map_err(|e| format!("Failed to import key: {}", e))?;
-
-    let info = store.get_key_info(&fp)
-        .map_err(|e| format!("Failed to read key info: {}", e))?;
-
+    let info = key::import_any(&*store, &data).map_err(|e| e.to_string())?;
     Ok(cert_info_to_key_info(&info))
 }
 
 #[tauri::command]
-pub fn delete_key(
-    state: State<'_, AppState>,
-    fingerprint: String,
-) -> Result<(), String> {
+pub fn delete_key(state: State<'_, AppState>, fingerprint: String) -> Result<(), String> {
     let store = state.keystore.lock().map_err(|e| e.to_string())?;
-    store.delete_key(&fingerprint)
-        .map_err(|e| format!("Failed to delete key: {}", e))?;
-    Ok(())
+    key::delete(&*store, &fingerprint).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -295,13 +276,11 @@ pub fn export_public_key(
     fingerprint: String,
     file_path: String,
 ) -> Result<(), String> {
-    let store = state.keystore.lock().map_err(|e| e.to_string())?;
-    let armored = store.export_key_armored(&fingerprint)
-        .map_err(|e| format!("Failed to export key: {}", e))?;
-    drop(store);
-
-    std::fs::write(&file_path, armored)
-        .map_err(|e| format!("Failed to write file: {}", e))?;
+    let armored = {
+        let store = state.keystore.lock().map_err(|e| e.to_string())?;
+        key::export_public_armored(&*store, &fingerprint).map_err(|e| e.to_string())?
+    };
+    std::fs::write(&file_path, armored).map_err(|e| format!("Failed to write file: {}", e))?;
     Ok(())
 }
 
@@ -312,36 +291,13 @@ pub fn get_available_subkeys(
     fingerprint: String,
 ) -> Result<SubkeyAvailability, String> {
     let store = state.keystore.lock().map_err(|e| e.to_string())?;
-    let info = store.get_key_info(&fingerprint)
-        .map_err(|e| format!("Key not found: {}", e))?;
-
-    let now = Utc::now();
-    let mut availability = SubkeyAvailability {
-        primary_can_sign: info.can_primary_sign,
-        signing_subkey: false,
-        encryption: false,
-        authentication: false,
-    };
-
-    for sk in &info.subkeys {
-        // Skip revoked or expired subkeys
-        if sk.is_revoked {
-            continue;
-        }
-        if let Some(exp) = sk.expiration_time {
-            if exp < now {
-                continue;
-            }
-        }
-        match sk.key_type {
-            KeyType::Encryption => availability.encryption = true,
-            KeyType::Signing => availability.signing_subkey = true,
-            KeyType::Authentication => availability.authentication = true,
-            _ => {}
-        }
-    }
-
-    Ok(availability)
+    let avail = key::available_subkeys(&*store, &fingerprint).map_err(|e| e.to_string())?;
+    Ok(SubkeyAvailability {
+        primary_can_sign: avail.primary_can_sign,
+        signing_subkey: avail.signing_subkey,
+        encryption: avail.encryption,
+        authentication: avail.authentication,
+    })
 }
 
 #[tauri::command]
@@ -350,10 +306,10 @@ pub fn get_key_details(
     fingerprint: String,
 ) -> Result<KeyInfo, String> {
     let store = state.keystore.lock().map_err(|e| e.to_string())?;
-    let info = store.get_key_info(&fingerprint)
+    let info = store
+        .get_key_info(&fingerprint)
         .map_err(|e| format!("Key not found: {}", e))?;
-    drop(store);
-    Ok(cert_info_to_key_info_with_cards(&info, &state))
+    Ok(cert_info_to_key_info_with_cards(&info, &*store))
 }
 
 #[tauri::command]
@@ -362,23 +318,12 @@ pub fn add_user_id(
     fingerprint: String,
     name: String,
     email: String,
-    mut password: String,
+    password: String,
 ) -> Result<KeyInfo, String> {
     let uid_str = format!("{} <{}>", name, email);
-
+    let pw = Passphrase::new(password);
     let store = state.keystore.lock().map_err(|e| e.to_string())?;
-    let (cert_data, _) = store.get_key(&fingerprint)
-        .map_err(|e| format!("Key not found: {}", e))?;
-
-    let updated = add_uid(&cert_data, &uid_str, &password)
-        .map_err(|e| format!("Failed to add user ID: {}", e))?;
-    password.zeroize();
-
-    store.update_key(&fingerprint, &updated)
-        .map_err(|e| format!("Failed to update key: {}", e))?;
-
-    let info = store.get_key_info(&fingerprint)
-        .map_err(|e| format!("Failed to read key info: {}", e))?;
+    let info = key::add_uid(&*store, &fingerprint, &uid_str, &pw).map_err(|e| e.to_string())?;
     Ok(cert_info_to_key_info(&info))
 }
 
@@ -387,21 +332,11 @@ pub fn revoke_user_id(
     state: State<'_, AppState>,
     fingerprint: String,
     uid: String,
-    mut password: String,
+    password: String,
 ) -> Result<KeyInfo, String> {
+    let pw = Passphrase::new(password);
     let store = state.keystore.lock().map_err(|e| e.to_string())?;
-    let (cert_data, _) = store.get_key(&fingerprint)
-        .map_err(|e| format!("Key not found: {}", e))?;
-
-    let updated = revoke_uid(&cert_data, &uid, &password)
-        .map_err(|e| format!("Failed to revoke user ID: {}", e))?;
-    password.zeroize();
-
-    store.update_key(&fingerprint, &updated)
-        .map_err(|e| format!("Failed to update key: {}", e))?;
-
-    let info = store.get_key_info(&fingerprint)
-        .map_err(|e| format!("Failed to read key info: {}", e))?;
+    let info = key::revoke_uid(&*store, &fingerprint, &uid, &pw).map_err(|e| e.to_string())?;
     Ok(cert_info_to_key_info(&info))
 }
 
@@ -410,41 +345,13 @@ pub fn update_key_expiry(
     state: State<'_, AppState>,
     fingerprint: String,
     new_date: String,
-    mut password: String,
+    password: String,
 ) -> Result<KeyInfo, String> {
-    let expiry = NaiveDate::parse_from_str(&new_date, "%Y-%m-%d")
-        .map_err(|e| format!("Invalid date: {}", e))?;
-    let expiry_dt = Utc.from_utc_datetime(&expiry.and_hms_opt(0, 0, 0).unwrap());
-
+    let expiry = parse_expiry(&new_date)?;
+    let pw = Passphrase::new(password);
     let store = state.keystore.lock().map_err(|e| e.to_string())?;
-    let (cert_data, info) = store.get_key(&fingerprint)
-        .map_err(|e| format!("Key not found: {}", e))?;
-
-    // Update primary key expiry
-    let updated = update_primary_expiry(&cert_data, expiry_dt, &password)
-        .map_err(|e| format!("Failed to update primary expiry: {}", e))?;
-
-    // Update all subkey expiries
-    let subkey_fps: Vec<String> = info.subkeys.iter()
-        .filter(|sk| sk.key_type != KeyType::Certification)
-        .map(|sk| sk.fingerprint.clone())
-        .collect();
-
-    let final_cert = if !subkey_fps.is_empty() {
-        let fp_refs: Vec<&str> = subkey_fps.iter().map(|s| s.as_str()).collect();
-        update_subkeys_expiry(&updated, &fp_refs, expiry_dt, &password)
-            .map_err(|e| format!("Failed to update subkey expiry: {}", e))?
-    } else {
-        updated
-    };
-    password.zeroize();
-
-    store.update_key(&fingerprint, &final_cert)
-        .map_err(|e| format!("Failed to update key: {}", e))?;
-
-    let new_info = store.get_key_info(&fingerprint)
-        .map_err(|e| format!("Failed to read key info: {}", e))?;
-    Ok(cert_info_to_key_info(&new_info))
+    let info = key::update_expiry(&*store, &fingerprint, expiry, &pw).map_err(|e| e.to_string())?;
+    Ok(cert_info_to_key_info(&info))
 }
 
 #[tauri::command]
@@ -453,69 +360,38 @@ pub fn update_selected_subkeys_expiry(
     fingerprint: String,
     subkey_fingerprints: Vec<String>,
     new_date: String,
-    mut password: String,
+    password: String,
 ) -> Result<KeyInfo, String> {
-    let expiry = NaiveDate::parse_from_str(&new_date, "%Y-%m-%d")
-        .map_err(|e| format!("Invalid date: {}", e))?;
-    let expiry_dt = Utc.from_utc_datetime(&expiry.and_hms_opt(0, 0, 0).unwrap());
-
+    let expiry = parse_expiry(&new_date)?;
+    let pw = Passphrase::new(password);
     let store = state.keystore.lock().map_err(|e| e.to_string())?;
-    let (cert_data, _) = store.get_key(&fingerprint)
-        .map_err(|e| format!("Key not found: {}", e))?;
-
     let fp_refs: Vec<&str> = subkey_fingerprints.iter().map(|s| s.as_str()).collect();
-    let updated = update_subkeys_expiry(&cert_data, &fp_refs, expiry_dt, &password)
-        .map_err(|e| format!("Failed to update subkey expiry: {}", e))?;
-    password.zeroize();
-
-    store.update_key(&fingerprint, &updated)
-        .map_err(|e| format!("Failed to update key: {}", e))?;
-
-    let new_info = store.get_key_info(&fingerprint)
-        .map_err(|e| format!("Failed to read key info: {}", e))?;
-    Ok(cert_info_to_key_info(&new_info))
+    let info = key::update_subkey_expiry(&*store, &fingerprint, &fp_refs, expiry, &pw)
+        .map_err(|e| e.to_string())?;
+    Ok(cert_info_to_key_info(&info))
 }
 
 #[tauri::command]
 pub fn change_key_password(
     state: State<'_, AppState>,
     fingerprint: String,
-    mut old_password: String,
-    mut new_password: String,
+    old_password: String,
+    new_password: String,
 ) -> Result<(), String> {
+    let old_pw = Passphrase::new(old_password);
+    let new_pw = Passphrase::new(new_password);
     let store = state.keystore.lock().map_err(|e| e.to_string())?;
-    let (cert_data, _) = store.get_key(&fingerprint)
-        .map_err(|e| format!("Key not found: {}", e))?;
-
-    let updated = update_password(&cert_data, &old_password, &new_password)
-        .map_err(|e| format!("Failed to change password: {}", e))?;
-    old_password.zeroize();
-    new_password.zeroize();
-
-    store.update_key(&fingerprint, &updated)
-        .map_err(|e| format!("Failed to update key: {}", e))?;
-
-    Ok(())
+    key::change_password(&*store, &fingerprint, &old_pw, &new_pw).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 pub fn revoke_key_cmd(
     state: State<'_, AppState>,
     fingerprint: String,
-    mut password: String,
+    password: String,
 ) -> Result<KeyInfo, String> {
+    let pw = Passphrase::new(password);
     let store = state.keystore.lock().map_err(|e| e.to_string())?;
-    let (cert_data, _) = store.get_key(&fingerprint)
-        .map_err(|e| format!("Key not found: {}", e))?;
-
-    let revoked = revoke_key(&cert_data, &password)
-        .map_err(|e| format!("Failed to revoke key: {}", e))?;
-    password.zeroize();
-
-    store.update_key(&fingerprint, &revoked)
-        .map_err(|e| format!("Failed to update key: {}", e))?;
-
-    let info = store.get_key_info(&fingerprint)
-        .map_err(|e| format!("Failed to read key info: {}", e))?;
+    let info = key::revoke(&*store, &fingerprint, &pw).map_err(|e| e.to_string())?;
     Ok(cert_info_to_key_info(&info))
 }

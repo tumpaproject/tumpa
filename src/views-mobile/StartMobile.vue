@@ -1,4 +1,5 @@
 <script setup>
+import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { open } from '@tauri-apps/plugin-dialog'
 import { invoke } from '@tauri-apps/api/core'
@@ -6,6 +7,19 @@ import { useAppStore } from '@/stores/appStore'
 
 const router = useRouter()
 const store = useAppStore()
+// Show the empty-state UI only after we've confirmed there are no keys.
+// On cold launch the store is empty, so without this flag we'd flash
+// "No keys yet" even for users who have existing keys.
+const ready = ref(false)
+
+onMounted(async () => {
+  await store.refreshKeys()
+  if (store.hasKeys) {
+    router.replace('/keys')
+    return
+  }
+  ready.value = true
+})
 
 async function importKey() {
   const path = await open({ title: 'Import Key', multiple: false })
@@ -21,7 +35,7 @@ async function importKey() {
 </script>
 
 <template>
-  <div class="start">
+  <div v-if="ready" class="start">
     <h1>No keys yet</h1>
     <p class="subtitle">Generate a new OpenPGP key or import an existing one.</p>
     <div class="actions">
