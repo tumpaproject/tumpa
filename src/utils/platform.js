@@ -15,3 +15,15 @@ export function isMobilePlatform() {
   }
   return false
 }
+
+/**
+ * Returns true when the app is running on iOS. Used to hide the
+ * USB transport options — Apple doesn't grant third-party apps the
+ * `com.apple.smartcard` entitlement needed for `TKSmartCard`, so
+ * only NFC is actually wired up on iOS.
+ */
+export function isIosPlatform() {
+  if (typeof navigator === 'undefined') return false
+  const ua = navigator.userAgent.toLowerCase()
+  return /iphone|ipad|ipod/.test(ua)
+}

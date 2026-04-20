@@ -5,6 +5,9 @@ import { useAppStore } from '@/stores/appStore'
 import CardConnectMobile from '@/views-mobile/CardConnectMobile.vue'
 import { useCardOp } from '@/utils/useCardOp'
 import { setCardTransport } from '@/utils/cardTransport'
+import { isIosPlatform } from '@/utils/platform'
+
+const isIos = isIosPlatform()
 
 const router = useRouter()
 const store = useAppStore()
@@ -48,7 +51,7 @@ async function save() {
       inputmode="numeric"
     />
 
-    <fieldset class="group">
+    <fieldset v-if="!isIos" class="group">
       <legend class="label">Card transport</legend>
       <label class="opt">
         <input type="radio" name="transport" value="nfc" v-model="transport" />

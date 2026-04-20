@@ -5,6 +5,9 @@ import { listen } from '@tauri-apps/api/event'
 import { useAppStore } from '@/stores/appStore'
 import CardConnectMobile from '@/views-mobile/CardConnectMobile.vue'
 import { setCardTransport } from '@/utils/cardTransport'
+import { isIosPlatform } from '@/utils/platform'
+
+const isIos = isIosPlatform()
 
 const router = useRouter()
 const store = useAppStore()
@@ -60,19 +63,30 @@ function cancel() {
   <div class="card-home">
     <div class="toolbar">
       <button class="primary" :disabled="reading" @click="readCard('nfc')">
-        Read (NFC)
+        {{ isIos ? 'Read card' : 'Read (NFC)' }}
       </button>
-      <button class="secondary" :disabled="reading" @click="readCard('usb')">
+      <button
+        v-if="!isIos"
+        class="secondary"
+        :disabled="reading"
+        @click="readCard('usb')"
+      >
         Read (USB)
       </button>
     </div>
 
     <p v-if="!store.cardDetails && !reading" class="hint">
-      <strong>NFC</strong>: tap your OpenPGP smartcard against the top
-      of the phone after pressing the button.
-      <br>
-      <strong>USB</strong>: plug a YubiKey or other CCID reader into
-      the phone's USB-C port first, then press the button.
+      <template v-if="isIos">
+        Tap <strong>Read card</strong>, then hold your OpenPGP
+        smartcard against the top of the phone.
+      </template>
+      <template v-else>
+        <strong>NFC</strong>: tap your OpenPGP smartcard against the
+        top of the phone after pressing the button.
+        <br>
+        <strong>USB</strong>: plug a YubiKey or other CCID reader into
+        the phone's USB-C port first, then press the button.
+      </template>
     </p>
 
     <p v-if="errorMessage && !reading" class="error" role="alert">

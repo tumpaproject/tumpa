@@ -13,6 +13,9 @@ import {
   isCancelledError,
 } from '@/utils/keyring'
 import { setCardTransport } from '@/utils/cardTransport'
+import { isIosPlatform } from '@/utils/platform'
+
+const isIos = isIosPlatform()
 
 const router = useRouter()
 const route = useRoute()
@@ -232,7 +235,7 @@ function cancelUpload() {
         Remember passphrase (Face ID / Touch ID)
       </label>
 
-      <fieldset class="group">
+      <fieldset v-if="!isIos" class="group">
         <legend class="label">Card transport</legend>
         <label class="opt">
           <input type="radio" name="transport" value="nfc" v-model="transport" />
