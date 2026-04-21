@@ -1,6 +1,6 @@
 [package]
 name = "tumpa"
-version = "0.3.0"
+version = "0.11.0"
 description = "The Usability Minded PGP Application"
 authors = ["Kushal Das"]
 edition = "2021"
