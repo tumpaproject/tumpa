@@ -4,6 +4,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
 import CardConnectMobile from '@/views-mobile/CardConnectMobile.vue'
+import PasswordInputMobile from '@/components/PasswordInputMobile.vue'
 import { setCardTransport } from '@/utils/cardTransport'
 import { isIosPlatform } from '@/utils/platform'
 
@@ -163,10 +164,9 @@ function cancelUpload() {
       <p class="fp">{{ fingerprint }}</p>
 
       <label class="label" for="up-pass">Key password</label>
-      <input
+      <PasswordInputMobile
         id="up-pass"
         v-model="password"
-        type="password"
         autocomplete="current-password"
       />
 

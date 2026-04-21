@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/appStore'
+import PasswordInputMobile from '@/components/PasswordInputMobile.vue'
 
 const router = useRouter()
 const store = useAppStore()
@@ -62,7 +63,7 @@ function submit() {
     ></textarea>
 
     <label class="label" for="gm-pass">Key Passphrase</label>
-    <input id="gm-pass" v-model="passphrase" type="password" autocomplete="new-password" />
+    <PasswordInputMobile id="gm-pass" v-model="passphrase" autocomplete="new-password" />
     <small class="hint">Recommended: 10+ chars in length</small>
 
     <label class="label" for="gm-algo">Key algorithm</label>

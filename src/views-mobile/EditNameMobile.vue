@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/appStore'
 import CardConnectMobile from '@/views-mobile/CardConnectMobile.vue'
+import PasswordInputMobile from '@/components/PasswordInputMobile.vue'
 import { useCardOp } from '@/utils/useCardOp'
 import { setCardTransport } from '@/utils/cardTransport'
 import { isIosPlatform } from '@/utils/platform'
@@ -43,10 +44,9 @@ async function save() {
     <input id="card-name" v-model="name" type="text" autocomplete="off" />
 
     <label class="label" for="card-name-pin">Current admin PIN</label>
-    <input
+    <PasswordInputMobile
       id="card-name-pin"
       v-model="adminPin"
-      type="password"
       autocomplete="current-password"
       inputmode="numeric"
     />
