@@ -21,7 +21,6 @@ import ErrorView from '@/views/ErrorView.vue'
 
 import StartMobile from '@/views-mobile/StartMobile.vue'
 import KeyListMobile from '@/views-mobile/KeyListMobile.vue'
-import GenerateKeyMobile from '@/views-mobile/GenerateKeyMobile.vue'
 import KeyDetailsMobile from '@/views-mobile/KeyDetailsMobile.vue'
 import UploadToCardMobile from '@/views-mobile/UploadToCardMobile.vue'
 import CardHomeMobile from '@/views-mobile/CardHomeMobile.vue'
@@ -55,8 +54,6 @@ const desktopRoutes = [
 const mobileRoutes = [
   { path: '/', name: 'start', component: StartMobile, meta: { title: 'Tumpa' } },
   { path: '/keys', name: 'key-list', component: KeyListMobile, meta: { title: 'Keys' } },
-  { path: '/keys/generate', name: 'generate-key', component: GenerateKeyMobile, meta: { title: 'Generate key' } },
-  { path: '/keys/generating', name: 'generating', component: GeneratingView, meta: { title: 'Generating…' } },
   { path: '/keys/:fingerprint', name: 'key-details', component: KeyDetailsMobile, props: true, meta: { title: 'Key' } },
   { path: '/card', name: 'card-home', component: CardHomeMobile, meta: { title: 'SmartCards' } },
   { path: '/card/upload', name: 'upload-to-card', component: UploadToCardMobile, meta: { title: 'Upload to card' } },

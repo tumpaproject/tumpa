@@ -38,9 +38,12 @@ function primaryUid(key) {
 
 <template>
   <div class="list-view">
+    <!-- Generate is intentionally desktop-only. Key generation on a
+         phone is slow (no PCSC / hardware entropy helpers) and offers
+         a weaker UX than just importing an existing key; mobile users
+         should create their key on desktop and sync. -->
     <div class="toolbar">
-      <button class="primary" @click="router.push('/keys/generate')">+ Generate</button>
-      <button class="secondary" @click="importKey">Import</button>
+      <button class="secondary" @click="importKey">Import key</button>
     </div>
 
     <ul class="keys">
