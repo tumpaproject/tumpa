@@ -76,6 +76,7 @@ async function save() {
       v-if="busy"
       :phase="phase"
       action="changing PIN"
+      :transport="transport"
       :error="error"
       @cancel="cancel"
     />

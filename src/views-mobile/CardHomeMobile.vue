@@ -14,6 +14,7 @@ const store = useAppStore()
 
 const reading = ref(false)
 const overlayPhase = ref('waiting')
+const overlayTransport = ref('nfc')
 const errorMessage = ref('')
 
 let unlistenCardConnected = null
@@ -39,6 +40,7 @@ onUnmounted(() => {
 async function readCard(transport) {
   errorMessage.value = ''
   overlayPhase.value = 'waiting'
+  overlayTransport.value = transport
   reading.value = true
   try {
     await setCardTransport(transport)
@@ -155,6 +157,7 @@ function cancel() {
       v-if="reading"
       :phase="overlayPhase"
       action="reading"
+      :transport="overlayTransport"
       :error="errorMessage"
       @cancel="cancel"
     />

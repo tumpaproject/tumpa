@@ -242,6 +242,7 @@ function cancelUpload() {
       v-if="uploading"
       :phase="overlayPhase"
       action="uploading"
+      :transport="transport"
       :error="errorMessage"
       @cancel="cancelUpload"
     />

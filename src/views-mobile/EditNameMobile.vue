@@ -71,6 +71,7 @@ async function save() {
       v-if="busy"
       :phase="phase"
       action="updating"
+      :transport="transport"
       :error="error"
       @cancel="cancel"
     />

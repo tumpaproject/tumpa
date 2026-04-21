@@ -25,6 +25,15 @@ const props = defineProps({
   // subtitle). Upload flows pass 'uploading', expiry flows 'updating',
   // PIN changes 'changing PIN', etc.
   action: { type: String, default: 'working' },
+  // Transport the parent chose. Drives the waiting-phase copy so the
+  // user sees "Hold your card" on NFC or "Plug in your reader" on
+  // USB-C — without this, USB flows confused users into thinking the
+  // app was stuck trying NFC.
+  transport: {
+    type: String,
+    default: 'nfc',
+    validator: (v) => v === 'nfc' || v === 'usb',
+  },
   error: { type: String, default: '' },
 })
 defineEmits(['cancel'])
@@ -45,14 +54,23 @@ defineEmits(['cancel'])
         <div v-else class="spinner-ring"></div>
       </div>
       <h2 id="cc-title" class="title">
-        <template v-if="phase === 'waiting'">Hold your security key to the phone</template>
+        <template v-if="phase === 'waiting' && transport === 'usb'">
+          Plug your smartcard reader in
+        </template>
+        <template v-else-if="phase === 'waiting'">
+          Hold your security key to the phone
+        </template>
         <template v-else>
           Card connected — {{ action }}<span class="ellipsis" aria-hidden="true"></span>
         </template>
       </h2>
       <p class="subtitle">
-        <template v-if="phase === 'waiting'">
-          Hold the back of the phone against the card, or plug it in via USB-C.
+        <template v-if="phase === 'waiting' && transport === 'usb'">
+          Connect your YubiKey or other CCID reader to the phone's USB-C
+          port and accept the permission prompt.
+        </template>
+        <template v-else-if="phase === 'waiting'">
+          Hold the back of the phone against the card.
         </template>
         <template v-else>
           Keep the card in place. This can take 10–30 seconds for a full
