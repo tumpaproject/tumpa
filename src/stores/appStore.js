@@ -2,6 +2,9 @@ import { defineStore } from 'pinia'
 import { invoke } from '@tauri-apps/api/core'
 
 let cardPollInterval = null
+// Shared across all callers so overlapping refreshes (e.g. SidebarLayout
+// + a route view mounting together) collapse into a single IPC.
+let refreshInFlight = null
 
 export const useAppStore = defineStore('app', {
   state: () => ({
@@ -29,11 +32,24 @@ export const useAppStore = defineStore('app', {
 
   actions: {
     async refreshKeys() {
-      try {
-        this.keys = await invoke('list_keys')
-      } catch (e) {
-        this.errorMessage = String(e)
-      }
+      // Collapse overlapping calls into a single IPC. Without this,
+      // two concurrent onMounted hooks on startup (e.g. layout shell +
+      // route view) would each pay the full list_keys cost.
+      //
+      // Uses `list_keys_summary` (schema v4+) so the list view never
+      // triggers a per-key rpgp parse. Per-key details are fetched on
+      // drill-in via `get_key_details` as before.
+      if (refreshInFlight) return refreshInFlight
+      refreshInFlight = (async () => {
+        try {
+          this.keys = await invoke('list_keys_summary')
+        } catch (e) {
+          this.errorMessage = String(e)
+        } finally {
+          refreshInFlight = null
+        }
+      })()
+      return refreshInFlight
     },
 
     async checkCard() {

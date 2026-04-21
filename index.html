@@ -5,6 +5,13 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>Tumpa</title>
+    <style>
+      /* Pre-hydration background: WebKitGTK shows the window's default
+         (black) color until the first paint commits. Inline a white
+         background here so the window flashes white, not black, during
+         the brief gap between window creation and Vue mount. */
+      html, body { background: #ffffff; margin: 0; }
+    </style>
   </head>
   <body>
     <div id="app"></div>

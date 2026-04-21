@@ -12,7 +12,7 @@
 
 use chrono::{NaiveDate, TimeZone, Utc};
 use libtumpa::{
-    key, CipherSuite, KeyStore, KeyType, Passphrase, SubkeyFlags,
+    key, CipherSuite, KeyStore, KeySummary, KeyType, Passphrase, SubkeyFlags, SubkeySummary,
 };
 use serde::Serialize;
 use tauri::State;
@@ -177,6 +177,127 @@ pub fn list_keys(state: State<'_, AppState>) -> Result<Vec<KeyInfo>, String> {
     Ok(certs
         .iter()
         .map(|c| cert_info_to_key_info_with_cards(c, &*store))
+        .collect())
+}
+
+/// Wire-format summary row consumed by `KeyItem.vue` +
+/// `KeyListMobile.vue`. Intentionally a subset of [`KeyInfo`] — the
+/// per-subkey details + UID certifications aren't shown on the list
+/// screen and would force an rpgp parse per key to populate.
+#[derive(Serialize, Clone)]
+pub struct KeyListRow {
+    pub fingerprint: String,
+    pub key_type: String,
+    pub is_secret: bool,
+    pub is_revoked: bool,
+    pub creation_time: String,
+    pub expiration_time: String,
+    pub revocation_time: Option<String>,
+    pub user_ids: Vec<UserIdData>,
+    pub card_idents: Vec<String>,
+}
+
+fn summary_to_row(summary: &KeySummary, card_idents: Vec<String>) -> KeyListRow {
+    // Parse "Name <email@example.com>" back into name / email pairs
+    // so the frontend can render UID pills. Matches
+    // `cert_info_to_key_info_inner`'s splitter, because the frontend
+    // is already coded against that shape. `revoked` stays false
+    // here — the `user_ids` SQL cache doesn't track per-UID
+    // revocation, and the list view only surfaces whole-key
+    // revocation anyway.
+    let user_ids: Vec<UserIdData> = summary
+        .user_ids
+        .iter()
+        .map(|uid| {
+            let (name, email) = match uid.uid.find('<') {
+                Some(lt_pos) => (
+                    uid.uid[..lt_pos].trim().to_string(),
+                    uid.uid[lt_pos + 1..]
+                        .trim_end_matches('>')
+                        .trim()
+                        .to_string(),
+                ),
+                None => (uid.uid.clone(), uid.email.clone().unwrap_or_default()),
+            };
+            UserIdData {
+                name,
+                email,
+                revoked: false,
+                revocation_time: None,
+            }
+        })
+        .collect();
+
+    KeyListRow {
+        fingerprint: summary.fingerprint.clone(),
+        key_type: derive_key_type_label(&summary.subkeys),
+        is_secret: summary.is_secret,
+        is_revoked: summary.is_revoked,
+        creation_time: summary
+            .creation_time
+            .map(|t| t.format("%d %b %Y").to_string())
+            .unwrap_or_else(|| "Unknown".to_string()),
+        expiration_time: summary
+            .expiration_time
+            .map(|t| t.format("%d %b %Y").to_string())
+            .unwrap_or_else(|| "Never".to_string()),
+        revocation_time: summary
+            .revocation_time
+            .map(|t| t.format("%d %b %Y %H:%M").to_string()),
+        user_ids,
+        card_idents,
+    }
+}
+
+/// Pick the cipher-suite label the UI shows — mirrors
+/// `cert_info_to_key_info_inner`'s logic so switching the list view
+/// over to the summary payload doesn't cause visible tag changes.
+fn derive_key_type_label(subkeys: &[SubkeySummary]) -> String {
+    subkeys
+        .iter()
+        .find(|sk| sk.key_type != "unknown" && sk.key_type != "certification")
+        .or_else(|| subkeys.first())
+        .map(|sk| match (sk.algorithm.as_deref().unwrap_or(""), sk.bit_length.unwrap_or(0)) {
+            ("RSA", n) if n >= 4096 => "RSA4096".to_string(),
+            ("RSA", n) if n >= 2048 => "RSA2048".to_string(),
+            ("RSA", n) => format!("RSA{}", n),
+            ("EdDSA", _) | ("Ed25519", _) | ("ECDH", _) => "Cv25519".to_string(),
+            ("ECDSA", 256) | ("ECDH P-256", _) => "NistP256".to_string(),
+            ("ECDSA", 384) | ("ECDH P-384", _) => "NistP384".to_string(),
+            ("ECDSA", 521) | ("ECDH P-521", _) => "NistP521".to_string(),
+            (other, _) if !other.is_empty() => other.to_string(),
+            _ => "Unknown".to_string(),
+        })
+        .unwrap_or_else(|| "Unknown".to_string())
+}
+
+/// Cheap alternative to `list_keys` for the list / gallery views.
+///
+/// Reads only the SQL summary columns (schema v4+) — no rpgp parse
+/// per key. Card idents are fetched in a single batched query via
+/// `libtumpa::card::link::card_idents_map`, killing the per-key N+1
+/// the old command had on desktop.
+#[tauri::command]
+pub fn list_keys_summary(state: State<'_, AppState>) -> Result<Vec<KeyListRow>, String> {
+    let store = state.keystore.lock().map_err(|e| e.to_string())?;
+    let mut summaries = store.list_keys_summary().map_err(|e| e.to_string())?;
+    summaries.sort_by(|a, b| b.creation_time.cmp(&a.creation_time));
+
+    // Desktop: one SQL query → fingerprint → card idents map.
+    // Mobile: PCSC isn't available and link::card_idents_map isn't
+    // compiled in, so every key gets an empty ident list.
+    #[cfg(not(any(target_os = "android", target_os = "ios")))]
+    let card_map = libtumpa::card::link::card_idents_map(&*store).unwrap_or_default();
+    #[cfg(any(target_os = "android", target_os = "ios"))]
+    let card_map: std::collections::HashMap<String, Vec<String>> =
+        std::collections::HashMap::new();
+
+    Ok(summaries
+        .into_iter()
+        .map(|s| {
+            let idents = card_map.get(&s.fingerprint).cloned().unwrap_or_default();
+            summary_to_row(&s, idents)
+        })
         .collect())
 }
 

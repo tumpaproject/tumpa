@@ -7,7 +7,7 @@ use tauri::Manager;
 
 #[cfg(not(any(target_os = "android", target_os = "ios")))]
 use commands::{
-    list_keys, generate_key, import_key, import_public_key, delete_key,
+    list_keys, list_keys_summary, generate_key, import_key, import_public_key, delete_key,
     export_public_key, get_public_armored, get_available_subkeys,
     get_key_details, add_user_id, revoke_user_id, update_key_expiry,
     update_selected_subkeys_expiry, change_key_password, revoke_key_cmd,
@@ -23,7 +23,7 @@ use commands::{
 
 #[cfg(any(target_os = "android", target_os = "ios"))]
 use commands::{
-    list_keys, generate_key, import_key, import_public_key, delete_key,
+    list_keys, list_keys_summary, generate_key, import_key, import_public_key, delete_key,
     export_public_key, get_public_armored, get_available_subkeys,
     get_key_details, add_user_id, revoke_user_id, update_key_expiry,
     update_selected_subkeys_expiry, change_key_password, revoke_key_cmd,
@@ -76,6 +76,7 @@ pub fn run() {
     #[cfg(not(any(target_os = "android", target_os = "ios")))]
     let builder = builder.invoke_handler(tauri::generate_handler![
         list_keys,
+        list_keys_summary,
         generate_key,
         import_key,
         import_public_key,
@@ -115,6 +116,7 @@ pub fn run() {
     #[cfg(any(target_os = "android", target_os = "ios"))]
     let builder = builder.invoke_handler(tauri::generate_handler![
         list_keys,
+        list_keys_summary,
         generate_key,
         import_key,
         import_public_key,

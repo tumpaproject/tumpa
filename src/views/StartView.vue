@@ -1,4 +1,5 @@
 <script setup>
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { open } from '@tauri-apps/plugin-dialog'
 import { invoke } from '@tauri-apps/api/core'
@@ -10,6 +11,19 @@ import importSvg from '@/assets/icons/import.svg'
 
 const router = useRouter()
 const store = useAppStore()
+
+// Gate the empty-state UI on a completed refresh so users who already
+// have keys don't see "No keys added yet" flash before the redirect.
+const ready = ref(false)
+
+onMounted(async () => {
+  await store.refreshKeys()
+  if (store.hasKeys) {
+    router.replace('/keys')
+    return
+  }
+  ready.value = true
+})
 
 async function importKey() {
   const path = await open({
@@ -29,7 +43,7 @@ async function importKey() {
 </script>
 
 <template>
-  <div class="start-view">
+  <div v-if="ready" class="start-view">
     <img :src="bigKeySvg" alt="" class="big-key" />
     <h1>No keys added yet</h1>
     <p>You can import an existing key or generate a new one</p>

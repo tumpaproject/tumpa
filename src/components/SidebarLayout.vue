@@ -2,6 +2,13 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/appStore'
+
+// Defer to requestIdleCallback when available (real browsers), else
+// fall back to a short-delay setTimeout. queueMicrotask isn't enough —
+// we want the first paint to commit before we fire card IPC.
+const defer = typeof requestIdleCallback === 'function'
+  ? (fn) => requestIdleCallback(fn, { timeout: 400 })
+  : (fn) => setTimeout(fn, 50)
 import logoSvg from '@/assets/icons/logo.svg'
 import keyIconSvg from '@/assets/icons/key_icon.svg'
 import usbkeySvg from '@/assets/icons/usbkey.svg'
@@ -13,13 +20,15 @@ const router = useRouter()
 const store = useAppStore()
 const smartCardOpen = ref(true)
 
-onMounted(async () => {
-  await store.refreshKeys()
-  if (store.hasKeys) {
-    router.replace('/keys')
-  }
-  await store.checkCard()
-  store.startCardPolling()
+// Key loading + initial redirect are owned by the route views
+// (StartView / KeyListView) so the sidebar shell doesn't block the
+// first paint on a Rust IPC. Card detection is deferred past first
+// paint so the window renders before we touch PCSC.
+onMounted(() => {
+  defer(async () => {
+    await store.checkCard()
+    store.startCardPolling()
+  })
 })
 
 onUnmounted(() => {

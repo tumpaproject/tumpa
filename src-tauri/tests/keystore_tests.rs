@@ -355,3 +355,110 @@ fn test_change_key_password_wrong_old_password() {
     let result = update_password(&key.secret_key, "wrongpass", "newpass");
     assert!(result.is_err(), "Should fail with wrong old password");
 }
+
+/// Regression / forward-compat check for `list_keys_summary` on the
+/// wecanencrypt side. Covers the fields the tumpa list view reads —
+/// fingerprint, is_secret, creation_time, user_ids name+email,
+/// subkey algorithm/bit_length — without touching parse_key_bytes.
+///
+/// Card-ident wiring lives in tumpa's keystore.rs command layer, not
+/// in wecanencrypt, so we exercise it separately (save_card_key +
+/// list_all_card_keys) to guarantee the "one bulk query" assumption
+/// the command relies on.
+#[test]
+fn test_list_keys_summary_and_bulk_card_keys() {
+    let store = KeyStore::open_in_memory().unwrap();
+
+    let key_a = generate_test_key("pw-a");
+    let key_b = generate_test_key("pw-b");
+    let fp_a = store.import_key(&key_a.secret_key).unwrap();
+    let fp_b = store.import_key(&key_b.secret_key).unwrap();
+
+    // Link A to two slots on one card, B to one slot on a second card.
+    store
+        .save_card_key(&fp_a, "FOO:0001", "0001", Some("Foo"), "signature", "SIGA")
+        .unwrap();
+    store
+        .save_card_key(&fp_a, "FOO:0001", "0001", Some("Foo"), "encryption", "ENCA")
+        .unwrap();
+    store
+        .save_card_key(&fp_b, "BAR:0002", "0002", Some("Bar"), "signature", "SIGB")
+        .unwrap();
+
+    // list_keys_summary returns both keys with the fields the list
+    // view needs, without re-parsing the blob.
+    let summaries = store.list_keys_summary().unwrap();
+    assert_eq!(summaries.len(), 2);
+
+    let a_summary = summaries
+        .iter()
+        .find(|s| s.fingerprint == fp_a)
+        .expect("key A in summary");
+    assert!(a_summary.is_secret);
+    assert!(a_summary.creation_time.is_some());
+    assert_eq!(a_summary.user_ids.len(), 1);
+    assert!(a_summary.user_ids[0].uid.contains("Test User"));
+    assert_eq!(
+        a_summary.user_ids[0].email.as_deref(),
+        Some("test@example.com")
+    );
+    // Primary + signing + encryption subkey = at least three rows.
+    assert!(
+        a_summary.subkeys.len() >= 2,
+        "primary + >=1 subkey cached on summary"
+    );
+    for sk in &a_summary.subkeys {
+        assert!(sk.algorithm.is_some(), "algorithm cached on subkey");
+        assert!(sk.bit_length.is_some(), "bit_length cached on subkey");
+    }
+
+    // Bulk card lookup returns the same rows as per-key lookup, but in
+    // a single query — the property the new tumpa command depends on.
+    let all = store.list_all_card_keys().unwrap();
+    let a_from_all: Vec<&wecanencrypt::keystore::StoredCardKey> = all
+        .iter()
+        .filter(|(fp, _)| fp == &fp_a)
+        .map(|(_, c)| c)
+        .collect();
+    let b_from_all: Vec<&wecanencrypt::keystore::StoredCardKey> = all
+        .iter()
+        .filter(|(fp, _)| fp == &fp_b)
+        .map(|(_, c)| c)
+        .collect();
+    assert_eq!(a_from_all.len(), 2, "A has both slots");
+    assert_eq!(b_from_all.len(), 1, "B has one slot");
+    assert_eq!(all.len(), 3);
+
+    // get_key_summary must agree with the list form for a single row.
+    let one = store.get_key_summary(&fp_a).unwrap();
+    assert_eq!(one.fingerprint, fp_a);
+    assert_eq!(one.user_ids.len(), a_summary.user_ids.len());
+    assert_eq!(one.subkeys.len(), a_summary.subkeys.len());
+}
+
+/// A revoked key must show `is_revoked = true` and a
+/// `revocation_time` in the summary without parsing the blob.
+#[test]
+fn test_list_keys_summary_surfaces_revocation() {
+    use wecanencrypt::revoke_key;
+
+    let store = KeyStore::open_in_memory().unwrap();
+    let key = generate_test_key("pw");
+    let fp = store.import_key(&key.secret_key).unwrap();
+
+    // Pre-condition: not revoked.
+    let before = store.get_key_summary(&fp).unwrap();
+    assert!(!before.is_revoked);
+    assert!(before.revocation_time.is_none());
+
+    // Revoke and reimport so the keystore has the revocation cert.
+    let revoked_cert = revoke_key(&key.secret_key, "pw").unwrap();
+    store.import_key(&revoked_cert).unwrap();
+
+    let after = store.get_key_summary(&fp).unwrap();
+    assert!(after.is_revoked, "summary must reflect revocation");
+    assert!(
+        after.revocation_time.is_some(),
+        "summary must cache revocation_time"
+    );
+}
