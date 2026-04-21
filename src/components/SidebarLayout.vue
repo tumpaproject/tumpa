@@ -6,6 +6,8 @@ import logoSvg from '@/assets/icons/logo.svg'
 import keyIconSvg from '@/assets/icons/key_icon.svg'
 import usbkeySvg from '@/assets/icons/usbkey.svg'
 import cardStatusSvg from '@/assets/icons/card_status.svg'
+import OneShotBanner from '@/components/OneShotBanner.vue'
+import { enterOneShot, exitOneShot } from '@/utils/oneShot'
 
 const router = useRouter()
 const store = useAppStore()
@@ -47,12 +49,27 @@ async function goToCard(subItem = '') {
     router.push(`/card/${subItem}`)
   }
 }
+
+async function onOneShotToggle() {
+  try {
+    if (store.mode === 'one-shot') {
+      await exitOneShot()
+    } else {
+      await enterOneShot()
+    }
+    router.replace(store.hasKeys ? '/keys' : '/')
+  } catch (e) {
+    alert(`Could not change mode: ${e}`)
+  }
+}
 </script>
 
 <template>
-  <div class="layout">
-    <a href="#main-content" class="skip-link">Skip to content</a>
-    <aside class="sidebar" aria-label="Sidebar">
+  <div class="shell">
+    <OneShotBanner />
+    <div class="layout">
+      <a href="#main-content" class="skip-link">Skip to content</a>
+      <aside class="sidebar" aria-label="Sidebar">
       <div class="sidebar-logo">
         <img :src="logoSvg" alt="Tumpa" />
       </div>
@@ -120,6 +137,18 @@ async function goToCard(subItem = '') {
             @click="goToCard('touch-mode')"
           >Touch Mode</button>
         </template>
+
+        <div class="nav-spacer"></div>
+
+        <button
+          type="button"
+          class="nav-item nav-item--icon one-shot-toggle"
+          :class="{ 'one-shot-active': store.mode === 'one-shot' }"
+          @click="onOneShotToggle"
+        >
+          <span class="nav-icon" aria-hidden="true">&#9888;</span>
+          <span>{{ store.mode === 'one-shot' ? 'Exit One Shot' : 'One Shot mode' }}</span>
+        </button>
       </nav>
 
       <div class="sidebar-status" v-if="store.cardConnected">
@@ -131,14 +160,32 @@ async function goToCard(subItem = '') {
     <main id="main-content" class="content">
       <slot />
     </main>
+    </div>
   </div>
 </template>
 
 <style scoped>
-.layout {
+.shell {
   display: flex;
+  flex-direction: column;
   height: 100vh;
   width: 100vw;
+}
+
+.layout {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.one-shot-toggle {
+  color: #d24545;
+  margin-top: auto;
+}
+
+.one-shot-toggle.one-shot-active {
+  color: #ff6b6b;
+  font-weight: 700;
 }
 
 .sidebar {

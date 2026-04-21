@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { invoke } from '@tauri-apps/api/core'
 import { save } from '@tauri-apps/plugin-dialog'
+import { writeTextFile } from '@tauri-apps/plugin-fs'
 import { useAppStore } from '@/stores/appStore'
 
 const props = defineProps({ fingerprint: { type: String, required: true } })
@@ -30,7 +31,15 @@ async function exportKey() {
   })
   if (!path) return
   try {
-    await invoke('export_public_key', { fingerprint: props.fingerprint, filePath: path })
+    // On Android `save()` returns a SAF `content://` URI, which the
+    // Rust `export_public_key` command can't handle (std::fs::write
+    // treats it as a literal path and fails silently — a 0-byte
+    // placeholder gets left behind). Fetch the armored text from Rust
+    // and write it through the fs plugin, which understands content
+    // URIs on Android and behaves like a normal filesystem write on
+    // desktop.
+    const armored = await invoke('get_public_armored', { fingerprint: props.fingerprint })
+    await writeTextFile(path, armored)
   } catch (e) {
     alert(String(e))
   }

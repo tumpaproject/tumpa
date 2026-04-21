@@ -283,6 +283,23 @@ pub fn export_public_key(
     Ok(())
 }
 
+/// Return the armored public key for a fingerprint without touching
+/// the filesystem. Used by the mobile UI, which can't call
+/// `export_public_key` directly — on Android the dialog plugin returns
+/// a `content://` URI instead of a filesystem path, and
+/// `std::fs::write` quietly fails on it (Android creates a 0-byte
+/// placeholder first, so the user sees an empty file + an error).
+/// The JS side calls this, then uses `@tauri-apps/plugin-fs`'s
+/// `writeTextFile` which does understand content URIs.
+#[tauri::command]
+pub fn get_public_armored(
+    state: State<'_, AppState>,
+    fingerprint: String,
+) -> Result<String, String> {
+    let store = state.keystore.lock().map_err(|e| e.to_string())?;
+    key::export_public_armored(&*store, &fingerprint).map_err(|e| e.to_string())
+}
+
 #[tauri::command]
 pub fn get_available_subkeys(
     state: State<'_, AppState>,

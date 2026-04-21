@@ -7,22 +7,36 @@
 //
 //   card.pin.user          — OpenPGP card user PIN (PW1)
 //   card.pin.admin         — OpenPGP card admin PIN (PW3)
-//   key.pass.<FINGERPRINT> — passphrase for the on-disk secret key
-//                            with the given uppercase fingerprint
+//
+// Passphrase remembering is intentionally NOT supported. Key-unlock
+// passphrases are always typed fresh — biometric-gated storage for
+// passphrases encourages users to hand their master secret to the OS
+// keyring, which is the wrong threat model for Tumpa. PIN storage is
+// fine because the card itself is the access factor.
 //
 // Every read triggers a biometric prompt. Saves are allowed freely
 // within the app process; the OS still requires a device passcode.
 
 import { invoke } from '@tauri-apps/api/core'
+import { useAppStore } from '@/stores/appStore'
 
 export function keyForUserPin() { return 'card.pin.user' }
 export function keyForAdminPin() { return 'card.pin.admin' }
-export function keyForKeyPassphrase(fingerprint) {
-  return `key.pass.${String(fingerprint).toUpperCase()}`
+
+function assertNotOneShot() {
+  // One Shot mode's whole promise is "nothing persists beyond this
+  // process". Any saveSecret / readSecret would break that, so refuse
+  // at the JS layer; callers shouldn't surface keyring UI in One Shot
+  // in the first place but this is a safety net.
+  const store = useAppStore()
+  if (store.mode === 'one-shot') {
+    throw new Error('keyring is disabled in One Shot mode')
+  }
 }
 
 /// Save a secret (bytes or string) to the platform keyring.
 export async function saveSecret(key, secret) {
+  assertNotOneShot()
   const bytes = typeof secret === 'string'
     ? Array.from(new TextEncoder().encode(secret))
     : Array.from(secret)
@@ -41,6 +55,7 @@ export async function saveSecret(key, secret) {
 /// Callers typically want to catch the first one (fall back to
 /// prompting) and surface the second as a gentle "Try again".
 export async function readSecret(key, reason) {
+  assertNotOneShot()
   const resp = await invoke('plugin:tumpa-card|read_secret', {
     req: { key, reason },
   })

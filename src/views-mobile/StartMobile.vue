@@ -38,12 +38,25 @@ async function importKey() {
   <div v-if="ready" class="start">
     <h1>No keys yet</h1>
     <p class="subtitle">
-      Import an existing OpenPGP key to get started. Generating a new
-      key is desktop-only — do that on Tumpa desktop and sync the key
-      over here.
+      <template v-if="store.mode === 'one-shot'">
+        Generate a key in memory or import an existing one. Either way,
+        nothing will be saved when you close Tumpa.
+      </template>
+      <template v-else>
+        Import an existing OpenPGP key to get started. Generating a new
+        key is desktop-only — do that on Tumpa desktop and sync the key
+        over here.
+      </template>
     </p>
     <div class="actions">
-      <button class="primary" @click="importKey">Import key</button>
+      <button
+        v-if="store.mode === 'one-shot'"
+        class="primary"
+        @click="router.push('/keys/generate')"
+      >
+        Generate new key
+      </button>
+      <button class="secondary" @click="importKey">Import key</button>
     </div>
   </div>
 </template>

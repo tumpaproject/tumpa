@@ -8,7 +8,7 @@ use tauri::Manager;
 #[cfg(not(any(target_os = "android", target_os = "ios")))]
 use commands::{
     list_keys, generate_key, import_key, import_public_key, delete_key,
-    export_public_key, get_available_subkeys,
+    export_public_key, get_public_armored, get_available_subkeys,
     get_key_details, add_user_id, revoke_user_id, update_key_expiry,
     update_selected_subkeys_expiry, change_key_password, revoke_key_cmd,
     upload_to_keyserver, request_keyserver_verification,
@@ -18,12 +18,13 @@ use commands::{
     link_card_to_key, unlink_card_from_key, auto_detect_card_links,
     update_key_expiry_on_card, update_selected_subkeys_expiry_on_card,
     get_card_touch_modes, set_card_touch_mode,
+    get_app_mode, enter_one_shot, exit_one_shot,
 };
 
 #[cfg(any(target_os = "android", target_os = "ios"))]
 use commands::{
     list_keys, generate_key, import_key, import_public_key, delete_key,
-    export_public_key, get_available_subkeys,
+    export_public_key, get_public_armored, get_available_subkeys,
     get_key_details, add_user_id, revoke_user_id, update_key_expiry,
     update_selected_subkeys_expiry, change_key_password, revoke_key_cmd,
     // Card commands that work on mobile (no PCSC enumeration needed).
@@ -35,6 +36,7 @@ use commands::{
     link_card_to_key, unlink_card_from_key,
     update_key_expiry_on_card, update_selected_subkeys_expiry_on_card,
     get_card_touch_modes, set_card_touch_mode,
+    get_app_mode, enter_one_shot, exit_one_shot,
 };
 
 #[cfg(any(target_os = "android", target_os = "ios"))]
@@ -79,6 +81,7 @@ pub fn run() {
         import_public_key,
         delete_key,
         export_public_key,
+        get_public_armored,
         get_available_subkeys,
         get_key_details,
         add_user_id,
@@ -104,6 +107,9 @@ pub fn run() {
         update_selected_subkeys_expiry_on_card,
         get_card_touch_modes,
         set_card_touch_mode,
+        get_app_mode,
+        enter_one_shot,
+        exit_one_shot,
     ]);
 
     #[cfg(any(target_os = "android", target_os = "ios"))]
@@ -114,6 +120,7 @@ pub fn run() {
         import_public_key,
         delete_key,
         export_public_key,
+        get_public_armored,
         get_available_subkeys,
         get_key_details,
         add_user_id,
@@ -136,6 +143,9 @@ pub fn run() {
         get_card_touch_modes,
         set_card_touch_mode,
         set_card_transport,
+        get_app_mode,
+        enter_one_shot,
+        exit_one_shot,
     ]);
 
     builder

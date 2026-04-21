@@ -16,6 +16,11 @@ export const useAppStore = defineStore('app', {
     // Runtime platform flag. Populated once at app startup by main.js.
     // Mobile builds skip card routes and use a simplified UI.
     isMobile: false,
+    // 'persistent' (disk-backed, the default) or 'one-shot'
+    // (in-memory SQLite; see src-tauri/src/commands/mode.rs). Flipped
+    // by `enter_one_shot` / `exit_one_shot` Tauri commands; the banner
+    // and conditional Generate-key UI read this.
+    mode: 'persistent',
   }),
 
   getters: {
@@ -93,6 +98,10 @@ export const useAppStore = defineStore('app', {
 
     setMobile(value) {
       this.isMobile = !!value
+    },
+
+    setMode(mode) {
+      this.mode = mode === 'one-shot' ? 'one-shot' : 'persistent'
     },
   },
 })

@@ -4,14 +4,6 @@ import { useRouter, useRoute } from 'vue-router'
 import { invoke } from '@tauri-apps/api/core'
 import { listen } from '@tauri-apps/api/event'
 import CardConnectMobile from '@/views-mobile/CardConnectMobile.vue'
-import { useAppStore } from '@/stores/appStore'
-import {
-  keyForKeyPassphrase,
-  saveSecret,
-  readSecretAsString,
-  isMissingSecretError,
-  isCancelledError,
-} from '@/utils/keyring'
 import { setCardTransport } from '@/utils/cardTransport'
 import { isIosPlatform } from '@/utils/platform'
 
@@ -19,7 +11,6 @@ const isIos = isIosPlatform()
 
 const router = useRouter()
 const route = useRoute()
-const appStore = useAppStore()
 
 const fingerprint = ref('')
 const password = ref('')
@@ -42,12 +33,6 @@ const uploadAuthentication = ref(false)
 // works on every device with NFC hardware; USB needs a CCID reader
 // plugged in before upload.
 const transport = ref('nfc')
-
-// Keyring — only exposed on mobile. Checkbox persists the passphrase
-// to the platform keyring (iOS Keychain / Android EncryptedSharedPrefs)
-// after a successful upload, gated by biometrics on read-back.
-const rememberPassphrase = ref(false)
-const biometricBusy = ref(false)
 
 // Overlay phase. `waiting` while we've armed reader mode but no tap
 // has happened yet; `connected` once the plugin fires its
@@ -140,18 +125,6 @@ async function upload() {
       password: password.value,
       whichSubkeys,
     })
-    // Upload succeeded → the passphrase was correct, so it's safe to
-    // persist if the user opted in. We save BEFORE clearing the
-    // reactive ref so the bytes are still in memory, then overwrite.
-    if (rememberPassphrase.value && appStore.isMobile) {
-      try {
-        await saveSecret(keyForKeyPassphrase(fingerprint.value), password.value)
-      } catch (e) {
-        // Save failure shouldn't block the "upload succeeded" flow,
-        // just surface a debug-level message.
-        console.warn('save passphrase to keyring failed:', e)
-      }
-    }
     password.value = ''
     uploaded.value = true
   } catch (e) {
@@ -163,29 +136,6 @@ async function upload() {
 
 function done() {
   router.replace('/card')
-}
-
-async function useSavedPassphrase() {
-  if (biometricBusy.value) return
-  biometricBusy.value = true
-  errorMessage.value = ''
-  try {
-    const cached = await readSecretAsString(
-      keyForKeyPassphrase(fingerprint.value),
-      'Unlock key passphrase',
-    )
-    password.value = cached
-  } catch (e) {
-    if (isMissingSecretError(e)) {
-      errorMessage.value = 'No saved passphrase for this key yet.'
-    } else if (isCancelledError(e)) {
-      // User dismissed the biometric sheet — stay quiet.
-    } else {
-      errorMessage.value = String(e)
-    }
-  } finally {
-    biometricBusy.value = false
-  }
 }
 
 function cancelUpload() {
@@ -212,28 +162,13 @@ function cancelUpload() {
     <template v-else>
       <p class="fp">{{ fingerprint }}</p>
 
-      <div class="pass-header">
-        <label class="label" for="up-pass">Key password</label>
-        <button
-          v-if="appStore.isMobile"
-          type="button"
-          class="link"
-          :disabled="biometricBusy"
-          @click="useSavedPassphrase"
-        >
-          Use saved
-        </button>
-      </div>
+      <label class="label" for="up-pass">Key password</label>
       <input
         id="up-pass"
         v-model="password"
         type="password"
         autocomplete="current-password"
       />
-      <label v-if="appStore.isMobile" class="opt remember">
-        <input type="checkbox" v-model="rememberPassphrase" />
-        Remember passphrase (Face ID / Touch ID)
-      </label>
 
       <fieldset v-if="!isIos" class="group">
         <legend class="label">Card transport</legend>

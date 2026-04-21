@@ -1,9 +1,13 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useAppStore } from '@/stores/appStore'
+import OneShotBanner from '@/components/OneShotBanner.vue'
+import { enterOneShot, exitOneShot } from '@/utils/oneShot'
 
 const route = useRoute()
 const router = useRouter()
+const store = useAppStore()
 
 const title = computed(() => route.meta?.title || 'Tumpa')
 const canGoBack = computed(() => route.name !== 'start' && route.name !== 'key-list' && route.name !== 'card-home')
@@ -14,13 +18,43 @@ const canGoBack = computed(() => route.name !== 'start' && route.name !== 'key-l
 const showTabs = computed(() => route.name !== 'start')
 const activeTab = computed(() => route.path.startsWith('/card') ? 'card' : 'keys')
 
+// Overflow menu state. Simple dropdown anchored to the kebab button;
+// open via tap, close via outside click. Mobile doesn't have room for
+// a third tab so the One Shot toggle lives here.
+const menuOpen = ref(false)
+
+function toggleMenu() { menuOpen.value = !menuOpen.value }
+function closeMenu() { menuOpen.value = false }
+
+async function onOneShotToggle() {
+  closeMenu()
+  try {
+    if (store.mode === 'one-shot') {
+      await exitOneShot()
+    } else {
+      await enterOneShot()
+    }
+    router.replace(store.hasKeys ? '/keys' : '/')
+  } catch (e) {
+    alert(`Could not change mode: ${e}`)
+  }
+}
+
 function back() {
   router.back()
 }
+
+function onDocClick(evt) {
+  if (!menuOpen.value) return
+  if (!evt.target.closest('.kebab-menu, .kebab-btn')) closeMenu()
+}
+onMounted(() => document.addEventListener('click', onDocClick))
+onUnmounted(() => document.removeEventListener('click', onDocClick))
 </script>
 
 <template>
   <div class="mobile-layout">
+    <OneShotBanner />
     <header class="app-bar">
       <button
         v-if="canGoBack"
@@ -31,6 +65,21 @@ function back() {
         &#x2190;
       </button>
       <h1 class="title">{{ title }}</h1>
+      <div class="kebab-wrap">
+        <button
+          class="kebab-btn"
+          aria-label="More"
+          :aria-expanded="menuOpen"
+          @click.stop="toggleMenu"
+        >
+          &#x22EE;
+        </button>
+        <div v-if="menuOpen" class="kebab-menu" role="menu">
+          <button class="menu-item" role="menuitem" @click="onOneShotToggle">
+            {{ store.mode === 'one-shot' ? 'Exit One Shot' : 'One Shot mode' }}
+          </button>
+        </div>
+      </div>
     </header>
     <main class="content">
       <slot />
@@ -105,7 +154,57 @@ function back() {
   font-size: 18px;
   font-weight: 600;
   margin: 0;
+  flex: 1;
 }
+
+.kebab-wrap {
+  position: relative;
+}
+
+.kebab-btn {
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 22px;
+  line-height: 1;
+  padding: 6px 10px;
+  cursor: pointer;
+  border-radius: 8px;
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.kebab-btn:active {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.kebab-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 4px;
+  min-width: 160px;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  padding: 4px 0;
+  z-index: 10;
+}
+
+.menu-item {
+  width: 100%;
+  display: block;
+  padding: 12px 14px;
+  background: transparent;
+  border: none;
+  text-align: left;
+  font-size: 14px;
+  font-family: var(--font-family);
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.menu-item:active { background: var(--color-bg-light); }
 
 .content {
   flex: 1;
