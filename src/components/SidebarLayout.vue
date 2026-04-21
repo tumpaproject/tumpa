@@ -20,11 +20,18 @@ const router = useRouter()
 const store = useAppStore()
 const smartCardOpen = ref(true)
 
-// Key loading + initial redirect are owned by the route views
-// (StartView / KeyListView) so the sidebar shell doesn't block the
-// first paint on a Rust IPC. Card detection is deferred past first
-// paint so the window renders before we touch PCSC.
+// Paint-first policy: fire the initial keystore refresh without
+// awaiting it so Vue can render the shell + current route on the very
+// first frame, and let Rust finish the IPC in the background. When it
+// resolves we redirect to /keys only if we're still on the empty-state
+// route, so a user who already navigated away won't get yanked back.
+// Card detection is likewise deferred past first paint.
 onMounted(() => {
+  store.refreshKeys().then(() => {
+    if (store.hasKeys && router.currentRoute.value.path === '/') {
+      router.replace('/keys')
+    }
+  })
   defer(async () => {
     await store.checkCard()
     store.startCardPolling()

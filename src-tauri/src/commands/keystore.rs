@@ -279,8 +279,14 @@ fn derive_key_type_label(subkeys: &[SubkeySummary]) -> String {
 /// the old command had on desktop.
 #[tauri::command]
 pub fn list_keys_summary(state: State<'_, AppState>) -> Result<Vec<KeyListRow>, String> {
+    #[cfg(debug_assertions)]
+    let t0 = std::time::Instant::now();
     let store = state.keystore.lock().map_err(|e| e.to_string())?;
+    #[cfg(debug_assertions)]
+    let t_lock = t0.elapsed();
     let mut summaries = store.list_keys_summary().map_err(|e| e.to_string())?;
+    #[cfg(debug_assertions)]
+    let t_summary = t0.elapsed();
     summaries.sort_by(|a, b| b.creation_time.cmp(&a.creation_time));
 
     // Desktop: one SQL query → fingerprint → card idents map.
@@ -291,14 +297,30 @@ pub fn list_keys_summary(state: State<'_, AppState>) -> Result<Vec<KeyListRow>, 
     #[cfg(any(target_os = "android", target_os = "ios"))]
     let card_map: std::collections::HashMap<String, Vec<String>> =
         std::collections::HashMap::new();
+    #[cfg(debug_assertions)]
+    let t_card = t0.elapsed();
 
-    Ok(summaries
+    let rows: Vec<KeyListRow> = summaries
         .into_iter()
         .map(|s| {
             let idents = card_map.get(&s.fingerprint).cloned().unwrap_or_default();
             summary_to_row(&s, idents)
         })
-        .collect())
+        .collect();
+    #[cfg(debug_assertions)]
+    {
+        let t_rows = t0.elapsed();
+        eprintln!(
+            "[tumpa/perf] list_keys_summary: n={} lock={:?} summary_sql={:?} card_map={:?} format={:?} total={:?}",
+            rows.len(),
+            t_lock,
+            t_summary - t_lock,
+            t_card - t_summary,
+            t_rows - t_card,
+            t_rows,
+        );
+    }
+    Ok(rows)
 }
 
 #[tauri::command]

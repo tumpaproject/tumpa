@@ -15,7 +15,14 @@ const keyFilter = ref('all')
 const searchQuery = ref('')
 
 onMounted(async () => {
-  await store.refreshKeys()
+  // Skip the refresh if the store was already primed for this session
+  // (e.g. StartView just redirected us here after its own refresh).
+  // Every mutating command — import / generate / delete / add-uid /
+  // revoke / expiry update — already calls store.refreshKeys on its
+  // own, so KeyListView only needs to load on a truly cold mount.
+  if (!store.keysLoaded) {
+    await store.refreshKeys()
+  }
   if (!store.hasKeys) {
     router.replace('/')
   }
@@ -144,18 +151,33 @@ async function uploadToCard(fingerprint) {
           </button>
         </div>
       </div>
-      <div class="key-list">
-        <KeyItem
-          v-for="key in filteredKeys"
-          :key="key.fingerprint"
-          :key-data="key"
-          @details="router.push(`/keys/${key.fingerprint}`)"
-          @upload="uploadToCard(key.fingerprint)"
-          @export="exportKey(key.fingerprint)"
-          @delete="deleteKey(key.fingerprint)"
-        />
-      </div>
-      <p v-if="filteredKeys.length === 0" class="empty-filter">
+      <DynamicScroller
+        v-if="filteredKeys.length > 0"
+        :items="filteredKeys"
+        :min-item-size="170"
+        key-field="fingerprint"
+        class="key-list-scroller"
+      >
+        <template #default="{ item, index, active }">
+          <DynamicScrollerItem
+            :item="item"
+            :active="active"
+            :data-index="index"
+            :size-dependencies="[item.user_ids, item.card_idents]"
+          >
+            <div class="key-list-row">
+              <KeyItem
+                :key-data="item"
+                @details="router.push(`/keys/${item.fingerprint}`)"
+                @upload="uploadToCard(item.fingerprint)"
+                @export="exportKey(item.fingerprint)"
+                @delete="deleteKey(item.fingerprint)"
+              />
+            </div>
+          </DynamicScrollerItem>
+        </template>
+      </DynamicScroller>
+      <p v-else class="empty-filter">
         <template v-if="searchQuery">No keys match "{{ searchQuery }}".</template>
         <template v-else>No {{ keyFilter }} keys found.</template>
       </p>
@@ -197,8 +219,23 @@ async function uploadToCard(fingerprint) {
 
 .key-list-content {
   padding: 24px;
-  overflow-y: auto;
   flex: 1;
+  /* DynamicScroller owns its own scrolling now; removing the outer
+     overflow-y keeps only one scroll axis on the page. */
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.key-list-scroller {
+  flex: 1;
+  min-height: 0;
+}
+
+/* DynamicScrollerItem wraps each row; add the 12px gap the old
+   .key-list flex column used to supply. */
+.key-list-row {
+  padding-bottom: 12px;
 }
 
 .list-header {

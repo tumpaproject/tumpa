@@ -10,7 +10,11 @@ const store = useAppStore()
 const searchQuery = ref('')
 
 onMounted(async () => {
-  await store.refreshKeys()
+  // See src/views/KeyListView.vue — skip the refresh when StartMobile
+  // has already primed the store for this session.
+  if (!store.keysLoaded) {
+    await store.refreshKeys()
+  }
   if (!store.hasKeys) {
     router.replace('/')
   }
@@ -95,24 +99,29 @@ function clearSearch() {
       <button class="secondary" @click="importKey">Import key</button>
     </div>
 
-    <ul class="keys">
-      <li
-        v-for="key in filteredKeys"
-        :key="key.fingerprint"
+    <RecycleScroller
+      v-if="filteredKeys.length > 0"
+      :items="filteredKeys"
+      :item-size="60"
+      key-field="fingerprint"
+      class="keys-scroller"
+      v-slot="{ item }"
+    >
+      <div
         class="row"
-        @click="router.push(`/keys/${key.fingerprint}`)"
+        @click="router.push(`/keys/${item.fingerprint}`)"
       >
         <div class="row-main">
-          <div class="row-title">{{ primaryUid(key) }}</div>
-          <div class="row-fp">{{ key.fingerprint }}</div>
+          <div class="row-title">{{ primaryUid(item) }}</div>
+          <div class="row-fp">{{ item.fingerprint }}</div>
         </div>
         <div class="row-tags">
-          <span v-if="key.is_secret" class="tag tag-private">PRIVATE</span>
+          <span v-if="item.is_secret" class="tag tag-private">PRIVATE</span>
           <span v-else class="tag tag-public">PUBLIC</span>
         </div>
-      </li>
-    </ul>
-    <p v-if="filteredKeys.length === 0 && searchQuery" class="empty">
+      </div>
+    </RecycleScroller>
+    <p v-else-if="searchQuery" class="empty">
       No keys match "{{ searchQuery }}".
     </p>
   </div>
@@ -122,7 +131,15 @@ function clearSearch() {
 .list-view {
   display: flex;
   flex-direction: column;
-  min-height: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+/* RecycleScroller needs a concrete height + its own scroll region. */
+.keys-scroller {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .search-wrap {
@@ -208,12 +225,6 @@ function clearSearch() {
 
 .primary { background: var(--color-green); color: #0a2e1c; }
 .secondary { background: #fff; color: var(--color-text); border-color: var(--color-border-input); }
-
-.keys {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
 
 .row {
   display: flex;

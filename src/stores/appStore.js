@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { markRaw } from 'vue'
 import { invoke } from '@tauri-apps/api/core'
 
 let cardPollInterval = null
@@ -9,6 +10,11 @@ let refreshInFlight = null
 export const useAppStore = defineStore('app', {
   state: () => ({
     keys: [],
+    // Set by `refreshKeys` once the store has been populated from the
+    // Rust side at least once. Route views check this before firing
+    // their own onMounted refresh so the StartView → KeyListView
+    // redirect chain doesn't cause two identical IPCs on cold start.
+    keysLoaded: false,
     currentFingerprint: '',
     cardConnected: false,
     cardDetails: null,
@@ -39,10 +45,28 @@ export const useAppStore = defineStore('app', {
       // Uses `list_keys_summary` (schema v4+) so the list view never
       // triggers a per-key rpgp parse. Per-key details are fetched on
       // drill-in via `get_key_details` as before.
-      if (refreshInFlight) return refreshInFlight
+      if (refreshInFlight) {
+        if (import.meta.env.DEV) {
+          console.log('[tumpa/perf] refreshKeys: collapsed into in-flight call')
+        }
+        return refreshInFlight
+      }
+      const t0 = import.meta.env.DEV ? performance.now() : 0
       refreshInFlight = (async () => {
         try {
-          this.keys = await invoke('list_keys_summary')
+          // markRaw each row so Pinia / Vue doesn't wrap every field
+          // in a reactive proxy. The key rows are read-only snapshots
+          // returned by Rust; nothing in the UI mutates their fields
+          // in place. Profiling showed the deep-reactive wrap adding
+          // ~120 ms per refresh on a 137-key store.
+          const raw = await invoke('list_keys_summary')
+          this.keys = Array.isArray(raw) ? raw.map(markRaw) : raw
+          this.keysLoaded = true
+          if (import.meta.env.DEV) {
+            console.log(
+              `[tumpa/perf] refreshKeys: invoke+assign took ${(performance.now() - t0).toFixed(1)}ms, n=${this.keys.length}`
+            )
+          }
         } catch (e) {
           this.errorMessage = String(e)
         } finally {
