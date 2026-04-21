@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { invoke } from '@tauri-apps/api/core'
 import { open } from '@tauri-apps/plugin-dialog'
@@ -7,6 +7,7 @@ import { useAppStore } from '@/stores/appStore'
 
 const router = useRouter()
 const store = useAppStore()
+const searchQuery = ref('')
 
 onMounted(async () => {
   await store.refreshKeys()
@@ -34,10 +35,52 @@ function primaryUid(key) {
   const uid = key.user_ids?.find(u => !u.revoked) ?? key.user_ids?.[0]
   return uid ? formatUid(uid) : '(no user id)'
 }
+
+function keyMatchesSearch(key, needle) {
+  if (key.fingerprint && key.fingerprint.toLowerCase().includes(needle)) return true
+  if (Array.isArray(key.user_ids)) {
+    for (const uid of key.user_ids) {
+      if (uid?.name && uid.name.toLowerCase().includes(needle)) return true
+      if (uid?.email && uid.email.toLowerCase().includes(needle)) return true
+    }
+  }
+  return false
+}
+
+const filteredKeys = computed(() => {
+  const needle = searchQuery.value.trim().toLowerCase()
+  if (!needle) return store.keys
+  return store.keys.filter(k => keyMatchesSearch(k, needle))
+})
+
+function clearSearch() {
+  searchQuery.value = ''
+}
 </script>
 
 <template>
   <div class="list-view">
+    <div class="search-wrap">
+      <div class="search-box" :class="{ 'has-value': searchQuery }">
+        <input
+          v-model="searchQuery"
+          type="text"
+          class="search-input"
+          placeholder="Search by name, UID or fingerprint"
+          aria-label="Search keys by name, UID or fingerprint"
+        />
+        <button
+          v-if="searchQuery"
+          type="button"
+          class="search-clear"
+          aria-label="Clear search"
+          @click="clearSearch"
+        >
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+    </div>
+
     <!-- Persistent mode: Import only. One Shot mode: Generate is
          re-enabled, since the whole point is "create a key in RAM,
          push it to a card, export pub, discard". -->
@@ -54,7 +97,7 @@ function primaryUid(key) {
 
     <ul class="keys">
       <li
-        v-for="key in store.keys"
+        v-for="key in filteredKeys"
         :key="key.fingerprint"
         class="row"
         @click="router.push(`/keys/${key.fingerprint}`)"
@@ -69,6 +112,9 @@ function primaryUid(key) {
         </div>
       </li>
     </ul>
+    <p v-if="filteredKeys.length === 0 && searchQuery" class="empty">
+      No keys match "{{ searchQuery }}".
+    </p>
   </div>
 </template>
 
@@ -77,6 +123,68 @@ function primaryUid(key) {
   display: flex;
   flex-direction: column;
   min-height: 100%;
+}
+
+.search-wrap {
+  padding: 12px 16px;
+  background: var(--color-bg);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.search-box {
+  position: relative;
+}
+
+.search-input {
+  width: 100%;
+  padding: 10px 40px 10px 12px;
+  border: 1px solid var(--color-border-input);
+  border-radius: 10px;
+  font-size: 15px;
+  font-family: var(--font-family);
+  background: var(--color-bg-light);
+  outline: none;
+  transition: border-color 0.15s;
+  min-height: 44px;
+}
+
+.search-input:focus {
+  border-color: var(--color-sidebar);
+  box-shadow: 0 0 0 2px var(--color-sidebar-focus);
+  background: var(--color-bg);
+}
+
+.search-clear {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: var(--color-border);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  line-height: 1;
+  padding: 0;
+}
+
+.search-clear:active,
+.search-clear:focus-visible {
+  background: var(--color-sidebar);
+  color: white;
+}
+
+.empty {
+  padding: 24px 16px;
+  color: var(--color-text-muted);
+  font-size: 14px;
+  text-align: center;
 }
 
 .toolbar {

@@ -12,6 +12,7 @@ import importSvg from '@/assets/icons/import.svg'
 const router = useRouter()
 const store = useAppStore()
 const keyFilter = ref('all')
+const searchQuery = ref('')
 
 onMounted(async () => {
   await store.refreshKeys()
@@ -20,11 +21,30 @@ onMounted(async () => {
   }
 })
 
+function keyMatchesSearch(key, needle) {
+  if (key.fingerprint && key.fingerprint.toLowerCase().includes(needle)) return true
+  if (Array.isArray(key.user_ids)) {
+    for (const uid of key.user_ids) {
+      if (uid?.name && uid.name.toLowerCase().includes(needle)) return true
+      if (uid?.email && uid.email.toLowerCase().includes(needle)) return true
+    }
+  }
+  return false
+}
+
 const filteredKeys = computed(() => {
-  if (keyFilter.value === 'private') return store.keys.filter(k => k.is_secret)
-  if (keyFilter.value === 'public') return store.keys.filter(k => !k.is_secret)
-  return store.keys
+  let keys = store.keys
+  if (keyFilter.value === 'private') keys = keys.filter(k => k.is_secret)
+  else if (keyFilter.value === 'public') keys = keys.filter(k => !k.is_secret)
+
+  const needle = searchQuery.value.trim().toLowerCase()
+  if (!needle) return keys
+  return keys.filter(k => keyMatchesSearch(k, needle))
 })
+
+function clearSearch() {
+  searchQuery.value = ''
+}
 
 const filterLabel = computed(() => {
   if (keyFilter.value === 'private') return 'Private keys'
@@ -103,7 +123,27 @@ async function uploadToCard(fingerprint) {
     </div>
 
     <div class="key-list-content">
-      <h1>{{ filterLabel }}</h1>
+      <div class="list-header">
+        <h1>{{ filterLabel }}</h1>
+        <div class="search-box" :class="{ 'has-value': searchQuery }">
+          <input
+            v-model="searchQuery"
+            type="text"
+            class="search-input"
+            placeholder="Search by name, UID or fingerprint"
+            aria-label="Search keys by name, UID or fingerprint"
+          />
+          <button
+            v-if="searchQuery"
+            type="button"
+            class="search-clear"
+            aria-label="Clear search"
+            @click="clearSearch"
+          >
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+      </div>
       <div class="key-list">
         <KeyItem
           v-for="key in filteredKeys"
@@ -115,7 +155,10 @@ async function uploadToCard(fingerprint) {
           @delete="deleteKey(key.fingerprint)"
         />
       </div>
-      <p v-if="filteredKeys.length === 0" class="empty-filter">No {{ keyFilter }} keys found.</p>
+      <p v-if="filteredKeys.length === 0" class="empty-filter">
+        <template v-if="searchQuery">No keys match "{{ searchQuery }}".</template>
+        <template v-else>No {{ keyFilter }} keys found.</template>
+      </p>
     </div>
   </div>
 </template>
@@ -158,10 +201,65 @@ async function uploadToCard(fingerprint) {
   flex: 1;
 }
 
+.list-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
 h1 {
   font-size: 24px;
   font-weight: 700;
-  margin-bottom: 16px;
+}
+
+.search-box {
+  position: relative;
+  flex: 1;
+  max-width: 360px;
+}
+
+.search-input {
+  width: 100%;
+  padding: 8px 36px 8px 12px;
+  border: 1px solid var(--color-border-input);
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: var(--font-family);
+  background: white;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.search-input:focus {
+  border-color: var(--color-sidebar);
+  box-shadow: 0 0 0 2px var(--color-sidebar-focus);
+}
+
+.search-clear {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: none;
+  background: var(--color-border);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  line-height: 1;
+  padding: 0;
+}
+
+.search-clear:hover,
+.search-clear:focus-visible {
+  background: var(--color-sidebar);
+  color: white;
 }
 
 .key-list {
