@@ -395,12 +395,15 @@ pub fn import_key(state: State<'_, AppState>, file_path: String) -> Result<KeyIn
     Ok(cert_info_to_key_info(&info))
 }
 
+// Takes raw file bytes rather than a path because Android's file picker
+// returns SAF `content://` URIs that `std::fs::read` can't resolve. The
+// frontend reads the file via `@tauri-apps/plugin-fs` (which handles both
+// content URIs and desktop paths) and passes the bytes here.
 #[tauri::command]
 pub fn import_public_key(
     state: State<'_, AppState>,
-    file_path: String,
+    data: Vec<u8>,
 ) -> Result<KeyInfo, String> {
-    let data = std::fs::read(&file_path).map_err(|e| format!("Failed to read file: {}", e))?;
     let store = state.keystore.lock().map_err(|e| e.to_string())?;
     let info = key::import_any(&*store, &data).map_err(|e| e.to_string())?;
     Ok(cert_info_to_key_info(&info))

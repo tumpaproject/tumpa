@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { invoke } from '@tauri-apps/api/core'
 import { open } from '@tauri-apps/plugin-dialog'
+import { readFile } from '@tauri-apps/plugin-fs'
 import { useAppStore } from '@/stores/appStore'
 
 const router = useRouter()
@@ -24,7 +25,12 @@ async function importKey() {
   const path = await open({ title: 'Import Key', multiple: false })
   if (!path) return
   try {
-    await invoke('import_public_key', { filePath: path })
+    // On Android `open()` returns a SAF `content://` URI that Rust's
+    // `std::fs::read` can't resolve. Read via plugin-fs (which speaks
+    // content URIs on Android and regular paths on desktop) and hand
+    // the bytes to Rust directly.
+    const data = await readFile(path)
+    await invoke('import_public_key', { data: Array.from(data) })
     await store.refreshKeys()
   } catch (e) {
     alert(String(e))

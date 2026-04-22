@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { invoke } from '@tauri-apps/api/core'
 import { open, save } from '@tauri-apps/plugin-dialog'
+import { readFile } from '@tauri-apps/plugin-fs'
 import { useAppStore } from '@/stores/appStore'
 import TButton from '@/components/TButton.vue'
 import KeyItem from '@/components/KeyItem.vue'
@@ -67,7 +68,12 @@ async function importKey() {
   if (!path) return
 
   try {
-    await invoke('import_public_key', { filePath: path })
+    // Symmetric with export: read via plugin-fs (handles Android SAF
+    // `content://` URIs the dialog plugin returns) and pass bytes to
+    // Rust, instead of a path that `std::fs::read` can't resolve on
+    // Android.
+    const data = await readFile(path)
+    await invoke('import_public_key', { data: Array.from(data) })
     await store.refreshKeys()
   } catch (e) {
     alert(String(e))

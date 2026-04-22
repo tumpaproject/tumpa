@@ -373,6 +373,27 @@ build-dmg-signed:
     echo "DMG built and signed. Output in src-tauri/target/release/bundle/dmg/"
     ls -la src-tauri/target/release/bundle/dmg/*.dmg 2>/dev/null || echo "No DMG files found"
 
+# Capture a screenshot from the connected Android device into ./screenshots/
+# Uses `adb exec-out screencap -p` so nothing is written to device storage.
+# If multiple devices are attached, set ANDROID_SERIAL to pick one.
+android-screenshot:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    mkdir -p screenshots
+    ts=$(date +%Y%m%d-%H%M%S)
+    out="screenshots/tumpa-${ts}.png"
+    serial_arg=""
+    if [ -n "${ANDROID_SERIAL:-}" ]; then
+        serial_arg="-s ${ANDROID_SERIAL}"
+    fi
+    adb $serial_arg exec-out screencap -p > "$out"
+    if [ ! -s "$out" ]; then
+        rm -f "$out"
+        echo "Screenshot failed — is a device connected? (adb devices)" >&2
+        exit 1
+    fi
+    echo "Saved $out"
+
 # Show project info
 info:
     @echo "Tumpa - The Usability Minded PGP Application"
