@@ -2,7 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { invoke } from '@tauri-apps/api/core'
-import { save } from '@tauri-apps/plugin-dialog'
+import { save, confirm as confirmDialog } from '@tauri-apps/plugin-dialog'
 import { writeTextFile } from '@tauri-apps/plugin-fs'
 import { useAppStore } from '@/stores/appStore'
 
@@ -46,7 +46,16 @@ async function exportKey() {
 }
 
 async function deleteKey() {
-  if (!confirm('Delete this key?')) return
+  // `window.confirm` is a no-op in Tauri's Android WebView (JS dialogs
+  // are suppressed), so the delete would fire through unguarded.
+  // Use plugin-dialog's native confirm, which works on every platform.
+  const ok = await confirmDialog('Delete this key? This cannot be undone.', {
+    title: 'Delete key',
+    kind: 'warning',
+    okLabel: 'Delete',
+    cancelLabel: 'Cancel',
+  })
+  if (!ok) return
   try {
     await invoke('delete_key', { fingerprint: props.fingerprint })
     await store.refreshKeys()

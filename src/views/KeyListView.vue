@@ -2,7 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { invoke } from '@tauri-apps/api/core'
-import { open, save } from '@tauri-apps/plugin-dialog'
+import { open, save, confirm as confirmDialog } from '@tauri-apps/plugin-dialog'
 import { readFile } from '@tauri-apps/plugin-fs'
 import { useAppStore } from '@/stores/appStore'
 import TButton from '@/components/TButton.vue'
@@ -95,7 +95,17 @@ async function exportKey(fingerprint) {
 }
 
 async function deleteKey(fingerprint) {
-  if (!confirm('Are you sure you want to delete the selected key?')) return
+  // `window.confirm` is a no-op in Tauri's Android WebView and is also
+  // blocked by the stricter CSPs shipped on desktop/iOS webviews, so a
+  // JS confirm would let deletes fire through unguarded. Route through
+  // plugin-dialog, which uses a native dialog on every platform.
+  const ok = await confirmDialog('Delete the selected key? This cannot be undone.', {
+    title: 'Delete key',
+    kind: 'warning',
+    okLabel: 'Delete',
+    cancelLabel: 'Cancel',
+  })
+  if (!ok) return
 
   try {
     await invoke('delete_key', { fingerprint })

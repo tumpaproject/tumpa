@@ -373,6 +373,44 @@ build-dmg-signed:
     echo "DMG built and signed. Output in src-tauri/target/release/bundle/dmg/"
     ls -la src-tauri/target/release/bundle/dmg/*.dmg 2>/dev/null || echo "No DMG files found"
 
+# Build and install an Android debug APK to the attached device.
+# Debug APKs are signed with Android's auto-generated debug key, so they
+# install directly. If multiple devices are attached, set ANDROID_SERIAL.
+android-debug:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    pnpm tauri android build --debug --apk
+    APK=$(ls -t src-tauri/gen/android/app/build/outputs/apk/universal/debug/*.apk 2>/dev/null | head -n1)
+    if [ -z "${APK:-}" ]; then
+        echo "Debug APK not found after build" >&2
+        exit 1
+    fi
+    serial_arg=""
+    if [ -n "${ANDROID_SERIAL:-}" ]; then
+        serial_arg="-s ${ANDROID_SERIAL}"
+    fi
+    adb $serial_arg install -r "$APK"
+    echo "Installed $APK"
+
+# Build and install an Android release APK to the attached device.
+# Release APKs need a signingConfig in src-tauri/gen/android/app/build.gradle.kts
+# — `adb install` will reject an unsigned release APK.
+android-release:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    pnpm tauri android build --apk
+    APK=$(ls -t src-tauri/gen/android/app/build/outputs/apk/universal/release/*.apk 2>/dev/null | head -n1)
+    if [ -z "${APK:-}" ]; then
+        echo "Release APK not found after build" >&2
+        exit 1
+    fi
+    serial_arg=""
+    if [ -n "${ANDROID_SERIAL:-}" ]; then
+        serial_arg="-s ${ANDROID_SERIAL}"
+    fi
+    adb $serial_arg install -r "$APK"
+    echo "Installed $APK"
+
 # Capture a screenshot from the connected Android device into ./screenshots/
 # Uses `adb exec-out screencap -p` so nothing is written to device storage.
 # If multiple devices are attached, set ANDROID_SERIAL to pick one.
