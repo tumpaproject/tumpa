@@ -178,6 +178,7 @@ fn test_full_upload_workflow() {
         b"testpass",
         CardKeySlot::Signing,
         default_admin,
+        None,
     ).expect("Failed to upload primary key");
 
     card_upload_key(
@@ -185,6 +186,7 @@ fn test_full_upload_workflow() {
         b"testpass",
         CardKeySlot::Decryption,
         default_admin,
+        None,
     ).expect("Failed to upload encryption subkey");
 
     let auth_fp = cert_info.subkeys.iter()
@@ -198,6 +200,7 @@ fn test_full_upload_workflow() {
         &auth_fp,
         CardKeySlot::Authentication,
         default_admin,
+        None,
     ).expect("Failed to upload auth subkey");
 
     let details = get_card_details(None).expect("Failed to get card details");
