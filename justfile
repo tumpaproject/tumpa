@@ -56,6 +56,138 @@ clean-dist:
 clean-rust:
     rm -rf src-tauri/target
 
+# Update the marketing version in package.json, src-tauri/tauri.conf.json,
+# src-tauri/Cargo.toml, and the iOS Info.plist (CFBundleShortVersionString).
+# Resets the Apple build number (CFBundleVersion / bundle.macOS.bundleVersion)
+# to 1 in both the iOS Info.plist and the macOS bundle config.
+# Usage: just set-version 0.10.90
+set-version VERSION:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    VERSION="{{VERSION}}"
+    if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+([-+].*)?$ ]]; then
+        echo "Error: '$VERSION' does not look like a semver version" >&2
+        exit 1
+    fi
+
+    # JSON files: replace the first "version": "..." line.
+    for f in package.json src-tauri/tauri.conf.json; do
+        awk -v ver="$VERSION" '
+            !done && /"version"[[:space:]]*:[[:space:]]*"/ {
+                sub(/"version"[[:space:]]*:[[:space:]]*"[^"]*"/, "\"version\": \"" ver "\"")
+                done = 1
+            }
+            { print }
+        ' "$f" > "$f.tmp" && mv "$f.tmp" "$f"
+    done
+
+    # tauri.conf.json: reset bundle.macOS.bundleVersion -> "1" so the
+    # macOS .app bundle gets CFBundleVersion=1 on the next build.
+    awk '
+        !done && /"bundleVersion"[[:space:]]*:[[:space:]]*"/ {
+            sub(/"bundleVersion"[[:space:]]*:[[:space:]]*"[^"]*"/, "\"bundleVersion\": \"1\"")
+            done = 1
+        }
+        { print }
+    ' src-tauri/tauri.conf.json > src-tauri/tauri.conf.json.tmp && mv src-tauri/tauri.conf.json.tmp src-tauri/tauri.conf.json
+
+    # Cargo.toml: only the first `version = "..."` (the [package] entry).
+    awk -v ver="$VERSION" '
+        !done && /^version[[:space:]]*=[[:space:]]*"/ {
+            sub(/^version[[:space:]]*=[[:space:]]*"[^"]*"/, "version = \"" ver "\"")
+            done = 1
+        }
+        { print }
+    ' src-tauri/Cargo.toml > src-tauri/Cargo.toml.tmp && mv src-tauri/Cargo.toml.tmp src-tauri/Cargo.toml
+
+    # iOS Info.plist: marketing version <- VERSION, build number <- 1.
+    PLIST="src-tauri/gen/apple/tumpa_iOS/Info.plist"
+    if [ -f "$PLIST" ]; then
+        awk -v ver="$VERSION" '
+            /<key>CFBundleShortVersionString<\/key>/ { print; getline; sub(/<string>[^<]*<\/string>/, "<string>" ver "</string>"); print; next }
+            /<key>CFBundleVersion<\/key>/ { print; getline; sub(/<string>[^<]*<\/string>/, "<string>1</string>"); print; next }
+            { print }
+        ' "$PLIST" > "$PLIST.tmp" && mv "$PLIST.tmp" "$PLIST"
+    fi
+
+    # Refresh Cargo.lock so the tumpa entry stays in sync.
+    (cd src-tauri && cargo update -p tumpa >/dev/null 2>&1) || true
+
+    echo "Version set to ${VERSION} (iOS + macOS build number reset to 1)"
+
+# Increment the Apple build number by 1, in both the iOS Info.plist
+# (CFBundleVersion) and the macOS bundle config
+# (tauri.conf.json -> bundle.macOS.bundleVersion). Apple requires every
+# uploaded build — DMG or IPA — to carry a unique, monotonically
+# increasing CFBundleVersion, so re-signing for App Store / notarization
+# needs a bump even when the marketing version has not changed.
+# Usage: just bump-build
+bump-build:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    PLIST="src-tauri/gen/apple/tumpa_iOS/Info.plist"
+    CONF="src-tauri/tauri.conf.json"
+
+    # Read current iOS CFBundleVersion as the source of truth.
+    if [ ! -f "$PLIST" ]; then
+        echo "Error: $PLIST not found — run \`pnpm tauri ios init\` first" >&2
+        exit 1
+    fi
+    CURRENT=$(awk '
+        /<key>CFBundleVersion<\/key>/ {
+            getline
+            sub(/.*<string>/, "")
+            sub(/<\/string>.*/, "")
+            print
+            exit
+        }
+    ' "$PLIST")
+
+    if ! [[ "$CURRENT" =~ ^[0-9]+$ ]]; then
+        echo "Error: CFBundleVersion is '$CURRENT', not a plain integer." >&2
+        echo "Run \`just set-version <ver>\` to reset it to 1, then bump from there." >&2
+        exit 1
+    fi
+
+    # Cross-check: macOS bundleVersion in tauri.conf.json should agree.
+    MAC_CURRENT=$(awk '
+        /"bundleVersion"[[:space:]]*:[[:space:]]*"/ {
+            sub(/.*"bundleVersion"[[:space:]]*:[[:space:]]*"/, "")
+            sub(/".*/, "")
+            print
+            exit
+        }
+    ' "$CONF")
+    if [ -n "$MAC_CURRENT" ] && [ "$MAC_CURRENT" != "$CURRENT" ]; then
+        echo "Warning: macOS bundleVersion ($MAC_CURRENT) differs from iOS CFBundleVersion ($CURRENT)." >&2
+        echo "Bumping based on iOS value; both will be set to $((CURRENT + 1))." >&2
+    fi
+
+    NEW=$((CURRENT + 1))
+
+    # Update iOS Info.plist.
+    awk -v new="$NEW" '
+        /<key>CFBundleVersion<\/key>/ { print; getline; sub(/<string>[^<]*<\/string>/, "<string>" new "</string>"); print; next }
+        { print }
+    ' "$PLIST" > "$PLIST.tmp" && mv "$PLIST.tmp" "$PLIST"
+
+    # Update macOS bundle.macOS.bundleVersion in tauri.conf.json. Insert
+    # the field if the user has a `macOS` block but no `bundleVersion`.
+    if grep -q '"bundleVersion"' "$CONF"; then
+        awk -v new="$NEW" '
+            !done && /"bundleVersion"[[:space:]]*:[[:space:]]*"/ {
+                sub(/"bundleVersion"[[:space:]]*:[[:space:]]*"[^"]*"/, "\"bundleVersion\": \"" new "\"")
+                done = 1
+            }
+            { print }
+        ' "$CONF" > "$CONF.tmp" && mv "$CONF.tmp" "$CONF"
+    else
+        echo "Warning: bundle.macOS.bundleVersion not found in $CONF — macOS DMG won't get the bumped build number." >&2
+        echo "Add \"macOS\": { \"bundleVersion\": \"$NEW\" } under \"bundle\" in $CONF." >&2
+    fi
+
+    echo "Apple build number: ${CURRENT} -> ${NEW} (iOS Info.plist + macOS bundleVersion)"
+
 # Generate app icons from SVG source (square owl icon)
 icons:
     #!/usr/bin/env bash
