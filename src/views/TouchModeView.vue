@@ -9,6 +9,8 @@ import PasswordInput from '@/components/PasswordInput.vue'
 const router = useRouter()
 const store = useAppStore()
 
+const cards = ref([])
+const selectedIdent = ref('')
 const slots = ref([])
 const loading = ref(true)
 const error = ref('')
@@ -21,18 +23,54 @@ const touchModes = ['Off', 'On', 'Fixed', 'Cached', 'CachedFixed']
 
 onMounted(async () => {
   store.setActiveSection('card', 'touch-mode')
-  await loadTouchModes()
+  await loadCards()
 })
+
+function cardLabel(c) {
+  const name = c.cardholder_name || c.manufacturer_name || 'Card'
+  return `${name} (${c.serial_number || c.ident})`
+}
+
+async function loadCards() {
+  loading.value = true
+  error.value = ''
+  slots.value = []
+  try {
+    cards.value = await invoke('list_cards')
+  } catch (e) {
+    cards.value = []
+    error.value = String(e)
+    loading.value = false
+    return
+  }
+
+  if (cards.value.length === 0) {
+    error.value = 'No smart card detected.'
+    loading.value = false
+    return
+  }
+
+  if (!selectedIdent.value || !cards.value.some(c => c.ident === selectedIdent.value)) {
+    selectedIdent.value = cards.value[0].ident
+  }
+  await loadTouchModes()
+}
 
 async function loadTouchModes() {
   loading.value = true
   error.value = ''
+  changingSlot.value = null
   try {
-    slots.value = await invoke('get_card_touch_modes')
+    slots.value = await invoke('get_card_touch_modes', { ident: selectedIdent.value || null })
   } catch (e) {
+    slots.value = []
     error.value = String(e)
   }
   loading.value = false
+}
+
+async function onCardChanged() {
+  await loadTouchModes()
 }
 
 function startChange(slot) {
@@ -65,6 +103,7 @@ async function applyChange() {
       slot: changingSlot.value,
       mode: selectedMode.value,
       adminPin: adminPin.value,
+      ident: selectedIdent.value || null,
     })
     changingSlot.value = null
     adminPin.value = ''
@@ -79,6 +118,21 @@ async function applyChange() {
   <div class="touch-view">
     <h1>Touch Mode Settings</h1>
     <p class="subtitle">Configure whether physical touch is required for each key slot on the smartcard.</p>
+
+    <div v-if="cards.length > 0" class="card-picker">
+      <label for="card-select" class="card-picker-label">Card:</label>
+      <select
+        id="card-select"
+        v-model="selectedIdent"
+        class="card-select"
+        :disabled="loading"
+        @change="onCardChanged"
+      >
+        <option v-for="c in cards" :key="c.ident" :value="c.ident">
+          {{ cardLabel(c) }}
+        </option>
+      </select>
+    </div>
 
     <div v-if="loading" class="loading">Loading touch mode settings...</div>
     <div v-else-if="error" class="error-msg" role="alert">{{ error }}</div>
@@ -138,6 +192,35 @@ h1 {
   font-size: 14px;
   color: var(--color-text-muted);
   margin-bottom: 24px;
+}
+
+.card-picker {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  max-width: 600px;
+}
+
+.card-picker-label {
+  font-size: 13px;
+  font-weight: 500;
+  min-width: 80px;
+}
+
+.card-select {
+  flex: 1;
+  padding: 6px 12px;
+  border: 1px solid var(--color-border-input);
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: var(--font-family);
+  background: white;
+}
+
+.card-select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .loading, .error-msg {

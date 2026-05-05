@@ -273,8 +273,8 @@ pub struct SlotTouchInfo {
 }
 
 #[tauri::command]
-pub fn get_card_touch_modes() -> Result<Vec<SlotTouchInfo>, String> {
-    let modes = admin::get_touch_modes(None).map_err(|e| e.to_string())?;
+pub fn get_card_touch_modes(ident: Option<String>) -> Result<Vec<SlotTouchInfo>, String> {
+    let modes = admin::get_touch_modes(ident.as_deref()).map_err(|e| e.to_string())?;
 
     fn mode_to_string(m: &TouchMode) -> String {
         match m {
@@ -318,6 +318,7 @@ pub fn set_card_touch_mode(
     slot: String,
     mode: String,
     admin_pin: String,
+    ident: Option<String>,
 ) -> Result<(), String> {
     let key_slot = match slot.as_str() {
         "Signature" => KeySlot::Signature,
@@ -334,7 +335,7 @@ pub fn set_card_touch_mode(
         _ => return Err(format!("Unknown touch mode: {}", mode)),
     };
     let pin = Pin::new(admin_pin.into_bytes());
-    admin::set_touch_mode(key_slot, touch_mode, &pin, None).map_err(|e| e.to_string())
+    admin::set_touch_mode(key_slot, touch_mode, &pin, ident.as_deref()).map_err(|e| e.to_string())
 }
 
 /// Bitmask flag constants, kept in sync with `libtumpa::card::upload::flags`.
