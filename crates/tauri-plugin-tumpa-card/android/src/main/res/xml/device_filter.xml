@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    USB device filter for CCID-class readers. Matches any USB device
+    with interface class 0x0B (Smart Card) — this catches YubiKey,
+    Nitrokey 3 / Pro, SCR3310, OmniKey readers, and anything else that
+    speaks standard CCID. Vendor/product IDs are deliberately omitted
+    so the plugin stays vendor-neutral.
+-->
+<resources>
+    <usb-device class="0x0B" />
+</resources>

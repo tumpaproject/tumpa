@@ -1,0 +1,146 @@
+name: tumpa
+options:
+  bundleIdPrefix: in.kushaldas.tumpa
+  deploymentTarget:
+    iOS: 14.0
+fileGroups: [../../src]
+configs:
+  debug: debug
+  release: release
+settingGroups:
+  app:
+    base:
+      PRODUCT_NAME: Tumpa
+      PRODUCT_BUNDLE_IDENTIFIER: in.kushaldas.tumpa
+targetTemplates:
+  app:
+    type: application
+    sources:
+      - path: Sources
+    scheme:
+      environmentVariables:
+        RUST_BACKTRACE: full
+        RUST_LOG: info
+    settings:
+      groups: [app]
+targets:
+  tumpa_iOS:
+    type: application
+    platform: iOS
+    sources:
+      - path: Sources
+      - path: Assets.xcassets
+      - path: Externals
+        # libapp.a is linked via LIBRARY_SEARCH_PATHS + the framework
+        # dependency below, not copied as a resource. Without
+        # buildPhase: none, xcodegen sweeps both debug/ and release/
+        # libapp.a into the copy-resources phase and xcodebuild fails
+        # with "Multiple commands produce Tumpa.app/libapp.a".
+        buildPhase: none
+      - path: tumpa_iOS
+      - path: assets
+        buildPhase: resources
+        type: folder
+      - path: LaunchScreen.storyboard
+    info:
+      path: tumpa_iOS/Info.plist
+      properties:
+        LSRequiresIPhoneOS: true
+        UILaunchStoryboardName: LaunchScreen
+        UIRequiredDeviceCapabilities: [arm64, metal]
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        CFBundleShortVersionString: 0.3.0
+        CFBundleVersion: "0.3.0"
+        # Dark purple app bar looks bad with default dark status bar
+        # text; force light text. UIViewControllerBasedStatusBarAppearance
+        # must be false to honor Info.plist's value.
+        UIStatusBarStyle: UIStatusBarStyleLightContent
+        UIViewControllerBasedStatusBarAppearance: false
+        # Required by iOS before any LAContext Face ID evaluation.
+        # Without this key iOS terminates the process on first use.
+        NSFaceIDUsageDescription: Unlock your saved OpenPGP key passphrases and smartcard PINs.
+        # Shown on the Core NFC system sheet the first time NFC is used.
+        NFCReaderUsageDescription: Tumpa uses NFC to communicate with your OpenPGP smartcard (YubiKey, Nitrokey, …) for signing, decryption, and key management.
+        # CoreNFC prefix filter for the OpenPGP applet. Without this key
+        # iOS delivers YubiKey taps as .miFare, not .iso7816, and our
+        # guard in TumpaCardPlugin.swift bails out. The 6-byte RID+PIX
+        # form D27600012401 is all that's needed — CoreNFC does prefix
+        # matching on SELECT-by-name. (Previous 16-byte form
+        # D2760001240103040000000000000000 was an invalid exact match
+        # and is also suspected of causing CoreNFC-daemon SIGABRT at
+        # launch.)
+        com.apple.developer.nfc.readersession.iso7816.select-identifiers:
+          - D27600012401
+    entitlements:
+      path: tumpa_iOS/tumpa_iOS.entitlements
+      properties:
+        # TAG format enables ISO-DEP tag reading, which the ISO 7816-4
+        # smartcard path relies on. Declared here so xcodegen owns the
+        # entitlements file end-to-end — hand-editing it after regen
+        # makes Xcode abort code signing with "Entitlements file was
+        # modified during the build".
+        com.apple.developer.nfc.readersession.formats:
+          - TAG
+    scheme:
+      environmentVariables:
+        RUST_BACKTRACE: full
+        RUST_LOG: info
+    settings:
+      base:
+        ENABLE_BITCODE: false
+        ARCHS: [arm64]
+        VALID_ARCHS: arm64
+        LIBRARY_SEARCH_PATHS[arch=x86_64]: $(inherited) $(PROJECT_DIR)/Externals/x86_64/$(CONFIGURATION) $(SDKROOT)/usr/lib/swift $(TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME) $(TOOLCHAIN_DIR)/usr/lib/swift-5.0/$(PLATFORM_NAME)
+        LIBRARY_SEARCH_PATHS[arch=arm64]: $(inherited) $(PROJECT_DIR)/Externals/arm64/$(CONFIGURATION) $(SDKROOT)/usr/lib/swift $(TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME) $(TOOLCHAIN_DIR)/usr/lib/swift-5.0/$(PLATFORM_NAME)
+        ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES: true
+        EXCLUDED_ARCHS[sdk=iphoneos*]: x86_64
+        # Apple Developer Team ID. Keeps Xcode's automatic signing
+        # working across `tauri ios dev` runs that regenerate the
+        # project via xcodegen (which would otherwise blank the
+        # Team dropdown back to "None").
+        DEVELOPMENT_TEAM: A7WGUTKMK6
+      groups: [app]
+    dependencies:
+      - framework: libapp.a
+        embed: false
+      - sdk: CoreGraphics.framework
+      - sdk: Metal.framework
+      - sdk: MetalKit.framework
+      - sdk: QuartzCore.framework
+      - sdk: Security.framework
+      - sdk: UIKit.framework
+      - sdk: WebKit.framework
+      # Pulled in by tauri-plugin-tumpa-card for NFC smartcard I/O
+      # (NFCTagReaderSession + NFCISO7816Tag) and biometric-gated
+      # keychain reads (LAContext).
+      - sdk: CoreNFC.framework
+      - sdk: LocalAuthentication.framework
+    preBuildScripts:
+      # Xcode's build shell starts with a minimal PATH that doesn't
+      # include Homebrew (/opt/homebrew/bin on Apple Silicon) or
+      # Cargo (~/.cargo/bin), so `pnpm tauri ios xcode-script` fails
+      # with "pnpm: command not found". Prepend the two common paths
+      # before invoking.
+      - script: |
+          # Keg-only node formulae (node@22 etc.) aren't symlinked into
+          # /opt/homebrew/bin, so we add every present node@N opt path
+          # explicitly. Also prepend ~/.cargo/bin for cargo and
+          # /opt/homebrew/bin for pnpm + any non-keg-only tools.
+          export PATH="$HOME/.cargo/bin:/opt/homebrew/bin:/usr/local/bin:$PATH"
+          for n in /opt/homebrew/opt/node@*/bin /usr/local/opt/node@*/bin; do
+              if [ -d "$n" ]; then export PATH="$n:$PATH"; fi
+          done
+          pnpm tauri ios xcode-script -v --platform ${PLATFORM_DISPLAY_NAME:?} --sdk-root ${SDKROOT:?} --framework-search-paths "${FRAMEWORK_SEARCH_PATHS:?}" --header-search-paths "${HEADER_SEARCH_PATHS:?}" --gcc-preprocessor-definitions "${GCC_PREPROCESSOR_DEFINITIONS:-}" --configuration ${CONFIGURATION:?} ${FORCE_COLOR} ${ARCHS:?}
+        name: Build Rust Code
+        basedOnDependencyAnalysis: false
+        outputFiles:
+          - $(SRCROOT)/Externals/x86_64/${CONFIGURATION}/libapp.a
+          - $(SRCROOT)/Externals/arm64/${CONFIGURATION}/libapp.a

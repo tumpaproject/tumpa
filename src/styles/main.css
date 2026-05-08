@@ -1,0 +1,165 @@
+@font-face {
+  font-family: 'Inter';
+  src: url('@/assets/Inter.ttf') format('truetype');
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+:root {
+  /* Sidebar */
+  --color-sidebar: #54298B;
+  --color-sidebar-active: #45187E;
+  --color-sidebar-focus: #CCA4FF;
+  --color-sidebar-submenu-text: #DED4E9;
+  --color-titlebar: #1F0A33;
+
+  /* Content */
+  --color-bg: #ffffff;
+  --color-bg-light: #F9FAFB;
+  --color-border: #E5E7EB;
+  --color-border-input: #D1D5DB;
+
+  /* Buttons */
+  --color-green: #6EE7B7;
+  --color-green-hover: #66CC99;
+  --color-red: #B91C1C;
+  --color-red-hover: #A81919;
+  --color-red-text: #991B1B;
+  --color-indigo: #3730A3;
+
+  /* Key states */
+  --color-expired-bg: #FEF2F2;
+  --color-expired-border: #FCA5A5;
+  --color-expired-text: #DC2626;
+
+  /* Text */
+  --color-text: #000000;
+  --color-text-dark: #333333;
+  --color-text-muted: #6B7280;
+
+  /* Layout */
+  --sidebar-width: 217px;
+
+  /* Typography */
+  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-family);
+  font-size: 14px;
+  color: var(--color-text);
+  background: var(--color-bg);
+  overflow: hidden;
+}
+
+#app {
+  width: 100vw;
+  height: 100vh;
+}
+
+input, textarea, select {
+  font-family: var(--font-family);
+  font-size: 14px;
+}
+
+input[type="text"],
+input[type="password"],
+input[type="date"],
+textarea,
+select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border-input);
+  border-radius: 6px;
+  outline: none;
+  background: var(--color-bg);
+  transition: border-color 0.15s;
+}
+
+input[type="text"]:focus,
+input[type="password"]:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--color-sidebar);
+  box-shadow: 0 0 0 2px var(--color-sidebar-focus);
+}
+
+/* Global focus ring for all interactive elements */
+button:focus-visible,
+a:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--color-sidebar-focus);
+  outline-offset: 2px;
+}
+
+textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 3px;
+}
+
+/* Visually hidden — accessible to screen readers */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Skip navigation link */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 9999;
+  padding: 8px 16px;
+  background: var(--color-sidebar);
+  color: white;
+  text-decoration: none;
+  font-weight: 600;
+  border-radius: 0 0 4px 0;
+}
+.skip-link:focus {
+  left: 0;
+}
+
+/* Fieldset reset */
+fieldset {
+  border: none;
+  padding: 0;
+  margin: 0;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}

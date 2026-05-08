@@ -1,0 +1,13 @@
+# Automatically generated - DO NOT EDIT!
+
+"$schema" = "../../schemas/schema.json"
+
+[[permission]]
+identifier = "allow-end-session"
+description = "Enables the end_session command without any pre-configured scope."
+commands.allow = ["end_session"]
+
+[[permission]]
+identifier = "deny-end-session"
+description = "Denies the end_session command without any pre-configured scope."
+commands.deny = ["end_session"]

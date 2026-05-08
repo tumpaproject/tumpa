@@ -1,0 +1,67 @@
+# Arch Linux package build environment for Tumpa
+# Usage: docker build -f Dockerfile.arch -t tumpa-arch .
+FROM archlinux:latest
+
+ARG PKG_VERSION=""
+
+# Update and install build dependencies
+RUN pacman -Syu --noconfirm && pacman -S --noconfirm \
+    rust \
+    nodejs npm \
+    webkit2gtk-4.1 \
+    openssl \
+    curl wget file \
+    libappindicator-gtk3 \
+    librsvg \
+    gtk3 \
+    pango \
+    gdk-pixbuf2 \
+    pcsclite \
+    base-devel \
+    pkgconf \
+    jq \
+    sudo \
+    && pacman -Scc --noconfirm
+
+RUN npm install -g pnpm
+
+# Create a non-root user for makepkg
+RUN useradd -m builder && echo "builder ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+
+ENV CI=true
+WORKDIR /app
+COPY --chown=builder:builder . .
+
+# Build as root first (pnpm install + tauri build need it for node-gyp etc.)
+RUN pnpm install
+RUN pnpm tauri build --no-bundle
+
+# Create PKGBUILD and build the package as non-root
+WORKDIR /build
+RUN chown builder:builder /build
+
+RUN SEMVER="${PKG_VERSION:-$(grep '"version"' /app/src-tauri/tauri.conf.json | head -1 | sed 's/.*: *"\([^"]*\)".*/\1/')}" && \
+    BINARY="/app/src-tauri/target/release/tumpa" && \
+    cat > PKGBUILD << PKGEOF
+pkgname=tumpa
+pkgver=${SEMVER//-/_}
+pkgrel=1
+pkgdesc="The Usability Minded PGP Application"
+arch=('x86_64')
+url="https://tumpa.rocks"
+license=('GPL-3.0-or-later')
+depends=('webkit2gtk-4.1' 'gtk3' 'openssl' 'pcsclite')
+source=()
+sha256sums=()
+
+package() {
+    install -Dm755 "${BINARY}" "\${pkgdir}/usr/bin/tumpa"
+}
+PKGEOF
+    chown builder:builder PKGBUILD
+
+USER builder
+RUN makepkg --skipchecksums --nodeps -f
+
+USER root
+CMD ["ls", "-la", "/build/"]

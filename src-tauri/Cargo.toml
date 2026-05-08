@@ -1,0 +1,55 @@
+[package]
+name = "tumpa"
+version = "0.10.90"
+description = "The Usability Minded PGP Application"
+authors = ["Kushal Das"]
+edition = "2021"
+
+[lib]
+name = "tumpa_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-opener = "2"
+tauri-plugin-dialog = "2"
+tauri-plugin-fs = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+chrono = { version = "0.4", features = ["serde"] }
+tokio = { version = "1", features = ["rt"] }
+zeroize = "1"
+
+[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
+# Desktop gets the full libtumpa: card (PC/SC via card-backend-pcsc) +
+# network (VKS upload, email verification, WKD fetch).
+# 0.3.2 pulls wecanencrypt 0.15.0 with the Curve25519 0x40 prefix +
+# Nitrokey 3 (opcard-rs >= 1.5) ECC card upload fix, plus the
+# `factory_reset_card`, per-card `ident` threading, and the schema-v4
+# summary helpers (`list_keys_summary`, `list_all_card_keys`).
+libtumpa = { version = "0.3.2", default-features = false, features = ["card", "network"] }
+dirs = "6"
+
+# Mobile builds swap PC/SC for the external backend provider.
+# - libtumpa's `card-mobile` feature pulls `wecanencrypt/card-external`.
+# - The `tauri-plugin-tumpa-card` plugin supplies the native transport
+#   (NFC / USB) that libtumpa's MobileCardBackend talks to.
+# - `network` is still dropped on mobile — keyserver upload would pull
+#   reqwest with native-tls via wecanencrypt, which blocks
+#   cross-compilation.
+[target.'cfg(any(target_os = "android", target_os = "ios"))'.dependencies]
+libtumpa = { version = "0.3.2", default-features = false, features = ["card-mobile"] }
+tauri-plugin-tumpa-card = { path = "../crates/tauri-plugin-tumpa-card" }
+# Needed so we can hand libtumpa a Box<dyn CardBackend + Send + Sync>
+# from the backend provider closure we register in setup().
+card-backend = "0.2"
+
+# Integration tests under `tests/` exercise wecanencrypt APIs directly
+# (predating libtumpa). Keep the dev-dep so they keep compiling. libtumpa
+# 0.3.2 pulls wecanencrypt 0.15.0 in as a transitive; match the version
+# here so cargo resolves a single copy.
+[dev-dependencies]
+wecanencrypt = { version = "0.15.0", features = ["keystore", "card-pcsc", "network"] }

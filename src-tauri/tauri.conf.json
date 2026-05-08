@@ -1,0 +1,51 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Tumpa",
+  "version": "0.10.90",
+  "identifier": "in.kushaldas.tumpa",
+  "build": {
+    "beforeDevCommand": "pnpm dev",
+    "devUrl": "http://localhost:5173",
+    "beforeBuildCommand": "pnpm build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Tumpa",
+        "width": 930,
+        "height": 600,
+        "minWidth": 930,
+        "minHeight": 600,
+        "resizable": true,
+        "center": true,
+        "backgroundColor": "#54298B"
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: asset:; font-src 'self'; connect-src ipc: http://ipc.localhost; object-src 'none'; base-uri 'none'; form-action 'none'"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.png",
+      "icons/icon.ico"
+    ],
+    "macOS": {
+      "bundleVersion": "1"
+    },
+    "linux": {
+      "rpm": {
+        "depends": ["webkit2gtk4.1", "gtk3", "openssl-libs", "pcsc-lite"]
+      },
+      "deb": {
+        "depends": ["libwebkit2gtk-4.1-0", "libgtk-3-0", "libssl3", "libpcsclite1"]
+      }
+    }
+  }
+}

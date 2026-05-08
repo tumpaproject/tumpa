@@ -1,0 +1,49 @@
+# DEB build environment for Tumpa
+# Usage: docker build --build-arg BASE_IMAGE=debian:13 -f Dockerfile.deb -t tumpa-deb .
+ARG BASE_IMAGE=debian:13
+FROM ${BASE_IMAGE}
+
+ARG PKG_VERSION=""
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y \
+    libwebkit2gtk-4.1-dev \
+    libssl-dev \
+    curl wget file \
+    libayatana-appindicator3-dev \
+    librsvg2-dev \
+    libgtk-3-dev \
+    libpango1.0-dev \
+    libgdk-pixbuf-2.0-dev \
+    libpcsclite-dev \
+    build-essential \
+    pkg-config \
+    ca-certificates gnupg \
+    jq \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
+    && apt-get install -y nodejs \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+ENV PATH="/root/.cargo/bin:${PATH}"
+
+RUN npm install -g pnpm
+
+ENV CI=true
+WORKDIR /app
+COPY . .
+
+RUN rm -f src-tauri/Cargo.lock
+
+ARG PKG_VERSION
+RUN if [ -n "$PKG_VERSION" ]; then \
+        jq --arg v "$PKG_VERSION" '.version = $v' src-tauri/tauri.conf.json > tmp.json && \
+        mv tmp.json src-tauri/tauri.conf.json; \
+    fi
+
+RUN pnpm install
+RUN pnpm tauri build --bundles deb
+
+CMD ["ls", "-la", "src-tauri/target/release/bundle/deb/"]
