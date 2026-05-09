@@ -29,7 +29,7 @@ RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 ENV PATH="/root/.cargo/bin:${PATH}"
 
-RUN npm install -g pnpm
+RUN npm install -g pnpm@10
 
 ENV CI=true
 WORKDIR /app

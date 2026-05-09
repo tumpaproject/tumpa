@@ -23,7 +23,7 @@ RUN dnf install -y \
     jq \
     && dnf clean all
 
-RUN npm install -g pnpm
+RUN npm install -g pnpm@10
 
 ENV CI=true
 WORKDIR /app

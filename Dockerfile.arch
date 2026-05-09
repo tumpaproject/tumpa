@@ -23,7 +23,7 @@ RUN pacman -Syu --noconfirm && pacman -S --noconfirm \
     sudo \
     && pacman -Scc --noconfirm
 
-RUN npm install -g pnpm
+RUN npm install -g pnpm@10
 
 # Create a non-root user for makepkg
 RUN useradd -m builder && echo "builder ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
