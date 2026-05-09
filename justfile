@@ -472,38 +472,35 @@ build-dmg:
     pnpm tauri build --bundles dmg
 
 # Build macOS DMG with signing and notarization
-# Required environment variables:
-#   APPLE_SIGNING_IDENTITY - Certificate identity
-#   APPLE_ID               - Apple ID email for notarization
-#   APPLE_PASSWORD         - App-specific password
-#   APPLE_TEAM_ID          - Apple Developer Team ID
+# Uses keychain profile "tugpgp" for notarization credentials
+# Set up with: xcrun notarytool store-credentials tugpgp --apple-id EMAIL --team-id TEAM_ID
 build-dmg-signed:
     #!/usr/bin/env bash
     set -e
 
-    if [ -z "$APPLE_SIGNING_IDENTITY" ]; then
-        echo "Error: APPLE_SIGNING_IDENTITY not set"
-        exit 1
-    fi
-
-    if [ -z "$APPLE_TEAM_ID" ]; then
-        echo "Error: APPLE_TEAM_ID not set"
-        exit 1
-    fi
-
-    if [ -z "$APPLE_API_KEY" ]; then
-        if [ -z "$APPLE_ID" ] || [ -z "$APPLE_PASSWORD" ]; then
-            echo "Error: Set APPLE_ID + APPLE_PASSWORD or APPLE_API_KEY + APPLE_API_ISSUER + APPLE_API_KEY_ID"
-            exit 1
-        fi
-    fi
+    export APPLE_SIGNING_IDENTITY="Developer ID Application: Kushal Das (A7WGUTKMK6)"
 
     echo "Building signed macOS DMG..."
+    echo "Signing identity: $APPLE_SIGNING_IDENTITY"
+
     pnpm tauri build --bundles dmg
 
+    DMG_FILE=$(ls src-tauri/target/release/bundle/dmg/*.dmg 2>/dev/null | head -1)
+    if [ -z "$DMG_FILE" ]; then
+        echo "Error: No DMG file found"
+        exit 1
+    fi
+
     echo ""
-    echo "DMG built and signed. Output in src-tauri/target/release/bundle/dmg/"
-    ls -la src-tauri/target/release/bundle/dmg/*.dmg 2>/dev/null || echo "No DMG files found"
+    echo "Submitting for notarization..."
+    xcrun notarytool submit "$DMG_FILE" --keychain-profile tugpgp --wait
+
+    echo "Stapling notarization ticket..."
+    xcrun stapler staple "$DMG_FILE"
+
+    echo ""
+    echo "Done! Signed and notarized DMG:"
+    ls -la "$DMG_FILE"
 
 # Build and install an Android debug APK to the attached device.
 # Debug APKs are signed with Android's auto-generated debug key, so they
