@@ -340,8 +340,12 @@ pub async fn generate_key(
         .map(|email| format!("{} <{}>", name, email))
         .collect();
 
+    // libtumpa::key::generate always produces a V4 key; Cv25519Modern under
+    // V4 yields Ed25519 (RFC 9580) + X25519, which Nitrokey 3 accepts for
+    // upload and use. The legacy Cv25519 stays the default.
     let cipher = match cipher_suite.to_lowercase().as_str() {
         "rsa4096" | "rsa4k" => CipherSuite::Rsa4k,
+        "cv25519modern" | "curve25519modern" | "x25519" => CipherSuite::Cv25519Modern,
         _ => CipherSuite::Cv25519,
     };
 

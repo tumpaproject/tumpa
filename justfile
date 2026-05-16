@@ -267,6 +267,59 @@ build-rpm base_image="fedora:43":
     echo "RPM package(s) for $BASE_IMAGE available in $OUTPUT_DIR/"
     ls -la "$OUTPUT_DIR/"*.rpm 2>/dev/null || echo "No RPM files found"
 
+# Build RPM package on AlmaLinux 10 (RHEL 10 family) using Docker.
+# A separate target because AlmaLinux needs CRB + EPEL repos enabled
+# before -devel and libappindicator packages resolve.
+# Usage: just build-almalinux [base_image]
+# Examples:
+#   just build-almalinux              # Uses almalinux:10 (default)
+#   just build-almalinux rockylinux:10
+build-almalinux base_image="almalinux:10":
+    #!/usr/bin/env bash
+    set -e
+    BASE_IMAGE="{{base_image}}"
+    DISTRO_NAME=$(echo "$BASE_IMAGE" | tr ':' '-')
+    OUTPUT_DIR="dist/$DISTRO_NAME"
+
+    SEMVER=$(grep '"version"' src-tauri/tauri.conf.json | head -1 | sed 's/.*: *"\([^"]*\)".*/\1/')
+    RPM_VERSION="${SEMVER//-/\~}"
+
+    echo "Building RPM for $BASE_IMAGE..."
+    echo "Semver: $SEMVER -> RPM version: $RPM_VERSION"
+    mkdir -p "$OUTPUT_DIR"
+
+    docker build \
+        --build-arg BASE_IMAGE="$BASE_IMAGE" \
+        --build-arg PKG_VERSION="$RPM_VERSION" \
+        -f Dockerfile.almalinux \
+        -t "tumpa-rpm-$DISTRO_NAME" \
+        .
+
+    CONTAINER_ID=$(docker create "tumpa-rpm-$DISTRO_NAME")
+    docker cp "$CONTAINER_ID:/app/src-tauri/target/release/bundle/rpm/." "$OUTPUT_DIR/"
+    docker rm "$CONTAINER_ID"
+
+    # Rename RPM files to include distro tag
+    distro=$(echo "$BASE_IMAGE" | cut -d: -f1)
+    ver=$(echo "$BASE_IMAGE" | cut -d: -f2)
+    case "$distro" in
+        fedora) distro_tag="fc${ver}" ;;
+        centos|rocky|rockylinux|alma|almalinux) distro_tag="el${ver}" ;;
+        *) distro_tag="${distro}${ver}" ;;
+    esac
+    for f in "$OUTPUT_DIR"/*.rpm; do
+        [ -f "$f" ] || continue
+        basename=$(basename "$f")
+        newname=$(echo "$basename" | sed "s/\.\(x86_64\|aarch64\)\.rpm/.${distro_tag}.\1.rpm/")
+        if [ "$basename" != "$newname" ]; then
+            mv "$f" "$OUTPUT_DIR/$newname"
+        fi
+    done
+
+    echo ""
+    echo "RPM package(s) for $BASE_IMAGE available in $OUTPUT_DIR/"
+    ls -la "$OUTPUT_DIR/"*.rpm 2>/dev/null || echo "No RPM files found"
+
 # Build RPM using local (unpublished) wecanencrypt
 # Usage: just build-rpm-local [wecanencrypt_path] [base_image]
 # Examples:
@@ -365,7 +418,7 @@ build-deb base_image="debian:13":
     docker rm "$CONTAINER_ID"
 
     # Rename DEB files to include distro name
-    distro_tag=$(echo "$DISTRO_NAME" | tr '-' '')
+    distro_tag=$(echo "$DISTRO_NAME" | tr -d '-')
     for f in "$OUTPUT_DIR"/*.deb; do
         [ -f "$f" ] || continue
         basename=$(basename "$f")

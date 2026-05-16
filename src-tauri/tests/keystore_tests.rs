@@ -45,6 +45,66 @@ fn test_keystore_create_and_list() {
     assert!(certs[0].is_secret);
 }
 
+/// Regression test for the "Curve25519 (Modern, Nitrokey 3)" dropdown
+/// option: `CipherSuite::Cv25519Modern` must yield a V4 key whose primary
+/// and subkeys use the RFC 9580 Ed25519 / X25519 algorithms — not the
+/// legacy EdDSALegacy / ECDH(Curve25519) pair. Nitrokey 3 needs the modern
+/// algorithm IDs for card upload and use.
+#[test]
+fn test_generate_cv25519_modern_v4() {
+    use wecanencrypt::KeyAlgorithm;
+
+    let store = KeyStore::open_in_memory().unwrap();
+    let key = create_key(
+        "modernpass",
+        &["Modern User <modern@example.com>"],
+        CipherSuite::Cv25519Modern,
+        None,
+        Some(Utc::now() + Duration::days(365)),
+        Some(Utc::now() + Duration::days(365)),
+        SubkeyFlags {
+            encryption: true,
+            signing: true,
+            authentication: false,
+        },
+        true,
+        true,
+    )
+    .expect("Cv25519Modern key generation failed");
+
+    let fp = store.import_key(&key.secret_key).unwrap();
+    let info = store.get_key_info(&fp).unwrap();
+
+    // Primary must be RFC 9580 Ed25519, not the v4 EdDSALegacy.
+    assert_eq!(
+        info.primary_algorithm_detail,
+        KeyAlgorithm::Ed25519,
+        "modern suite must use RFC 9580 Ed25519 for the primary key"
+    );
+
+    // No subkey may fall back to the legacy Curve25519 algorithms.
+    for sk in &info.subkeys {
+        assert_ne!(
+            sk.algorithm_detail,
+            KeyAlgorithm::EdDsaLegacy,
+            "modern suite must not emit legacy EdDSALegacy subkeys"
+        );
+        assert_ne!(
+            sk.algorithm_detail,
+            KeyAlgorithm::EcdhCurve25519,
+            "modern suite must not emit legacy ECDH(Curve25519) subkeys"
+        );
+    }
+
+    // The encryption subkey must be X25519 (RFC 9580).
+    assert!(
+        info.subkeys
+            .iter()
+            .any(|sk| sk.algorithm_detail == KeyAlgorithm::X25519),
+        "modern suite must include an X25519 encryption subkey"
+    );
+}
+
 #[test]
 fn test_keystore_generate_and_get_info() {
     let store = KeyStore::open_in_memory().unwrap();
