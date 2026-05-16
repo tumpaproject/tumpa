@@ -1,0 +1,45 @@
+# RPM build environment for Tumpa on AlmaLinux 10 (RHEL 10 family)
+# Usage: docker build --build-arg BASE_IMAGE=almalinux:10 -f Dockerfile.almalinux -t tumpa-almalinux .
+ARG BASE_IMAGE=almalinux:10
+FROM ${BASE_IMAGE}
+
+ARG PKG_VERSION=""
+
+# AlmaLinux 10 needs CRB (CodeReady Builder) for -devel packages and
+# EPEL for libappindicator-gtk3-devel.
+RUN dnf install -y dnf-plugins-core epel-release \
+    && dnf config-manager --set-enabled crb \
+    && dnf install -y \
+        rust cargo \
+        nodejs \
+        webkit2gtk4.1-devel \
+        openssl-devel \
+        curl wget file \
+        libappindicator-gtk3-devel \
+        librsvg2-devel \
+        gtk3-devel \
+        pango-devel \
+        gdk-pixbuf2-devel \
+        pcsc-lite-devel \
+        rpm-build \
+        gcc gcc-c++ make \
+        pkgconf-pkg-config \
+        jq \
+    && dnf clean all
+
+RUN npm install -g pnpm@10
+
+ENV CI=true
+WORKDIR /app
+COPY . .
+
+ARG PKG_VERSION
+RUN if [ -n "$PKG_VERSION" ]; then \
+        jq --arg v "$PKG_VERSION" '.version = $v' src-tauri/tauri.conf.json > tmp.json && \
+        mv tmp.json src-tauri/tauri.conf.json; \
+    fi
+
+RUN pnpm install
+RUN pnpm tauri build --bundles rpm
+
+CMD ["ls", "-la", "src-tauri/target/release/bundle/rpm/"]
