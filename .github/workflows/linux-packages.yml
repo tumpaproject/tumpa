@@ -1,0 +1,115 @@
+name: Build Linux packages
+
+# Manual runs (Actions tab → "Run workflow") or a version tag push.
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+      - '[0-9]*'
+
+# The release job needs to create/update a GitHub release on tag pushes.
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # RPM-based distros — `just build-rpm` / `just build-almalinux`.
+          - name: fedora-43
+            recipe: build-rpm
+            image: fedora:43
+            glob: '*.rpm'
+          - name: fedora-44
+            recipe: build-rpm
+            image: fedora:44
+            glob: '*.rpm'
+          - name: almalinux-10
+            recipe: build-almalinux
+            image: almalinux:10
+            glob: '*.rpm'
+          # DEB-based distros — `just build-deb`.
+          - name: debian-13
+            recipe: build-deb
+            image: debian:13
+            glob: '*.deb'
+          - name: debian-sid
+            recipe: build-deb
+            image: debian:sid
+            glob: '*.deb'
+          - name: ubuntu-25.10
+            recipe: build-deb
+            image: ubuntu:25.10
+            glob: '*.deb'
+          - name: ubuntu-26.04
+            recipe: build-deb
+            image: ubuntu:26.04
+            glob: '*.deb'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Tauri + Rust builds inside Docker are large; reclaim space the
+      # default runner image spends on toolchains we don't use here.
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc \
+            /opt/hostedtoolcache/CodeQL
+          sudo docker image prune -af || true
+          df -h /
+
+      - name: Install just
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh \
+            | sudo bash -s -- --to /usr/local/bin
+          just --version
+
+      - name: Build package (${{ matrix.image }})
+        run: just ${{ matrix.recipe }} ${{ matrix.image }}
+
+      # Uploaded artifacts are downloadable from the workflow run page.
+      - name: Upload package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tumpa-${{ matrix.name }}
+          path: dist/**/${{ matrix.glob }}
+          if-no-files-found: error
+          retention-days: 30
+
+  # On a tag push, gather every distro's packages and attach them to the
+  # matching GitHub release so they are downloadable without digging into
+  # the Actions run. Skipped for manual (workflow_dispatch) runs.
+  release:
+    name: Attach packages to release
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - name: Download all package artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Collect packages
+        run: |
+          mkdir -p release
+          find artifacts -type f \( -name '*.rpm' -o -name '*.deb' \) \
+            -exec cp -v {} release/ \;
+          ls -la release/
+
+      - name: Upload to GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="${GITHUB_REF_NAME}"
+          # Create the release if a tag push beat the manual release.
+          gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1 \
+            || gh release create "$tag" --repo "$GITHUB_REPOSITORY" \
+                 --title "$tag" --notes "Automated Linux package build for $tag."
+          gh release upload "$tag" release/* --repo "$GITHUB_REPOSITORY" --clobber
