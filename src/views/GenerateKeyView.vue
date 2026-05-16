@@ -92,7 +92,8 @@ function submit() {
 
         <label class="field-label" for="gen-algo">Key algorithm:</label>
         <select id="gen-algo" v-model="keyAlgo">
-          <option value="curve25519">Curve25519</option>
+          <option value="curve25519">Curve25519 (Legacy)</option>
+          <option value="cv25519modern">Curve25519 (Modern, Nitrokey 3)</option>
           <option value="rsa4096">RSA4096</option>
         </select>
       </template>

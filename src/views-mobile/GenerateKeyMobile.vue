@@ -68,7 +68,8 @@ function submit() {
 
     <label class="label" for="gm-algo">Key algorithm</label>
     <select id="gm-algo" v-model="keyAlgo">
-      <option value="curve25519">Curve25519</option>
+      <option value="curve25519">Curve25519 (Legacy)</option>
+      <option value="cv25519modern">Curve25519 (Modern, Nitrokey 3)</option>
       <option value="rsa4096">RSA 4096</option>
     </select>
 
@@ -130,6 +131,16 @@ input, textarea, select {
 }
 
 input, select { min-height: 44px; }
+
+/* Scoped `background: #fff` above resets the global chevron; restore it
+   here so the dropdown keeps a custom arrow instead of native chrome. */
+select {
+  padding-right: 36px;
+  background-color: #fff;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='none' stroke='%236B7280' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' d='M1 1.5 6 6.5 11 1.5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+}
 
 textarea {
   resize: vertical;
