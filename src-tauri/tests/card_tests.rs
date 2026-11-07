@@ -242,3 +242,39 @@ fn test_pin_length_validation() {
     assert!("1234567".len() < 8);
     assert!("12345678".len() >= 8);
 }
+
+// --- change_user_pin error wording (regression) ---
+//
+// On a card whose user PIN was blocked, a "Change User PIN" failure
+// showed the generic "PIN is blocked". In the admin-authorized flow
+// (VERIFY PW3 + RESET RETRY COUNTER) only the admin PIN can be the
+// blocked one, so the message must say that.
+
+use tumpa_lib::card_errors::{explain_change_user_pin_error, ADMIN_PIN_BLOCKED_MSG};
+
+#[test]
+fn test_change_user_pin_blocked_error_names_admin_pin() {
+    // Exact string libtumpa 0.4.6 / wecanencrypt 0.17.0 produce for SW 6983.
+    let raw = "card error: Smart card error: PIN is blocked".to_string();
+    let msg = explain_change_user_pin_error(raw);
+    assert_eq!(msg, ADMIN_PIN_BLOCKED_MSG);
+    assert!(msg.contains("admin PIN"));
+    assert!(!msg.to_lowercase().contains("user pin is blocked"));
+}
+
+#[test]
+fn test_change_user_pin_6983_status_names_admin_pin() {
+    let raw = "card error: Card error: Authentication method blocked [6983]".to_string();
+    assert_eq!(explain_change_user_pin_error(raw), ADMIN_PIN_BLOCKED_MSG);
+}
+
+#[test]
+fn test_change_user_pin_other_errors_pass_through() {
+    for raw in [
+        "card error: Smart card error: Card error: Password not checked, 2 allowed retries",
+        "user PIN must be at least 6 characters",
+        "card not connected",
+    ] {
+        assert_eq!(explain_change_user_pin_error(raw.to_string()), raw);
+    }
+}

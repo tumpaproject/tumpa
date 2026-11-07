@@ -1,7 +1,7 @@
 {
   "name": "tumpa",
   "private": true,
-  "version": "0.10.91",
+  "version": "0.10.93",
   "type": "module",
   "scripts": {
     "dev": "vite",

@@ -132,10 +132,13 @@ pub fn update_card_url(url: String, admin_pin: String) -> Result<(), String> {
 pub fn change_user_pin(admin_pin: String, new_pin: String) -> Result<(), String> {
     // libtumpa's `change_user_pin` issues RESET RETRY COUNTER (PW1)
     // after verifying the admin PIN, so it both sets the new user PIN
-    // and unblocks PW1 when its retry counter is at 0.
+    // and unblocks PW1 when its retry counter is at 0. A "PIN is
+    // blocked" error here can therefore only mean the admin PIN, so
+    // say that instead of the generic text.
     let admin = Pin::new(admin_pin.into_bytes());
     let new = Pin::new(new_pin.into_bytes());
-    admin::change_user_pin(&admin, &new, None).map_err(|e| e.to_string())
+    admin::change_user_pin(&admin, &new, None)
+        .map_err(|e| crate::card_errors::explain_change_user_pin_error(e.to_string()))
 }
 
 #[tauri::command]

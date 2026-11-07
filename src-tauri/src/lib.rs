@@ -1,4 +1,5 @@
 mod commands;
+pub mod card_errors;
 #[cfg(any(target_os = "android", target_os = "ios"))]
 mod card_bridge;
 
