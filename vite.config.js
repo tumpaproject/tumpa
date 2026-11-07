@@ -8,7 +8,7 @@ export default defineConfig({
   plugins: [vue()],
   resolve: {
     alias: {
-      '@': resolve(__dirname, 'src')
+      '@': resolve(import.meta.dirname, 'src')
     }
   },
   // Tauri sets TAURI_DEV_HOST when running on mobile so the on-device
